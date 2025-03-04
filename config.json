@@ -1,0 +1,25 @@
+{
+    "app_name": "VMS_PLUS",
+    "version": "1.0.0",
+    "host": "localhost",
+    "port": 28080,
+    "isdev":true,
+    "log_level": "info",
+    "dsn_db":"host=pntdev.ddns.net user=postgres password=8rzK81fxHSgZ dbname=vms_plus port=15432 sslmode=disable TimeZone=Asia/Bangkok",
+    "api_key":"CUYeRj3qfuUB4hfzGkMtnt3EyrJ64Re4vCcCIvbjSZFBLuutKSahyQlQpXKxvUAA",
+    "jwt_secret":"eKZvqBeD3EZyMYhmOUH3w4PwtuNgLhp2xBlfgZFXDAGdvO9dtMHrwfs0RhAzBmH0",
+    "jwt_access_token_time":60,
+    "jwt_refresh_token_time":1140,
+    "otp_expired":5,
+    "keycloak_client_id":"pea-VMS-Plus",
+    "keycloak_client_secret":"zifXKuxZhGG1jlDpwKVVBS6N9CaxCz0Y",
+    "keycloak_end_point":"https://sso2.pea.co.th/realms/pea-users/protocol/openid-connect",
+    "thaiid_client_id":"pea-VMS-Plus",
+    "thaiid_client_secret":"zifXKuxZhGG1jlDpwKVVBS6N9CaxCz0Y",
+    "thaiid_end_point":"https://imauth.bora.dopa.go.th/api/v2/oauth2",
+    "save_file_path":"D:\\TLnProj\\GO\\@Files\\VMS_PLUS",
+    "save_file_url":"http://localhost:8083/Files/VMS_PLUS"
+
+  }
+  
+  
