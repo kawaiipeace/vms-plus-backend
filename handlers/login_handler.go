@@ -307,13 +307,14 @@ func GetUserInfo(accessToken string) (models.KeyCloak_UserInfo, error) {
 func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	var req models.OTP_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.Phone == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
+	refCode := funcs.RandomRefCode(4)
 	expiry := time.Minute * time.Duration(config.AppConfig.OtpExpired)
-	otpID, otpErr := SendOTP(req.Phone, expiry)
+	otpID, otpErr := SendOTP(req.Phone, refCode, expiry)
 	if otpErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
@@ -325,17 +326,18 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&otpRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
 	c.JSON(200, gin.H{
 		"otpId":   otpID,
+		"refCode": refCode,
 		"message": "OTP sent successfully",
 	})
 }
 
-func SendOTP(phone string, expiry time.Duration) (string, error) {
+func SendOTP(phone string, refCode string, expiry time.Duration) (string, error) {
 
 	//fmt.Printf("Sending OTP to phone %s\n", phone) // Simulate sending
 
@@ -351,11 +353,11 @@ func SendOTP(phone string, expiry time.Duration) (string, error) {
       <authenKey>545653AA-19E0-41BB-B89F-8485559CD0A7</authenKey>
       <smsServiceId>ae9d5c1b-7ed8-444e-8bb0-707ab7e3e68a</smsServiceId>
       <telephoneNumber>%s</telephoneNumber>
-      <messageTemplate>หมายเลข OTP ของท่านคือ **pw** โปรดป้อน ภายใน %d นาที</messageTemplate>
+      <messageTemplate>หมายเลข OTP ของท่านคือ **pw** (รหัสอ้างอิง %s) โปรดป้อน ภายใน %d นาที</messageTemplate>
       <timeoutSecond>%d</timeoutSecond>
     </RequestOtpBySmsService>
   </soap:Body>
-</soap:Envelope>`, phone, int(expiry.Minutes()), int(expiry.Seconds()))
+</soap:Envelope>`, phone, refCode, int(expiry.Minutes()), int(expiry.Seconds()))
 
 	req, err := http.NewRequest("POST", soapEndpoint, bytes.NewBuffer([]byte(soapRequest)))
 	if err != nil {
@@ -399,37 +401,37 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 
 	var req models.OTPVerify_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.OtpId == "" || req.OTP == "" {
-		c.JSON(400, gin.H{"error": "Invalid JSON input"})
+		c.JSON(400, gin.H{"error": "Invalid JSON input", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
 	var otpRequest models.OTP_Request_Create
 	if err := config.DB.Where("otp_id = ? and status='pending'", req.OtpId).First(&otpRequest).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "OTP request not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "OTP request not found", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 			return
 		}
 		return
 	}
 	if otpRequest.ExpiresAt.Before(time.Now()) {
-		c.JSON(403, gin.H{"error": "OTP has expired"})
+		c.JSON(403, gin.H{"error": "รหัส OTP หมดอายุแล้ว กรุณากด 'ขอรหัส OTP ใหม่' เพื่อกรอกอีกครั้ง"})
 		return
 	}
 
 	// Check OTP
 	result, err := CheckOTP(req.OtpId, req.OTP)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 	if !result {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP", "message": "กรอก OTP ไม่ถูกต้อง ตรวจสอบให้แน่ใจว่าคุณใช้รหัส OTP ที่ได้รับล่าสุด"})
 		return
 	}
 
 	otpRequest.Status = "verified"
 	if err := config.DB.Save(&otpRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update OTP status: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update OTP status: %v", err), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
@@ -439,7 +441,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
@@ -449,13 +451,13 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 	// Generate JWT tokens
 	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
 	refreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
