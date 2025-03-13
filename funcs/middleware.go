@@ -36,6 +36,10 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 
 func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if config.AppConfig.IsDev {
+			c.Next()
+			return
+		}
 		apiKey := c.GetHeader("X-ApiKey")
 		if config.AppConfig.IsDev {
 			apiKey = config.AppConfig.ApiKey

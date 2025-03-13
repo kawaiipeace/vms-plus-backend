@@ -114,6 +114,9 @@ func main() {
 	driverHandler := handlers.DriverHandler{}
 	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversByName)
 
+	masHandler := handlers.MasHandler{}
+	router.GET("/api/mas/user-vehicle-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleUser)
+
 	refHandler := handlers.RefHandler{}
 	router.GET("/api/ref/cost-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCostType)
 	router.GET("/api/ref/request-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListRequestStatus)

@@ -2162,6 +2162,38 @@
                 "responses": {}
             }
         },
+        "/api/mas/user-vehicle-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Supervisor User.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Supervisor User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/ref/cost-type": {
             "get": {
                 "security": [

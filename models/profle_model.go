@@ -1,10 +1,12 @@
 package models
 
 type AuthenJwtUsr struct {
-	EmpID    string `gorm:"column:emp_uid" json:"emp_id"`
-	FullName string `gorm:"column:full_name" json:"full_name"`
-	DeptSAP  string `gorm:"column:dept_sap" json:"dept_sap"`
-	Role     string `gorm:"column:role" json:"role"`
+	EmpID        string `gorm:"column:emp_uid" json:"emp_id"`
+	FullName     string `gorm:"column:full_name" json:"full_name"`
+	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
+	Role         string `gorm:"column:role" json:"role"`
+	AccessToken  string `gorm:"column:access_token" json:"access_token"`
+	RefreshToken string `gorm:"column:refresh_token" json:"refresh_token"`
 }
 
 type AuthenUserEmp struct {

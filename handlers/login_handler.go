@@ -109,7 +109,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		} else {
 			var user models.AuthenUserEmp
-			err = config.DB.Where("tel_mobile = ?", userInfo.UserID).
+			err = config.DB.Where("emp_id = ?", userInfo.Username).
 				First(&user).Error
 
 			if err != nil {
@@ -120,14 +120,13 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				}
 				return
 			}
-
-			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
+			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, successResponse.AccessToken, successResponse.RefreshToken)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
 				return
 			}
 
-			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
+			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, successResponse.AccessToken, successResponse.RefreshToken)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 				return
@@ -241,13 +240,13 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 				return
 			}
 
-			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
+			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
 				return
 			}
 
-			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
+			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 				return
@@ -449,13 +448,13 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 	}
 
 	// Generate JWT tokens
-	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
+	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
 	}
 
-	refreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
+	refreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
 		return
@@ -552,13 +551,13 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 		}
 		return
 	}
-	newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
+	newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
 		return
 	}
 
-	newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
+	newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 		return
@@ -580,14 +579,29 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/logout [get]
 func (h *LoginHandler) Logout(c *gin.Context) {
-	userInfoEndpoint := config.AppConfig.KeyCloakEndPoint + "/userinfo"
-	accessToken := ""
-	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
+	_ = funcs.GetAuthenUser(c, "")
+	logoutEndpoint := config.AppConfig.KeyCloakEndPoint + "/protocol/openid-connect/logout"
+
+	jwt, err := funcs.ExtractUserFromJWT(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.Abort()
+	}
+	accessToken := jwt.AccessToken
+	refreshToken := jwt.RefreshToken
+
+	data := url.Values{}
+	data.Set("client_id", config.AppConfig.KeyCloakClientID)
+	data.Set("client_secret", config.AppConfig.KeyCloakSecret)
+	data.Set("refresh_token", refreshToken)
+
+	req, err := http.NewRequest("POST", logoutEndpoint, bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	client := &http.Client{}
@@ -604,9 +618,14 @@ func (h *LoginHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(string(body))
+	var jsonData map[string]interface{}
+	err = json.Unmarshal([]byte(body), &jsonData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully"})
+	c.JSON(resp.StatusCode, jsonData)
 }
 
 // Profile godoc

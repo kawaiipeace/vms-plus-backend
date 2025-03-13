@@ -14,9 +14,10 @@ type KeyCloak_Error_Response struct {
 	ErrorDescription string `json:"error_description"`
 }
 type KeyCloak_Success_Response struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
 }
 type KeyCloak_UserInfo struct {
 	Username string `json:"preferred_username"`
@@ -42,8 +43,8 @@ type OTPVerify_Request struct {
 }
 
 type Login_Response struct {
-	AccessToken  string `json:"accessToken "`
-	RefreshToken string `json:"refreshToken "`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type RefreshToken_Request struct {

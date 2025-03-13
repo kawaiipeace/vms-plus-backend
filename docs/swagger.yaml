@@ -1652,6 +1652,25 @@ paths:
       summary: Log out the current user
       tags:
       - Login
+  /api/mas/user-vehicle-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Supervisor User.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Supervisor User
+      tags:
+      - MAS
   /api/ref/cost-type:
     get:
       consumes:

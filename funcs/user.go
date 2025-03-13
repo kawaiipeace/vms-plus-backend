@@ -14,10 +14,12 @@ import (
 
 // Claims for JWT
 type Claims struct {
-	EmpID     string `json:"emp_id"`
-	FullName  string `json:"full_name"`
-	TokenType string `json:"token_type"`
-	Role      string `json:"role"`
+	EmpID        string `json:"emp_id"`
+	FullName     string `json:"full_name"`
+	TokenType    string `json:"token_type"`
+	Role         string `json:"role"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 	jwt.RegisteredClaims
 }
 
@@ -25,7 +27,7 @@ var (
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 )
 
-func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
+func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration, accessToken string, refreshToken string) (string, error) {
 	claims := Claims{
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
@@ -69,8 +71,11 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 
 	// Map claims to UserEmp struct
 	user := &models.AuthenJwtUsr{
-		EmpID:    claims["emp_id"].(string),
-		FullName: claims["full_name"].(string),
+		EmpID:        claims["emp_id"].(string),
+		FullName:     claims["full_name"].(string),
+		Role:         claims["role"].(string),
+		AccessToken:  claims["access_token"].(string),
+		RefreshToken: claims["refresh_token"].(string),
 	}
 
 	return user, nil
@@ -92,6 +97,5 @@ func GetAuthenUser(c *gin.Context, role string) *models.AuthenUserEmp {
 	}
 
 	//check role
-
 	return &user
 }
