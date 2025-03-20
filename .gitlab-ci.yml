@@ -1,0 +1,58 @@
+stages:
+  - build-base
+  - build
+  - sqa
+  - artifact
+  - update-deployment
+  - tag-uat
+  - update-deployment-uat
+  - tag-production
+  - update-deployment-production
+
+variables:
+  IMAGE_REPOSITORY: "${CI_REGISTRY_IMAGE}"
+  VALUES_FILE_FULL_PATH: "api/backend/values.dev.yml"
+  DOWNSTREAM_DEPLOYMENT_PATH: developer/vmsplus/deployment
+  UPSTREAM_IMAGE_REPOSITORY: "${CI_REGISTRY_IMAGE}"
+
+include:
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "build-base.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "build.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "sqa-sonarqube.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "sqa-dependency-check.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "sqa-trivy.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "artifact.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "update-deployment-template.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "tag-uat.yml"
+  - project: "developer/share/ci"
+    ref: go-0.0.1
+    file: "tag-production.yml"
+
+update-deployment-dev:
+  extends: .update-deployment-template-dev
+
+update-deployment-uat:
+  extends: .update-deployment-template-uat
+  variables:
+    UPSTREAM_VALUES_FILE_FULL_PATH: "api/backend/values.uat.yml"
+
+update-deployment-production:
+  extends: .update-deployment-template-production
+  variables:
+    UPSTREAM_VALUES_FILE_FULL_PATH: "api/backend/values.prod.yml"
