@@ -12,7 +12,7 @@ stages:
 variables:
   IMAGE_REPOSITORY: "${CI_REGISTRY_IMAGE}"
   VALUES_FILE_FULL_PATH: "api/backend/values.dev.yml"
-  DOWNSTREAM_DEPLOYMENT_PATH: developer/vmsplus/deployment
+  DOWNSTREAM_DEPLOYMENT_PATH: developer/vms-plus/deployment
   UPSTREAM_IMAGE_REPOSITORY: "${CI_REGISTRY_IMAGE}"
 
 include:
