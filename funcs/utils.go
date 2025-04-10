@@ -2,6 +2,8 @@ package funcs
 
 import (
 	"math/rand"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -16,4 +18,20 @@ func RandomRefCode(n int) string {
 		refCode[i] = letters[r.Intn(len(letters))]
 	}
 	return string(refCode)
+}
+
+func TrimStringFields(model interface{}) {
+	// Get the value and type of the model
+	val := reflect.ValueOf(model).Elem()
+
+	// Iterate through all fields in the struct
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+
+		// Check if the field is a string and can be modified
+		if field.Kind() == reflect.String && field.CanSet() {
+			trimmedValue := strings.TrimSpace(field.String()) // Trim spaces
+			field.SetString(trimmedValue)                     // Set the trimmed value
+		}
+	}
 }

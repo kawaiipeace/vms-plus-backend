@@ -14,12 +14,11 @@
     "keycloak_client_id":"pea-VMS-Plus",
     "keycloak_client_secret":"zifXKuxZhGG1jlDpwKVVBS6N9CaxCz0Y",
     "keycloak_end_point":"https://sso2.pea.co.th/realms/pea-users/protocol/openid-connect",
-    "thaiid_client_id":"pea-VMS-Plus",
+    "thaiid_client_id":"bDNWUDBJYVNJVE4xNDhPRUhsTDdZSXNRM0RLZzl6WE4",
     "thaiid_client_secret":"zifXKuxZhGG1jlDpwKVVBS6N9CaxCz0Y",
-    "thaiid_end_point":"https://imauth.bora.dopa.go.th/api/v2/oauth2",
+    "thaiid_end_point":"https://imauthsbx.bora.dopa.go.th/api/v2/oauth2",
     "save_file_path":"D:\\TLnProj\\GO\\@Files\\VMS_PLUS",
     "save_file_url":"http://localhost:8083/Files/VMS_PLUS"
 
   }
-  
   

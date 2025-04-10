@@ -159,7 +159,7 @@ func (h *LoginHandler) RequestThaiID(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.KeyCloakClientID + "&redirect_uri=" + req.RedirectUri + "&scope=openid&state=001",
+		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.ThaiIDClientID + "&redirect_uri=" + req.RedirectUri + "&scope=pid%20name%20birthdate%20openid&state=001",
 	})
 }
 
@@ -184,8 +184,8 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", req.Code)
 	data.Set("redirect_uri", req.RedirectUri)
-	data.Set("client_id", config.AppConfig.KeyCloakClientID)
-	data.Set("client_secret", config.AppConfig.KeyCloakSecret)
+	data.Set("client_id", config.AppConfig.ThaiIDClientID)
+	data.Set("client_secret", config.AppConfig.ThaiIDSecret)
 
 	// Create request
 	creq, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))
