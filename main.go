@@ -61,7 +61,7 @@ func main() {
 	router.PUT("/api/booking-user/update-document", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateDocument)
 	router.PUT("/api/booking-user/update-cost", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateCost)
 	router.PUT("/api/booking-user/update-vehicle-type", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateVehicleType)
-	router.PUT("/api/booking-user/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateApproved)
+	router.PUT("/api/booking-user/update-approver", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateApprover)
 	router.GET("/api/booking-user/search-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.SearchRequests)
 
 	bookingApproverHandler := handlers.BookingApproverHandler{}
@@ -106,20 +106,58 @@ func main() {
 	router.PUT("/api/booking-final/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateApproved)
 	router.PUT("/api/booking-final/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateCanceled)
 
+	receivedKeyHandler := handlers.ReceivedKeyHandler{}
+	router.GET("/api/received-key/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyHandler.SearchRequests)
+	router.GET("/api/received-key/request/:id", funcs.ApiKeyAuthenMiddleware(), receivedKeyHandler.GetRequest)
+	router.PUT("/api/received-key/update-key-pickup-emp", funcs.ApiKeyAuthenMiddleware(), receivedKeyHandler.UpdateKeyPickup_Emp)
+	router.PUT("/api/received-key/update-key-pickup-outsource", funcs.ApiKeyAuthenMiddleware(), receivedKeyHandler.UpdateKeyPickup_OutSource)
+	router.PUT("/api/received-key/update-canceled", funcs.ApiKeyAuthenMiddleware(), receivedKeyHandler.UpdateCanceled)
+
+	receivedVehicleHandler := handlers.ReceivedVehicleHandler{}
+	router.GET("/api/received-vehicle/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedVehicleHandler.SearchRequests)
+	router.GET("/api/received-vehicle/request/:id", funcs.ApiKeyAuthenMiddleware(), receivedVehicleHandler.GetRequest)
+	router.PUT("/api/received-vehicle/update-vehicle-pickup", funcs.ApiKeyAuthenMiddleware(), receivedVehicleHandler.UpdateVehiclePickup)
+
+	vehicleInUseHandler := handlers.VehicleInUseHandler{}
+	router.GET("/api/vehicle-in-use/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.SearchRequests)
+	router.GET("/api/vehicle-in-use/request/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.GetRequest)
+	router.GET("/api/vehicle-in-use/travel-details", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.GetVehicleTripDetails)
+	router.GET("/api/vehicle-in-use/travel-detail/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.GetVehicleTripDetail)
+	router.POST("/api/vehicle-in-use/create-travel-detail", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.CreateVehicleTripDetail)
+	router.PUT("/api/vehicle-in-use/update-travel-detail/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.UpdateVehicleTripDetail)
+	router.DELETE("/api/vehicle-in-use/delete-travel-detail/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.DeleteVehicleTripDetail)
+	router.GET("/api/vehicle-in-use/add-fuel-details", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.GetVehicleAddFuelDetails)
+	router.GET("/api/vehicle-in-use/add-fuel-detail/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.GetVehicleAddFuelDetail)
+	router.POST("/api/vehicle-in-use/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.CreateVehicleAddFuel)
+	router.PUT("/api/vehicle-in-use/update-add-fuel/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.UpdateVehicleAddFuel)
+	router.DELETE("/api/vehicle-in-use/delete-add-fuel/:id", funcs.ApiKeyAuthenMiddleware(), vehicleInUseHandler.DeleteVehicleAddFuel)
+
 	vehicleHandler := handlers.VehicleHandler{}
 	router.GET("/api/vehicle/search", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchVehicles)
-	router.GET("/api/vehicle/category", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetCategory)
+	router.GET("/api/vehicle/types", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetTypes)
+	router.GET("/api/vehicle/departments", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetDepartments)
 	router.GET("/api/vehicle/:id", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicle)
+	router.GET("/api/vehicle-info/:id", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
 
 	driverHandler := handlers.DriverHandler{}
-	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversByName)
+	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDrivers)
+	router.GET("/api/driver/:id", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriver)
+	router.GET("/api/driver/search-other-dept", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversOtherDept)
 
 	masHandler := handlers.MasHandler{}
 	router.GET("/api/mas/user-vehicle-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleUser)
+	router.GET("/api/mas/user-driver-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverUser)
+	router.GET("/api/mas/user-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListApprovalUser)
+	router.GET("/api/mas/user-admin-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListAdminApprovalUser)
+	router.GET("/api/mas/user-final-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListFinalApprovalUser)
+	router.GET("/api/mas/user/:id", funcs.ApiKeyAuthenMiddleware(), masHandler.GetUserEmp)
 
 	refHandler := handlers.RefHandler{}
 	router.GET("/api/ref/cost-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCostType)
+	router.GET("/api/ref/cost-type/:code", funcs.ApiKeyAuthenMiddleware(), refHandler.GetCostType)
 	router.GET("/api/ref/request-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListRequestStatus)
+	router.GET("/api/ref/fuel-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListFuelType)
+	router.GET("/api/ref/oil-station-brand", funcs.ApiKeyAuthenMiddleware(), refHandler.ListOilStationBrand)
 
 	logHandler := handlers.LogHandler{}
 	router.GET("/api/log/request/:id", funcs.ApiKeyAuthenMiddleware(), logHandler.GetLogRequest)

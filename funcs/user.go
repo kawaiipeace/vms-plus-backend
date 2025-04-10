@@ -14,12 +14,12 @@ import (
 
 // Claims for JWT
 type Claims struct {
-	EmpID        string `json:"emp_id"`
-	FullName     string `json:"full_name"`
-	TokenType    string `json:"token_type"`
-	Role         string `json:"role"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	EmpID        string   `json:"emp_id"`
+	FullName     string   `json:"full_name"`
+	TokenType    string   `json:"token_type"`
+	Roles        []string `json:"roles"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
 	jwt.RegisteredClaims
 }
 
@@ -32,6 +32,7 @@ func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Du
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
 		TokenType: tokenType,
+		Roles:     []string{"vehicel-user", "level1-approval", "admin-approval", "final-approval"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
 		},
@@ -69,11 +70,18 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 		return nil, errors.New("invalid token claims")
 	}
 
+	rolesInterface := claims["roles"].([]interface{})
+	roles := make([]string, len(rolesInterface))
+
+	for i, v := range rolesInterface {
+		roles[i] = v.(string) // Perform type assertion
+	}
+
 	// Map claims to UserEmp struct
 	user := &models.AuthenJwtUsr{
 		EmpID:        claims["emp_id"].(string),
 		FullName:     claims["full_name"].(string),
-		Role:         claims["role"].(string),
+		Roles:        roles,
 		AccessToken:  claims["access_token"].(string),
 		RefreshToken: claims["refresh_token"].(string),
 	}
@@ -82,6 +90,13 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 }
 
 func GetAuthenUser(c *gin.Context, role string) *models.AuthenUserEmp {
+	if config.AppConfig.IsDev {
+		duser := models.AuthenUserEmp{
+			EmpID: "700001",
+		}
+		return &duser
+	}
+
 	// Extract user from JWT
 	jwt, err := ExtractUserFromJWT(c)
 	if err != nil {
