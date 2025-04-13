@@ -3,7 +3,9 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"vms_plus_be/config"
+	"vms_plus_be/funcs"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +67,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)
-
+	vehicles = models.AssignVehicleImageFromIndex(vehicles)
 	// Respond with JSON
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
@@ -86,10 +88,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "Vehicle ID (mas_vehicle_uid)"
-// @Router /api/vehicle/{id} [get]
+// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
+// @Router /api/vehicle/{mas_vehicle_uid} [get]
 func (h *VehicleHandler) GetVehicle(c *gin.Context) {
-	vehicleID := c.Param("id")
+	vehicleID := c.Param("mas_vehicle_uid")
 
 	// Parse the string ID to uuid.UUID
 	parsedID, err := uuid.Parse(vehicleID)
@@ -100,50 +102,111 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 
 	// Fetch the vehicle record from the database
 	var vehicle models.VmsMasVehicle
-	if err := config.DB.Preload("RefFuelType").First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", parsedID).Error; err != nil {
+	if err := config.DB.Preload("RefFuelType").
+		Preload("VehicleDepartment.VehicleUser").
+		First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", parsedID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
 		return
 	}
-
+	vehicle.Age = vehicle.CalculateAge()
+	vehicle.VehicleImgs = []string{
+		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+	}
+	vehicle.VehicleDepartment.VehicleUser.EmpID = vehicle.VehicleDepartment.VehicleUserEmpID
+	vehicle.VehicleDepartment.VehicleUser.FullName = vehicle.VehicleDepartment.VehicleUserEmpName
+	vehicle.VehicleDepartment.VehicleUser.DeptSAP = vehicle.VehicleDepartment.VehicleOwnerDeptSap
+	vehicle.VehicleDepartment.VehicleUser.DeptSAPFull = vehicle.VehicleDepartment.OwnerDeptName
+	vehicle.VehicleDepartment.VehicleUser.DeptSAPShort = "สฟฟ.มสด.4(ล)"
+	if strings.TrimSpace(vehicle.VehicleLicensePlate) == "7กษ 4377" {
+		vehicle.IsAdminChooseDriver = true
+	}
 	// Return the vehicle data as a JSON response
+	funcs.TrimStringFields(&vehicle)
 	c.JSON(http.StatusOK, vehicle)
 }
 
-// GetCategory godoc
-// @Summary Get vehicle categories
-// @Description Fetches vehicle categories with optional filtering and pagination
+// GetTypes godoc
+// @Summary Get vehicle types
+// @Description Fetches all vehicle types, optionally filtered by name
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Param name query string false "Filter by vehicle type name (partial match)"
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/vehicle/types [get]
+func (h *VehicleHandler) GetTypes(c *gin.Context) {
+	var types []models.VmsRefVehicleType
+	name := c.Query("name") // Get the 'name' query parameter
+
+	// Build the query
+	query := config.DB
+	if name != "" {
+		query = query.Where("ref_vehicle_type_name LIKE ?", "%"+name+"%")
+	}
+
+	// Execute the query
+	query.Find(&types)
+	types = models.AssignTypeImageFromIndex(types)
+
+	// Respond with JSON
+	c.JSON(http.StatusOK, types)
+}
+
+// GetDepartments godoc
+// @Summary Get department list
+// @Description Fetches a list of departments grouped by dept_sap, including dept_short and dept_full
 // @Tags Vehicle
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param page query int false "Page number (default: 1)"
-// @Param limit query int false "Number of records per page (default: 10)"
-// @Router /api/vehicle/category [get]
-func (h *VehicleHandler) GetCategory(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
-	offset := (page - 1) * limit
+// @Router /api/vehicle/departments [get]
+func (h *VehicleHandler) GetDepartments(c *gin.Context) {
+	var departments []struct {
+		DeptSap   string `json:"dept_sap"`
+		DeptShort string `json:"dept_short"`
+		DeptFull  string `json:"dept_full"`
+	}
 
-	var categories []models.VmsRefCategory
-	var total int64
+	// SQL query to group and join tables
+	query := `
+        SELECT 
+            vmd.dept_sap,
+            vmd.dept_short,
+            vmd.dept_full
+        FROM 
+            vms_mas_vehicle_department vvd
+        JOIN 
+            vms_mas_department vmd
+        ON 
+            vvd.vehicle_owner_dept_sap = vmd.dept_sap
+        GROUP BY 
+            vmd.dept_sap, vmd.dept_short, vmd.dept_full
+    `
 
-	query := config.DB.Model(&models.VmsRefCategory{})
+	// Execute the query
+	if err := config.DB.Raw(query).Scan(&departments).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+		return
+	}
 
-	// Count total records
-	query.Count(&total)
+	// Respond with the result
+	c.JSON(http.StatusOK, departments)
+}
 
-	// Fetch categories with pagination
-	query.Offset(offset).Limit(limit).Find(&categories)
-
-	// Respond with JSON
-	c.JSON(http.StatusOK, gin.H{
-		"pagination": gin.H{
-			"total":      total,
-			"page":       page,
-			"limit":      limit,
-			"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
-		},
-		"categories": categories,
-	})
+// GetVehicleInfo godoc
+// @Summary Get vehicle info
+// @Description Get vehicle info
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
+// @Router /api/vehicle-info/{mas_vehicle_uid} [get]
+func (h *VehicleHandler) GetVehicleInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"number_of_available_drivers": 2})
 }

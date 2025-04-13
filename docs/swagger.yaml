@@ -66,6 +66,106 @@ definitions:
     required:
     - redirect_uri
     type: object
+  models.VmsTrnAddFuel:
+    properties:
+      before_vat_price:
+        type: number
+      mas_vehicle_department_uid:
+        example: abc12345-6789-1234-5678-abcdef012345
+        type: string
+      mas_vehicle_uid:
+        example: 789e4567-e89b-12d3-a456-426614174002
+        type: string
+      price_per_liter:
+        type: number
+      receipt_img:
+        type: string
+      sum_liter:
+        type: number
+      sum_price:
+        type: number
+      tax_invoice_date:
+        type: string
+      tax_invoice_no:
+        type: string
+      trn_add_fuel_uid:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      trn_request_uid:
+        example: 456e4567-e89b-12d3-a456-426614174001
+        type: string
+      vat:
+        type: number
+      vehicle_license_plate:
+        example: SGP1234
+        type: string
+      vehicle_license_plate_province_full:
+        example: Singapore
+        type: string
+      vehicle_license_plate_province_short:
+        example: SG
+        type: string
+    type: object
+  models.VmsTrnReceivedKey_Emp:
+    properties:
+      received_key_emp_id:
+        example: "1234567890"
+        type: string
+      received_key_internal_contact_number:
+        example: "5551234"
+        type: string
+      received_key_mobile_contact_number:
+        example: "0812345678"
+        type: string
+      received_key_remark:
+        example: Employee received the key
+        type: string
+      trn_request_uid:
+        example: a7de5318-1e05-4511-abe7-8c1c6374ab29
+        type: string
+    type: object
+  models.VmsTrnReceivedKey_Received:
+    properties:
+      trn_request_uid:
+        example: a7de5318-1e05-4511-abe7-8c1c6374ab29
+        type: string
+    type: object
+  models.VmsTrnReceivedVehicle:
+    properties:
+      fuel_start:
+        example: 50
+        type: integer
+      mile_start:
+        example: 10000
+        type: integer
+      pickup_datetime:
+        example: 2025-03-26T14:30:00
+        type: string
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
+      trn_request_uid:
+        example: a7de5318-1e05-4511-abe7-8c1c6374ab29
+        type: string
+      vehicle_img_inside_backseat:
+        example: http://vms.pea.co.th/backseat_image.jpg
+        type: string
+      vehicle_img_inside_frontseat:
+        example: http://vms.pea.co.th/frontseat_image.jpg
+        type: string
+      vehicle_img_outside_behind:
+        example: http://vms.pea.co.th/behind_image.jpg
+        type: string
+      vehicle_img_outside_front:
+        example: http://vms.pea.co.th/front_image.jpg
+        type: string
+      vehicle_img_outside_left:
+        example: http://vms.pea.co.th/left_image.jpg
+        type: string
+      vehicle_img_outside_right:
+        example: http://vms.pea.co.th/right_image.jpg
+        type: string
+    type: object
   models.VmsTrnRequest_Approved:
     properties:
       trn_request_uid:
@@ -83,6 +183,22 @@ definitions:
     type: object
   models.VmsTrnRequest_Request:
     properties:
+      approved_request_dept_sap:
+        example: Finance
+        type: string
+      approved_request_dept_sap_full:
+        example: Finance
+        type: string
+      approved_request_dept_sap_short:
+        example: Finance
+        type: string
+      approved_request_emp_id:
+        description: Step 4
+        example: EMP67890
+        type: string
+      approved_request_emp_name:
+        example: Jane Doe
+        type: string
       attached_document:
         example: document.pdf
         type: string
@@ -95,24 +211,32 @@ definitions:
       cost_no:
         example: COST2024001
         type: string
+      driver_emp_dept_sap:
+        example: DPT001
+        type: string
+      driver_emp_id:
+        example: "700001"
+        type: string
+      driver_emp_name:
+        example: John Doe
+        type: string
+      driver_internal_contact_number:
+        example: "1234567890"
+        type: string
+      driver_mobile_contact_number:
+        example: "0987654321"
+        type: string
       end_datetime:
         example: "2025-01-01T10:00:00Z"
-        type: string
-      is_admin_choose_driver:
-        example: "0"
         type: string
       is_admin_choose_vehicle:
         example: "0"
         type: string
-      is_driver_need:
-        description: Step 3
-        example: "1"
-        type: string
-      is_have_sub_request:
-        example: "1"
-        type: string
       is_pea_employee_driver:
         example: "1"
+        type: string
+      is_system_choose_vehicle:
+        example: "0"
         type: string
       mas_carpool_driver_uid:
         example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
@@ -135,9 +259,6 @@ definitions:
         type: string
       ref_cost_type_code:
         example: 101
-        type: integer
-      ref_request_type_code:
-        example: 1
         type: integer
       reference_number:
         example: REF123456
@@ -270,12 +391,48 @@ definitions:
         example: John Doe
         type: string
     type: object
+  models.VmsTrnSatisfactionSurveyAnswers:
+    properties:
+      mas_satisfaction_survey_questions_code:
+        example: 1
+        type: integer
+      survey_answer:
+        example: 5
+        type: integer
+    type: object
+  models.VmsTrnTripDetail_Request:
+    properties:
+      trip_departure_place:
+        example: Changi Airport
+        type: string
+      trip_destination_place:
+        example: Marina Bay Sands
+        type: string
+      trip_detail:
+        example: Routine transport between airport and hotel.
+        type: string
+      trip_end_datetime:
+        example: 2025-03-26T10:00:00
+        type: string
+      trip_end_miles:
+        example: 5050
+        type: integer
+      trip_start_datetime:
+        example: 2025-03-26T08:00:00
+        type: string
+      trip_start_miles:
+        example: 5000
+        type: integer
+      trn_request_uid:
+        example: 456e4567-e89b-12d3-a456-426614174001
+        type: string
+    type: object
 info:
   contact: {}
   title: VMS_PLUS
   version: "1.0"
 paths:
-  /api/booking-admin-dept/request/{id}:
+  /api/booking-admin-dept/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -284,7 +441,7 @@ paths:
       parameters:
       - description: TrnRequestUID (trn_request_uid)
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       produces:
@@ -565,7 +722,7 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-admin-dept
-  /api/booking-admin/request/{id}:
+  /api/booking-admin/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -574,7 +731,7 @@ paths:
       parameters:
       - description: TrnRequestUID (trn_request_uid)
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       produces:
@@ -855,7 +1012,7 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-admin
-  /api/booking-approver/request/{id}:
+  /api/booking-approver/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -864,7 +1021,7 @@ paths:
       parameters:
       - description: TrnRequestUID (trn_request_uid)
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       produces:
@@ -991,7 +1148,7 @@ paths:
       summary: Update sended back status for an item
       tags:
       - Booking-approver
-  /api/booking-final/request/{id}:
+  /api/booking-final/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -1000,7 +1157,7 @@ paths:
       parameters:
       - description: TrnRequestUID (trn_request_uid)
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       produces:
@@ -1145,7 +1302,7 @@ paths:
       summary: Create a new booking request
       tags:
       - Booking-user
-  /api/booking-user/request/{id}:
+  /api/booking-user/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -1154,7 +1311,7 @@ paths:
       parameters:
       - description: TrnRequestUID (trn_request_uid)
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       produces:
@@ -1225,14 +1382,17 @@ paths:
       produces:
       - application/json
       responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
       summary: Search booking requests and get summary counts by request status code
       tags:
       - Booking-user
-  /api/booking-user/update-approved:
+  /api/booking-user/update-approver:
     put:
       consumes:
       - application/json
-      description: This endpoint allows a booking user to update the approval status
+      description: This endpoint allows a booking user to update the approver user
         of their booking request.
       parameters:
       - description: VmsTrnRequest_Update_Approver data
@@ -1247,7 +1407,7 @@ paths:
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update approval status for a booking request
+      summary: Update approver for a booking request
       tags:
       - Booking-user
   /api/booking-user/update-canceled:
@@ -1425,6 +1585,27 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-user
+  /api/driver/{mas_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a driver using its unique identifier
+        (MasDriverUID).
+      parameters:
+      - description: MasDriverUID (mas_driver_uid)
+        in: path
+        name: mas_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver
+      tags:
+      - Drivers
   /api/driver/search:
     get:
       consumes:
@@ -1434,7 +1615,6 @@ paths:
       - description: Driver name to search
         in: query
         name: name
-        required: true
         type: string
       - description: 'Page number (default: 1)'
         in: query
@@ -1447,17 +1627,48 @@ paths:
       produces:
       - application/json
       responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
       summary: Get drivers by name with pagination
       tags:
       - Drivers
-  /api/log/request/{id}:
+  /api/driver/search-other-dept:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of drivers filtered by name with pagination from other
+        department
+      parameters:
+      - description: Driver name to search
+        in: query
+        name: name
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get drivers by name with pagination from other department
+      tags:
+      - Drivers
+  /api/log/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
       parameters:
-      - description: Transaction Request UID
+      - description: trn_request_uid
         in: path
-        name: id
+        name: trn_request_uid
         required: true
         type: string
       - description: Page number
@@ -1652,11 +1863,25 @@ paths:
       summary: Log out the current user
       tags:
       - Login
-  /api/mas/user-vehicle-users:
+  /api/mas/satisfaction_survey_questions:
     get:
       consumes:
       - application/json
-      description: This endpoint allows a user to retrieve Supervisor User.
+      description: This endpoint fetches details of a user.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific user
+      tags:
+      - MAS
+  /api/mas/user-admin-approval-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Admin Approval Users.
       parameters:
       - description: Search by Employee ID or Full Name
         in: query
@@ -1668,9 +1893,374 @@ paths:
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Retrieve the Supervisor User
+      summary: Retrieve the Admin Approval Users
       tags:
       - MAS
+  /api/mas/user-approval-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Approval Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Approval Users
+      tags:
+      - MAS
+  /api/mas/user-driver-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Driver Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Driver Users
+      tags:
+      - MAS
+  /api/mas/user-final-approval-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Final Approval User.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Final Approval User
+      tags:
+      - MAS
+  /api/mas/user-vehicle-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Vehicle Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Vehicle Users
+      tags:
+      - MAS
+  /api/mas/user/{emp_id}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a user.
+      parameters:
+      - description: EmpID (emp_id)
+        in: path
+        name: emp_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific user
+      tags:
+      - MAS
+  /api/received-key/request/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific booking request using
+        its unique identifier (TrnRequestUID).
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific booking request
+      tags:
+      - Received-key
+  /api/received-key/search-requests:
+    get:
+      consumes:
+      - application/json
+      description: Search for requests using a keyword and get the summary of counts
+        grouped by request status code
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search booking requests and get summary counts by request status code
+      tags:
+      - Received-key
+  /api/received-key/update-canceled:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the cancel status of an item.
+      parameters:
+      - description: VmsTrnRequest_Canceled data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnRequest_Canceled'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update cancel status for an item
+      tags:
+      - Received-key
+  /api/received-key/update-key-pickup-emp:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update key pickup emp user.
+      parameters:
+      - description: VmsTrnReceivedKey_Emp data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnReceivedKey_Emp'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update key pickup emp user for a booking request
+      tags:
+      - Received-key
+  /api/received-key/update-key-pickup-outsource:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update key pickup outsource.
+      parameters:
+      - description: VmsTrnReceivedKey_Emp data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnReceivedKey_Emp'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update key pickup outsource for a booking request
+      tags:
+      - Received-key
+  /api/received-key/update-received:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the received status of an
+        item.
+      parameters:
+      - description: VmsTrnReceivedKey_Received data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnReceivedKey_Received'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update received status for an item
+      tags:
+      - Received-key
+  /api/received-vehicle/request/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific booking request using
+        its unique identifier (TrnRequestUID).
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific booking request
+      tags:
+      - Received-vehicle
+  /api/received-vehicle/search-requests:
+    get:
+      consumes:
+      - application/json
+      description: Search for requests using a keyword and get the summary of counts
+        grouped by request status code
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search booking requests and get summary counts by request status code
+      tags:
+      - Received-vehicle
+  /api/received-vehicle/travel-card/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches a travel-card of pecific booking request
+        using its unique identifier (TrnRequestUID).
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a travel-card of pecific booking request
+      tags:
+      - Received-vehicle
+  /api/received-vehicle/update-vehicle-pickup:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update vehicle pickup.
+      parameters:
+      - description: VmsTrnReceivedVehicle data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnReceivedVehicle'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update vehicle pickup for a booking request
+      tags:
+      - Received-vehicle
   /api/ref/cost-type:
     get:
       consumes:
@@ -1684,6 +2274,54 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve available cost types
+      tags:
+      - REF
+  /api/ref/cost-type/{code}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a cost type.
+      parameters:
+      - description: ref_cost_type_code (ref_cost_type_code)
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific cost type
+      tags:
+      - REF
+  /api/ref/fuel-type:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieve all fuel type
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the all fuel type
+      tags:
+      - REF
+  /api/ref/oil-station-brand:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieve all oil station brand.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the all oil station brand
       tags:
       - REF
   /api/ref/request-status:
@@ -1735,16 +2373,373 @@ paths:
       summary: Uploads a file
       tags:
       - Uploads
-  /api/vehicle/{id}:
+  /api/vehicle-in-use/add-fuel-detail/{trn_add_fuel_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch detailed information about an Add Fuel entry using its unique
+        TrnAddFuelUID.
+      parameters:
+      - description: TrnAddFuelUID
+        in: path
+        name: trn_add_fuel_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve details of a specific Add Fuel entry
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/add-fuel-details/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch a list of Add Fuel entries in TrnRequestUID.
+      parameters:
+      - description: TrnRequestUID
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a list of Add Fuel entries
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/create-add-fuel:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows to create a new Vehicle Add Fuel entry.
+      parameters:
+      - description: VmsTrnAddFuel data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnAddFuel'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create Vehicle Add Fuel entry
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/create-travel-detail:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows to Create Vehicle Travel List.
+      parameters:
+      - description: VmsTrnTripDetail_Request data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnTripDetail_Request'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create Vehicle Travel List for a booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/delete-add-fuel/{trn_add_fuel_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint allows to mark a Vehicle Add Fuel entry as deleted.
+      parameters:
+      - description: TrnAddFuelUID
+        in: path
+        name: trn_add_fuel_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete Vehicle Add Fuel entry
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/delete-travel-detail/{trn_trip_detail_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint allows to Update Vehicle Travel List.
+      parameters:
+      - description: TrnTripDetailUID
+        in: path
+        name: trn_trip_detail_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update Vehicle Travel List for a booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/request/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific booking request using
+        its unique identifier (TrnRequestUID).
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/search-requests:
+    get:
+      consumes:
+      - application/json
+      description: Search for requests using a keyword and get the summary of counts
+        grouped by request status code
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search booking requests and get summary counts by request status code
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/travel-card/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches a travel-card of pecific booking request
+        using its unique identifier (TrnRequestUID).
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a travel-card of pecific booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/travel-detail/{trn_trip_detail_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch detailed information about a trip detail using their unique
+        TrnTripDetailUID.
+      parameters:
+      - description: TrnTripDetailUID
+        in: path
+        name: trn_trip_detail_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve details of a specific trip detail
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/travel-details/{trn_request_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of trip detail in TrnRequestUID
+      parameters:
+      - description: TrnRequestUID (trn_request_uid)
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve list of trip detail
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/update-add-fuel/{trn_add_fuel_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update an existing Vehicle Add Fuel entry.
+      parameters:
+      - description: TrnAddFuelUID
+        in: path
+        name: trn_add_fuel_uid
+        required: true
+        type: string
+      - description: VmsTrnAddFuel data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnAddFuel'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update Vehicle Add Fuel entry
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/update-travel-detail/{trn_trip_detail_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to Update Vehicle Travel List.
+      parameters:
+      - description: TrnTripDetailUID
+        in: path
+        name: trn_trip_detail_uid
+        required: true
+        type: string
+      - description: VmsTrnTripDetail_Request data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnTripDetail_Request'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update Vehicle Travel List for a booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-in-use/update_satisfaction_survey/{trn_request_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to Update Satisfaction Survey for a booking
+        request.
+      parameters:
+      - description: TrnRequestUID
+        in: path
+        name: trn_request_uid
+        required: true
+        type: string
+      - description: Array of VmsTrnSatisfactionSurveyAnswers data
+        in: body
+        name: data
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsTrnSatisfactionSurveyAnswers'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update Satisfaction Survey for a booking request
+      tags:
+      - Vehicle-in-use
+  /api/vehicle-info/{mas_vehicle_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get vehicle info
+      parameters:
+      - description: MasVehicleUID (mas_vehicle_uid)
+        in: path
+        name: mas_vehicle_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle info
+      tags:
+      - Vehicle
+  /api/vehicle/{mas_vehicle_uid}:
     get:
       consumes:
       - application/json
       description: This endpoint allows a user to retrieve the details of a specific
         vehicle associated with a booking request.
       parameters:
-      - description: Vehicle ID (mas_vehicle_uid)
+      - description: MasVehicleUID (mas_vehicle_uid)
         in: path
-        name: id
+        name: mas_vehicle_uid
         required: true
         type: string
       produces:
@@ -1756,27 +2751,19 @@ paths:
       summary: Retrieve details of a specific vehicle
       tags:
       - Vehicle
-  /api/vehicle/category:
+  /api/vehicle/departments:
     get:
       consumes:
       - application/json
-      description: Fetches vehicle categories with optional filtering and pagination
-      parameters:
-      - description: 'Page number (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Number of records per page (default: 10)'
-        in: query
-        name: limit
-        type: integer
+      description: Fetches a list of departments grouped by dept_sap, including dept_short
+        and dept_full
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Get vehicle categories
+      summary: Get department list
       tags:
       - Vehicle
   /api/vehicle/search:
@@ -1817,6 +2804,25 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Search vehicles by brand, license plate, and filters
+      tags:
+      - Vehicle
+  /api/vehicle/types:
+    get:
+      consumes:
+      - application/json
+      description: Fetches all vehicle types, optionally filtered by name
+      parameters:
+      - description: Filter by vehicle type name (partial match)
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle types
       tags:
       - Vehicle
 securityDefinitions:

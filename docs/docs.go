@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/booking-admin-dept/request/{id}": {
+        "/api/booking-admin-dept/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -40,7 +40,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "id",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     }
@@ -472,7 +472,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-admin/request/{id}": {
+        "/api/booking-admin/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -497,7 +497,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "id",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     }
@@ -929,7 +929,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-approver/request/{id}": {
+        "/api/booking-approver/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -954,7 +954,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "id",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     }
@@ -1141,7 +1141,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-final/request/{id}": {
+        "/api/booking-final/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -1166,7 +1166,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "id",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     }
@@ -1380,7 +1380,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-user/request/{id}": {
+        "/api/booking-user/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -1405,7 +1405,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "id",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     }
@@ -1439,6 +1439,14 @@ const docTemplate = `{
         },
         "/api/booking-user/search-requests": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
                 "description": "Search for requests using a keyword and get the summary of counts grouped by request status code",
                 "consumes": [
                     "application/json"
@@ -1503,7 +1511,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-user/update-approved": {
+        "/api/booking-user/update-approver": {
             "put": {
                 "security": [
                     {
@@ -1513,7 +1521,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows a booking user to update the approval status of their booking request.",
+                "description": "This endpoint allows a booking user to update the approver user of their booking request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1523,7 +1531,7 @@ const docTemplate = `{
                 "tags": [
                     "Booking-user"
                 ],
-                "summary": "Update approval status for a booking request",
+                "summary": "Update approver for a booking request",
                 "parameters": [
                     {
                         "description": "VmsTrnRequest_Update_Approver data",
@@ -1820,6 +1828,14 @@ const docTemplate = `{
         },
         "/api/driver/search": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
                 "description": "Get a list of drivers filtered by name with pagination",
                 "consumes": [
                     "application/json"
@@ -1836,8 +1852,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Driver name to search",
                         "name": "name",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -1855,7 +1870,84 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/log/request/{id}": {
+        "/api/driver/search-other-dept": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get a list of drivers filtered by name with pagination from other department",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers"
+                ],
+                "summary": "Get drivers by name with pagination from other department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Driver name to search",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/driver/{mas_driver_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a driver using its unique identifier (MasDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers"
+                ],
+                "summary": "Retrieve a specific driver",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasDriverUID (mas_driver_uid)",
+                        "name": "mas_driver_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/log/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -1878,8 +1970,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Transaction Request UID",
-                        "name": "id",
+                        "description": "trn_request_uid",
+                        "name": "trn_request_uid",
                         "in": "path",
                         "required": true
                     },
@@ -2171,6 +2263,158 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/mas/satisfaction_survey_questions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve a specific user",
+                "responses": {}
+            }
+        },
+        "/api/mas/user-admin-approval-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Admin Approval Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Admin Approval Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-approval-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Approval Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Approval Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-driver-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Driver Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Driver Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-final-approval-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Final Approval User.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Final Approval User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/mas/user-vehicle-users": {
             "get": {
                 "security": [
@@ -2181,7 +2425,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows a user to retrieve Supervisor User.",
+                "description": "This endpoint allows a user to retrieve Vehicle Users.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2191,13 +2435,468 @@ const docTemplate = `{
                 "tags": [
                     "MAS"
                 ],
-                "summary": "Retrieve the Supervisor User",
+                "summary": "Retrieve the Vehicle Users",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
                         "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user/{emp_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve a specific user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "EmpID (emp_id)",
+                        "name": "emp_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/request/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Retrieve a specific booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/search-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Search for requests using a keyword and get the summary of counts grouped by request status code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Search booking requests and get summary counts by request status code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/update-canceled": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows users to update the cancel status of an item.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Update cancel status for an item",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequest_Canceled data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequest_Canceled"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/update-key-pickup-emp": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update key pickup emp user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Update key pickup emp user for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnReceivedKey_Emp data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnReceivedKey_Emp"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/update-key-pickup-outsource": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update key pickup outsource.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Update key pickup outsource for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnReceivedKey_Emp data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnReceivedKey_Emp"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key/update-received": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows users to update the received status of an item.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key"
+                ],
+                "summary": "Update received status for an item",
+                "parameters": [
+                    {
+                        "description": "VmsTrnReceivedKey_Received data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnReceivedKey_Received"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-vehicle/request/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-vehicle"
+                ],
+                "summary": "Retrieve a specific booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-vehicle/search-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Search for requests using a keyword and get the summary of counts grouped by request status code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-vehicle"
+                ],
+                "summary": "Search booking requests and get summary counts by request status code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-vehicle/travel-card/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches a travel-card of pecific booking request using its unique identifier (TrnRequestUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-vehicle"
+                ],
+                "summary": "Retrieve a travel-card of pecific booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-vehicle/update-vehicle-pickup": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update vehicle pickup.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-vehicle"
+                ],
+                "summary": "Update vehicle pickup for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnReceivedVehicle data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnReceivedVehicle"
+                        }
                     }
                 ],
                 "responses": {}
@@ -2224,6 +2923,87 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve available cost types",
+                "responses": {}
+            }
+        },
+        "/api/ref/cost-type/{code}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a cost type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve a specific cost type",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ref_cost_type_code (ref_cost_type_code)",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/ref/fuel-type": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieve all fuel type",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve the all fuel type",
+                "responses": {}
+            }
+        },
+        "/api/ref/oil-station-brand": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieve all oil station brand.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve the all oil station brand",
                 "responses": {}
             }
         },
@@ -2303,7 +3083,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/vehicle/category": {
+        "/api/vehicle-in-use/add-fuel-detail/{trn_add_fuel_uid}": {
             "get": {
                 "security": [
                     {
@@ -2313,7 +3093,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "Fetches vehicle categories with optional filtering and pagination",
+                "description": "Fetch detailed information about an Add Fuel entry using its unique TrnAddFuelUID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2321,10 +3101,281 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Vehicle"
+                    "Vehicle-in-use"
                 ],
-                "summary": "Get vehicle categories",
+                "summary": "Retrieve details of a specific Add Fuel entry",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnAddFuelUID",
+                        "name": "trn_add_fuel_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/add-fuel-details/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Fetch a list of Add Fuel entries in TrnRequestUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Retrieve a list of Add Fuel entries",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/create-add-fuel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to create a new Vehicle Add Fuel entry.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Create Vehicle Add Fuel entry",
+                "parameters": [
+                    {
+                        "description": "VmsTrnAddFuel data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnAddFuel"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/create-travel-detail": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to Create Vehicle Travel List.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Create Vehicle Travel List for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnTripDetail_Request data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnTripDetail_Request"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/delete-add-fuel/{trn_add_fuel_uid}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to mark a Vehicle Add Fuel entry as deleted.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Delete Vehicle Add Fuel entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnAddFuelUID",
+                        "name": "trn_add_fuel_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/delete-travel-detail/{trn_trip_detail_uid}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to Update Vehicle Travel List.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Update Vehicle Travel List for a booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnTripDetailUID",
+                        "name": "trn_trip_detail_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/request/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Retrieve a specific booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/search-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Search for requests using a keyword and get the summary of counts grouped by request status code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Search booking requests and get summary counts by request status code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "description": "Page number (default: 1)",
@@ -2334,10 +3385,295 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/travel-card/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches a travel-card of pecific booking request using its unique identifier (TrnRequestUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Retrieve a travel-card of pecific booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/travel-detail/{trn_trip_detail_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Fetch detailed information about a trip detail using their unique TrnTripDetailUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Retrieve details of a specific trip detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnTripDetailUID",
+                        "name": "trn_trip_detail_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/travel-details/{trn_request_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of trip detail in TrnRequestUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Retrieve list of trip detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID (trn_request_uid)",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/update-add-fuel/{trn_add_fuel_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update an existing Vehicle Add Fuel entry.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Update Vehicle Add Fuel entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnAddFuelUID",
+                        "name": "trn_add_fuel_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VmsTrnAddFuel data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnAddFuel"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/update-travel-detail/{trn_trip_detail_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to Update Vehicle Travel List.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Update Vehicle Travel List for a booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnTripDetailUID",
+                        "name": "trn_trip_detail_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VmsTrnTripDetail_Request data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnTripDetail_Request"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-in-use/update_satisfaction_survey/{trn_request_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to Update Satisfaction Survey for a booking request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-in-use"
+                ],
+                "summary": "Update Satisfaction Survey for a booking request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TrnRequestUID",
+                        "name": "trn_request_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Array of VmsTrnSatisfactionSurveyAnswers data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.VmsTrnSatisfactionSurveyAnswers"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-info/{mas_vehicle_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get vehicle info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Get vehicle info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasVehicleUID (mas_vehicle_uid)",
+                        "name": "mas_vehicle_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle/departments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Fetches a list of departments grouped by dept_sap, including dept_short and dept_full",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Get department list",
                 "responses": {}
             }
         },
@@ -2403,7 +3739,39 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/vehicle/{id}": {
+        "/api/vehicle/types": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Fetches all vehicle types, optionally filtered by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Get vehicle types",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by vehicle type name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle/{mas_vehicle_uid}": {
             "get": {
                 "security": [
                     {
@@ -2427,8 +3795,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Vehicle ID (mas_vehicle_uid)",
-                        "name": "id",
+                        "description": "MasVehicleUID (mas_vehicle_uid)",
+                        "name": "mas_vehicle_uid",
                         "in": "path",
                         "required": true
                     }
@@ -2536,6 +3904,146 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsTrnAddFuel": {
+            "type": "object",
+            "properties": {
+                "before_vat_price": {
+                    "type": "number"
+                },
+                "mas_vehicle_department_uid": {
+                    "type": "string",
+                    "example": "abc12345-6789-1234-5678-abcdef012345"
+                },
+                "mas_vehicle_uid": {
+                    "type": "string",
+                    "example": "789e4567-e89b-12d3-a456-426614174002"
+                },
+                "price_per_liter": {
+                    "type": "number"
+                },
+                "receipt_img": {
+                    "type": "string"
+                },
+                "sum_liter": {
+                    "type": "number"
+                },
+                "sum_price": {
+                    "type": "number"
+                },
+                "tax_invoice_date": {
+                    "type": "string"
+                },
+                "tax_invoice_no": {
+                    "type": "string"
+                },
+                "trn_add_fuel_uid": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "456e4567-e89b-12d3-a456-426614174001"
+                },
+                "vat": {
+                    "type": "number"
+                },
+                "vehicle_license_plate": {
+                    "type": "string",
+                    "example": "SGP1234"
+                },
+                "vehicle_license_plate_province_full": {
+                    "type": "string",
+                    "example": "Singapore"
+                },
+                "vehicle_license_plate_province_short": {
+                    "type": "string",
+                    "example": "SG"
+                }
+            }
+        },
+        "models.VmsTrnReceivedKey_Emp": {
+            "type": "object",
+            "properties": {
+                "received_key_emp_id": {
+                    "type": "string",
+                    "example": "1234567890"
+                },
+                "received_key_internal_contact_number": {
+                    "type": "string",
+                    "example": "5551234"
+                },
+                "received_key_mobile_contact_number": {
+                    "type": "string",
+                    "example": "0812345678"
+                },
+                "received_key_remark": {
+                    "type": "string",
+                    "example": "Employee received the key"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "a7de5318-1e05-4511-abe7-8c1c6374ab29"
+                }
+            }
+        },
+        "models.VmsTrnReceivedKey_Received": {
+            "type": "object",
+            "properties": {
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "a7de5318-1e05-4511-abe7-8c1c6374ab29"
+                }
+            }
+        },
+        "models.VmsTrnReceivedVehicle": {
+            "type": "object",
+            "properties": {
+                "fuel_start": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "mile_start": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "pickup_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T14:30:00"
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "a7de5318-1e05-4511-abe7-8c1c6374ab29"
+                },
+                "vehicle_img_inside_backseat": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/backseat_image.jpg"
+                },
+                "vehicle_img_inside_frontseat": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/frontseat_image.jpg"
+                },
+                "vehicle_img_outside_behind": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/behind_image.jpg"
+                },
+                "vehicle_img_outside_front": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/front_image.jpg"
+                },
+                "vehicle_img_outside_left": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/left_image.jpg"
+                },
+                "vehicle_img_outside_right": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/right_image.jpg"
+                }
+            }
+        },
         "models.VmsTrnRequest_Approved": {
             "type": "object",
             "properties": {
@@ -2561,6 +4069,27 @@ const docTemplate = `{
         "models.VmsTrnRequest_Request": {
             "type": "object",
             "properties": {
+                "approved_request_dept_sap": {
+                    "type": "string",
+                    "example": "Finance"
+                },
+                "approved_request_dept_sap_full": {
+                    "type": "string",
+                    "example": "Finance"
+                },
+                "approved_request_dept_sap_short": {
+                    "type": "string",
+                    "example": "Finance"
+                },
+                "approved_request_emp_id": {
+                    "description": "Step 4",
+                    "type": "string",
+                    "example": "EMP67890"
+                },
+                "approved_request_emp_name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                },
                 "attached_document": {
                     "type": "string",
                     "example": "document.pdf"
@@ -2577,30 +4106,41 @@ const docTemplate = `{
                     "type": "string",
                     "example": "COST2024001"
                 },
+                "driver_emp_dept_sap": {
+                    "type": "string",
+                    "example": "DPT001"
+                },
+                "driver_emp_id": {
+                    "type": "string",
+                    "example": "700001"
+                },
+                "driver_emp_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "driver_internal_contact_number": {
+                    "type": "string",
+                    "example": "1234567890"
+                },
+                "driver_mobile_contact_number": {
+                    "type": "string",
+                    "example": "0987654321"
+                },
                 "end_datetime": {
                     "type": "string",
                     "example": "2025-01-01T10:00:00Z"
-                },
-                "is_admin_choose_driver": {
-                    "type": "string",
-                    "example": "0"
                 },
                 "is_admin_choose_vehicle": {
                     "type": "string",
                     "example": "0"
                 },
-                "is_driver_need": {
-                    "description": "Step 3",
-                    "type": "string",
-                    "example": "1"
-                },
-                "is_have_sub_request": {
-                    "type": "string",
-                    "example": "1"
-                },
                 "is_pea_employee_driver": {
                     "type": "string",
                     "example": "1"
+                },
+                "is_system_choose_vehicle": {
+                    "type": "string",
+                    "example": "0"
                 },
                 "mas_carpool_driver_uid": {
                     "type": "string",
@@ -2630,10 +4170,6 @@ const docTemplate = `{
                 "ref_cost_type_code": {
                     "type": "integer",
                     "example": 101
-                },
-                "ref_request_type_code": {
-                    "type": "integer",
-                    "example": 1
                 },
                 "reference_number": {
                     "type": "string",
@@ -2814,6 +4350,56 @@ const docTemplate = `{
                 "vehicle_user_emp_name": {
                     "type": "string",
                     "example": "John Doe"
+                }
+            }
+        },
+        "models.VmsTrnSatisfactionSurveyAnswers": {
+            "type": "object",
+            "properties": {
+                "mas_satisfaction_survey_questions_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "survey_answer": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "models.VmsTrnTripDetail_Request": {
+            "type": "object",
+            "properties": {
+                "trip_departure_place": {
+                    "type": "string",
+                    "example": "Changi Airport"
+                },
+                "trip_destination_place": {
+                    "type": "string",
+                    "example": "Marina Bay Sands"
+                },
+                "trip_detail": {
+                    "type": "string",
+                    "example": "Routine transport between airport and hotel."
+                },
+                "trip_end_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T10:00:00"
+                },
+                "trip_end_miles": {
+                    "type": "integer",
+                    "example": 5050
+                },
+                "trip_start_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T08:00:00"
+                },
+                "trip_start_miles": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "456e4567-e89b-12d3-a456-426614174001"
                 }
             }
         }

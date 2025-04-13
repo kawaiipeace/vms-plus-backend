@@ -159,7 +159,7 @@ func (h *LoginHandler) RequestThaiID(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.KeyCloakClientID + "&redirect_uri=" + req.RedirectUri + "&scope=openid&state=001",
+		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.ThaiIDClientID + "&redirect_uri=" + req.RedirectUri + "&scope=pid%20name%20birthdate%20openid&state=001",
 	})
 }
 
@@ -184,8 +184,8 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", req.Code)
 	data.Set("redirect_uri", req.RedirectUri)
-	data.Set("client_id", config.AppConfig.KeyCloakClientID)
-	data.Set("client_secret", config.AppConfig.KeyCloakSecret)
+	data.Set("client_id", config.AppConfig.ThaiIDClientID)
+	data.Set("client_secret", config.AppConfig.ThaiIDSecret)
 
 	// Create request
 	creq, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))
@@ -579,29 +579,14 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/logout [get]
 func (h *LoginHandler) Logout(c *gin.Context) {
-	_ = funcs.GetAuthenUser(c, "")
-	logoutEndpoint := config.AppConfig.KeyCloakEndPoint + "/protocol/openid-connect/logout"
-
-	jwt, err := funcs.ExtractUserFromJWT(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		c.Abort()
-	}
-	accessToken := jwt.AccessToken
-	refreshToken := jwt.RefreshToken
-
-	data := url.Values{}
-	data.Set("client_id", config.AppConfig.KeyCloakClientID)
-	data.Set("client_secret", config.AppConfig.KeyCloakSecret)
-	data.Set("refresh_token", refreshToken)
-
-	req, err := http.NewRequest("POST", logoutEndpoint, bytes.NewBufferString(data.Encode()))
+	/*userInfoEndpoint := config.AppConfig.KeyCloakEndPoint + "/userinfo"
+	accessToken := ""
+	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	client := &http.Client{}
@@ -618,14 +603,9 @@ func (h *LoginHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	var jsonData map[string]interface{}
-	err = json.Unmarshal([]byte(body), &jsonData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
-		return
-	}
-
-	c.JSON(resp.StatusCode, jsonData)
+	fmt.Println(string(body))
+	*/
+	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully"})
 }
 
 // Profile godoc

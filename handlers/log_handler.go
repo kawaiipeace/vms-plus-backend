@@ -19,13 +19,13 @@ type LogHandler struct {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "Transaction Request UID"
+// @Param trn_request_uid path string true "trn_request_uid"
 // @Param page query int false "Page number"
 // @Param limit query int false "Limit per page"
-// @Router /api/log/request/{id} [get]
+// @Router /api/log/request/{trn_request_uid} [get]
 func (h *LogHandler) GetLogRequest(c *gin.Context) {
 	var logRequests []models.LogRequest
-	trnRequestUID := c.Param("id")
+	trnRequestUID := c.Param("trn_request_uid")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 

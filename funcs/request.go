@@ -27,7 +27,7 @@ func SearchRequests(c *gin.Context) {
 	}
 	var summary []struct {
 		RefRequestStatusCode string `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-		RefRequestStatusDesc string `gorm:"column:ref_request_status_desc" json:"ref_request_status_desc"`
+		RefRequestStatusDesc string `gorm:"column:ref_request_status_name_1" json:"ref_request_status_desc"`
 		Count                int    `gorm:"column:count" json:"count"`
 	}
 
@@ -98,28 +98,11 @@ func SearchRequests(c *gin.Context) {
 
 	// **Build Summary Query with Same Filters**
 	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, status.ref_request_status_desc, COUNT(*) as count").
+		Select("req.ref_request_status_code, status.ref_request_status_name_1, COUNT(*) as count").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code")
 
-	// Apply the same filters as the main query
-	if search := c.Query("search"); search != "" {
-		summaryQuery = summaryQuery.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
-	}
-
-	if statusCodes := c.Query("ref_request_status_code"); statusCodes != "" {
-		statusCodeList := strings.Split(statusCodes, ",")
-		summaryQuery = summaryQuery.Where("req.ref_request_status_code IN (?)", statusCodeList)
-	}
-
-	if startDate := c.Query("startdate"); startDate != "" {
-		summaryQuery = summaryQuery.Where("req.start_datetime >= ?", startDate)
-	}
-	if endDate := c.Query("enddate"); endDate != "" {
-		summaryQuery = summaryQuery.Where("req.start_datetime <= ?", endDate)
-	}
-
 	// Grouping to get count per status
-	summaryQuery = summaryQuery.Group("req.ref_request_status_code, status.ref_request_status_desc")
+	summaryQuery = summaryQuery.Group("req.ref_request_status_code, status.ref_request_status_name_1")
 
 	// Execute summary query
 	if err := summaryQuery.Scan(&summary).Error; err != nil {
@@ -157,9 +140,9 @@ func ListRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, requests)
 }
 
-func GetRequest(c *gin.Context) {
-	TrnRequestUID := c.Param("id")
-	parsedID, err := uuid.Parse(TrnRequestUID)
+func GetRequest(c *gin.Context, statusNameMap map[string]string) {
+	id := c.Param("trn_request_uid")
+	trnRequestUID, err := uuid.Parse(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID"})
 		return
@@ -168,12 +151,17 @@ func GetRequest(c *gin.Context) {
 	if err := config.DB.
 		Preload("VmsMasVehicle.RefFuelType").
 		Preload("VMSMasDriver").
-		First(&request, "trn_request_uid = ?", parsedID).Error; err != nil {
+		Preload("RefRequestStatus").
+		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
 		return
 	}
 	if request.VMSMasDriver.DriverBirthdate != (time.Time{}) {
 		request.VMSMasDriver.Age = request.VMSMasDriver.CalculateAgeInYearsMonths()
 	}
+	request.NumberOfAvailableDrivers = 2
+	request.DriverImageURL = config.DefaultURL
+	request.CanCancelRequest = true
+	request.RefRequestStatusName = statusNameMap[request.RefRequestStatusCode]
 	c.JSON(http.StatusOK, request)
 }

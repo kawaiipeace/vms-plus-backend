@@ -42,8 +42,10 @@ type Config struct {
 
 // AppConfig is a globally accessible configuration variable
 var AppConfig Config
+var DefaultURL string
 
 func init() {
+	DefaultURL = "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
 	// Load the configuration from config.json
 	data, err := os.ReadFile("config.json")
 	if err != nil {
