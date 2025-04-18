@@ -43,3 +43,11 @@ type VmsMasSatisfactionSurveyQuestions struct {
 func (VmsMasSatisfactionSurveyQuestions) TableName() string {
 	return "public.vms_mas_satisfaction_survey_questions"
 }
+
+//VmsMasVehicleDepartmentList
+type VmsMasVehicleDepartmentList struct {
+	VehicleOwnerDeptSap string `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
+	DeptSapShort        string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
+	DeptSapFull         string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
+	DeptType            string `gorm:"column:dept_type" json:"dept_type"`
+}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -13,14 +14,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type VehicleInUseHandler struct {
+type VehicleInUseUserHandler struct {
 	Role string
+}
+
+var StatusNameMapVehicelInUseUser = map[string]string{
+	"51": "รับยานพาหนะ",
+	"60": "เดินทาง",
 }
 
 // SearchRequests godoc
 // @Summary Search booking requests and get summary counts by request status code
 // @Description Search for requests using a keyword and get the summary of counts grouped by request status code
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
@@ -33,16 +39,12 @@ type VehicleInUseHandler struct {
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Number of records per page (default: 10)"
-// @Router /api/vehicle-in-use/search-requests [get]
-func (h *VehicleInUseHandler) SearchRequests(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/search-requests [get]
+func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
-	statusNameMap := map[string]string{
-		"51": "รับยานพาหนะ",
-		"60": "เดินทาง",
-	}
-
-	var requests []models.VmsTrnRequest_List
-	var summary []models.VmsTrnRequest_Summary
+	statusNameMap := StatusNameMapVehicelInUseUser
+	var requests []models.VmsTrnRequestList
+	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
 	statusCodes := make([]string, 0, len(statusNameMap))
@@ -137,13 +139,16 @@ func (h *VehicleInUseHandler) SearchRequests(c *gin.Context) {
 				break
 			}
 		}
-		summary = append(summary, models.VmsTrnRequest_Summary{
+		summary = append(summary, models.VmsTrnRequestSummary{
 			RefRequestStatusCode: code,
 			RefRequestStatusName: name,
 			Count:                count,
 		})
 	}
-
+	// Sort the summary by RefRequestStatusCode
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
+	})
 	// Return both the filtered requests and the complete summary
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
@@ -160,47 +165,43 @@ func (h *VehicleInUseHandler) SearchRequests(c *gin.Context) {
 // GetRequest godoc
 // @Summary Retrieve a specific booking request
 // @Description This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
-// @Router /api/vehicle-in-use/request/{trn_request_uid} [get]
-func (h *VehicleInUseHandler) GetRequest(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/request/{trn_request_uid} [get]
+func (h *VehicleInUseUserHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	statusNameMap := map[string]string{
-		"51": "รับยานพาหนะ",
-		"60": "เดินทาง",
-	}
-	funcs.GetRequest(c, statusNameMap)
+	funcs.GetRequest(c, StatusNameMapVehicelInUseUser)
 }
 
 // CreateVehicleTripDetail godoc
 // @Summary Create Vehicle Travel List for a booking request
 // @Description This endpoint allows to Create Vehicle Travel List.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnTripDetail_Request true "VmsTrnTripDetail_Request data"
-// @Router /api/vehicle-in-use/create-travel-detail [post]
-func (h *VehicleInUseHandler) CreateVehicleTripDetail(c *gin.Context) {
+// @Param data body models.VmsTrnTripDetailRequest true "VmsTrnTripDetailRequest data"
+// @Router /api/vehicle-in-use-user/create-travel-detail [post]
+func (h *VehicleInUseUserHandler) CreateVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var req models.VmsTrnTripDetail
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var request models.VmsTrnTripDetail
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
-	req.TrnTripDetailUID = uuid.New().String()
-	req.CreatedBy = user.EmpID
-	req.CreatedAt = time.Now()
-	req.UpdatedBy = user.EmpID
-	req.UpdatedAt = time.Now()
+	request.TrnTripDetailUID = uuid.New().String()
+	request.CreatedBy = user.EmpID
+	request.CreatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.UpdatedAt = time.Now()
 
-	var existingReq struct {
+	var trnRequest struct {
 		MasVehicleUID                   string `gorm:"column:mas_vehicle_uid"`
 		VehicleLicensePlate             string `gorm:"column:vehicle_license_plate"`
 		VehicleLicensePlateProvinceFull string `gorm:"column:vehicle_license_plate_province_full"`
@@ -208,57 +209,76 @@ func (h *VehicleInUseHandler) CreateVehicleTripDetail(c *gin.Context) {
 		MasCarpoolUID                   string `gorm:"column:mas_carpool_uid"`
 		EmployeeOrDriverID              string `gorm:"column:driver_emp_id"`
 	}
-	if err := config.DB.Table("public.vms_trn_request").Where("trn_request_uid = ?", req.TrnRequestUID).First(&existingReq).Error; err != nil {
+	if err := config.DB.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking not found"})
 		return
 	}
+	request.MasVehicleUID = func() string {
+		if trnRequest.MasVehicleUID == "" {
+			return funcs.DefaultUUID()
+		} else {
+			return trnRequest.MasVehicleUID
+		}
+	}()
+	request.MasCarpoolUID = func() string {
+		if trnRequest.MasCarpoolUID == "" {
+			return funcs.DefaultUUID()
+		} else {
+			return trnRequest.MasCarpoolUID
+		}
+	}()
+	request.MasVehicleDepartmentUID = func() string {
+		if trnRequest.MasVehicleDepartmentUID == "" {
+			return funcs.DefaultUUID()
+		} else {
+			return trnRequest.MasVehicleDepartmentUID
+		}
+	}()
+	request.VehicleLicensePlate = trnRequest.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceFull = trnRequest.VehicleLicensePlateProvinceFull
+	request.EmployeeOrDriverID = trnRequest.EmployeeOrDriverID
+	request.IsDeleted = "0"
 
-	req.MasCarpoolUID = existingReq.MasCarpoolUID
-	req.MasVehicleDepartmentUID = existingReq.MasVehicleDepartmentUID
-	req.VehicleLicensePlate = existingReq.VehicleLicensePlate
-	req.VehicleLicensePlateProvinceFull = existingReq.VehicleLicensePlateProvinceFull
-	req.EmployeeOrDriverID = existingReq.EmployeeOrDriverID
-
-	if err := config.DB.Create(&req).Error; err != nil {
+	if err := config.DB.Create(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create"})
 		return
 	}
 
 	// Return success response
-	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": req})
+	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": request})
 }
 
 // UpdateVehicleTripDetail godoc
 // @Summary Update Vehicle Travel List for a booking request
 // @Description This endpoint allows to Update Vehicle Travel List.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_trip_detail_uid path string true "TrnTripDetailUID"
-// @Param data body models.VmsTrnTripDetail_Request true "VmsTrnTripDetail_Request data"
-// @Router /api/vehicle-in-use/update-travel-detail/{trn_trip_detail_uid} [put]
-func (h *VehicleInUseHandler) UpdateVehicleTripDetail(c *gin.Context) {
+// @Param data body models.VmsTrnTripDetailRequest true "VmsTrnTripDetailRequest data"
+// @Router /api/vehicle-in-use-user/update-travel-detail/{trn_trip_detail_uid} [put]
+func (h *VehicleInUseUserHandler) UpdateVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	id := c.Param("trn_trip_detail_uid")
-	uid, err := uuid.Parse(id)
+	uid := c.Param("trn_trip_detail_uid")
+	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
 	var existing models.VmsTrnTripDetail
-	if err := config.DB.Where("trn_trip_detail_uid = ?", uid).First(&existing).Error; err != nil {
+	if err := config.DB.Where("trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").First(&existing).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
 		return
 	}
-	var req models.VmsTrnTripDetail_Request
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var request models.VmsTrnTripDetailRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	existing.VmsTrnTripDetail_Request = req
+	existing.VmsTrnTripDetailRequest = request
 	existing.UpdatedBy = user.EmpID
 	existing.UpdatedAt = time.Now()
 
@@ -267,36 +287,36 @@ func (h *VehicleInUseHandler) UpdateVehicleTripDetail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": req})
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": request})
 }
 
 // DeleteVehicleTripDetail godoc
 // @Summary Update Vehicle Travel List for a booking request
 // @Description This endpoint allows to Update Vehicle Travel List.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_trip_detail_uid path string true "TrnTripDetailUID"
-// @Router /api/vehicle-in-use/delete-travel-detail/{trn_trip_detail_uid} [delete]
-func (h *VehicleInUseHandler) DeleteVehicleTripDetail(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/delete-travel-detail/{trn_trip_detail_uid} [delete]
+func (h *VehicleInUseUserHandler) DeleteVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	id := c.Param("trn_trip_detail_uid")
-	uid, err := uuid.Parse(id)
+	uid := c.Param("trn_trip_detail_uid")
+	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
 
 	var existing models.VmsTrnTripDetail
-	if err := config.DB.Where("trn_trip_detail_uid = ?", uid).First(&existing).Error; err != nil {
+	if err := config.DB.Where("trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").First(&existing).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
 		return
 	}
 
 	if err := config.DB.Model(&existing).UpdateColumns(map[string]interface{}{
-		"is_deleted": true,
+		"is_deleted": "1",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
@@ -309,23 +329,29 @@ func (h *VehicleInUseHandler) DeleteVehicleTripDetail(c *gin.Context) {
 // GetVehicleTripDetails godoc
 // @Summary Retrieve list of trip detail
 // @Description Retrieve a list of trip detail in TrnRequestUID
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
-// @Router /api/vehicle-in-use/travel-details/{trn_request_uid} [get]
-func (h *VehicleInUseHandler) GetVehicleTripDetails(c *gin.Context) {
-	id := c.Param("trn_request_uid")
-	uid, err := uuid.Parse(id)
+// @Param search query string false "Search keyword (matches place)"
+// @Router /api/vehicle-in-use-user/travel-details/{trn_request_uid} [get]
+func (h *VehicleInUseUserHandler) GetVehicleTripDetails(c *gin.Context) {
+	uid := c.Param("trn_request_uid")
+	trnRequestUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
+	query := config.DB
+	if search := c.Query("search"); search != "" {
+		query = query.Where("req.trip_departure_place LIKE ? OR req.trip_destination_place LIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+
 	// Fetch the vehicle record from the database
-	var trips []models.VmsTrnTripDetail_List
-	if err := config.DB.Find(&trips, "trn_trip_detail_uid = ? AND is_deleted = false", uid).Error; err != nil {
+	var trips []models.VmsTrnTripDetailList
+	if err := query.Find(&trips, "trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
 		return
 	}
@@ -337,23 +363,23 @@ func (h *VehicleInUseHandler) GetVehicleTripDetails(c *gin.Context) {
 // GetVehicleTripDetail godoc
 // @Summary Retrieve details of a specific trip detail
 // @Description Fetch detailed information about a trip detail using their unique TrnTripDetailUID.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_trip_detail_uid path string true "TrnTripDetailUID"
-// @Router /api/vehicle-in-use/travel-detail/{trn_trip_detail_uid} [get]
-func (h *VehicleInUseHandler) GetVehicleTripDetail(c *gin.Context) {
-	id := c.Param("trn_trip_detail_uid")
-	uid, err := uuid.Parse(id)
+// @Router /api/vehicle-in-use-user/travel-detail/{trn_trip_detail_uid} [get]
+func (h *VehicleInUseUserHandler) GetVehicleTripDetail(c *gin.Context) {
+	uid := c.Param("trn_trip_detail_uid")
+	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
 	// Fetch the vehicle record from the database
 	var trip models.VmsTrnTripDetail
-	if err := config.DB.First(&trip, "trn_trip_detail_uid = ? AND is_deleted = false", uid).Error; err != nil {
+	if err := config.DB.First(&trip, "trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
 		return
 	}
@@ -365,64 +391,102 @@ func (h *VehicleInUseHandler) GetVehicleTripDetail(c *gin.Context) {
 // CreateVehicleAddFuel godoc
 // @Summary Create Vehicle Add Fuel entry
 // @Description This endpoint allows to create a new Vehicle Add Fuel entry.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnAddFuel true "VmsTrnAddFuel data"
-// @Router /api/vehicle-in-use/create-add-fuel [post]
-func (h *VehicleInUseHandler) CreateVehicleAddFuel(c *gin.Context) {
+// @Param data body models.VmsTrnAddFuelRequest true "VmsTrnAddFuelRequest data"
+// @Router /api/vehicle-in-use-user/create-add-fuel [post]
+func (h *VehicleInUseUserHandler) CreateVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var req models.VmsTrnAddFuel
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var request models.VmsTrnAddFuel
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
 
-	req.TrnAddFuelUID = uuid.New().String()
-	req.CreatedBy = user.EmpID
-	req.CreatedAt = time.Now()
-	req.UpdatedBy = user.EmpID
-	req.UpdatedAt = time.Now()
+	var trnRequest struct {
+		MasVehicleUID                    string `gorm:"column:mas_vehicle_uid"`
+		VehicleLicensePlate              string `gorm:"column:vehicle_license_plate"`
+		VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short"`
+		VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full"`
+		MasVehicleDepartmentUID          string `gorm:"column:mas_vehicle_department_uid"`
+		MasCarpoolUID                    string `gorm:"column:mas_carpool_uid"`
+		RefCostTypeCode                  int    `gorm:"column:ref_cost_type_code"`
+	}
+	if err := config.DB.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking not found"})
+		return
+	}
+	request.RefCostTypeCode = trnRequest.RefCostTypeCode
+	request.VehicleLicensePlate = trnRequest.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceShort = trnRequest.VehicleLicensePlateProvinceShort
+	request.VehicleLicensePlateProvinceFull = trnRequest.VehicleLicensePlateProvinceFull
+	request.MasVehicleUID = func() string {
+		if trnRequest.MasVehicleUID == "" {
+			return funcs.DefaultUUID()
+		} else {
+			return trnRequest.MasVehicleUID
+		}
+	}()
+	request.MasVehicleDepartmentUID = func() string {
+		if trnRequest.MasVehicleDepartmentUID == "" {
+			return funcs.DefaultUUID()
+		} else {
+			return trnRequest.MasVehicleDepartmentUID
+		}
+	}()
+	request.AddFuelDateTime = time.Now()
+	request.TrnAddFuelUID = uuid.New().String()
+	request.CreatedBy = user.EmpID
+	request.CreatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.UpdatedAt = time.Now()
+	request.IsDeleted = "0"
 
-	if err := config.DB.Create(&req).Error; err != nil {
+	if err := config.DB.Create(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": req})
+	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": request})
 }
 
 // UpdateVehicleAddFuel godoc
 // @Summary Update Vehicle Add Fuel entry
 // @Description This endpoint allows to update an existing Vehicle Add Fuel entry.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_add_fuel_uid path string true "TrnAddFuelUID"
 // @Param data body models.VmsTrnAddFuel true "VmsTrnAddFuel data"
-// @Router /api/vehicle-in-use/update-add-fuel/{trn_add_fuel_uid} [put]
-func (h *VehicleInUseHandler) UpdateVehicleAddFuel(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/update-add-fuel/{trn_add_fuel_uid} [put]
+func (h *VehicleInUseUserHandler) UpdateVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	id := c.Param("trn_add_fuel_uid")
+	uid := c.Param("trn_add_fuel_uid")
+	trnAddFuelUid, err := uuid.Parse(uid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		return
+	}
 
 	var existing models.VmsTrnAddFuel
-	if err := config.DB.Where("trn_add_fuel_uid = ?", id).First(&existing).Error; err != nil {
+	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&existing).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
 		return
 	}
 
-	var req models.VmsTrnAddFuel
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var request models.VmsTrnAddFuelRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
 
-	existing = req
+	existing.VmsTrnAddFuelRequest = request
 	existing.UpdatedBy = user.EmpID
 	existing.UpdatedAt = time.Now()
 
@@ -437,30 +501,29 @@ func (h *VehicleInUseHandler) UpdateVehicleAddFuel(c *gin.Context) {
 // DeleteVehicleAddFuel godoc
 // @Summary Delete Vehicle Add Fuel entry
 // @Description This endpoint allows to mark a Vehicle Add Fuel entry as deleted.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_add_fuel_uid path string true "TrnAddFuelUID"
-// @Router /api/vehicle-in-use/delete-add-fuel/{trn_add_fuel_uid} [delete]
-func (h *VehicleInUseHandler) DeleteVehicleAddFuel(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/delete-add-fuel/{trn_add_fuel_uid} [delete]
+func (h *VehicleInUseUserHandler) DeleteVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	id := c.Param("trn_add_fuel_uid")
-	uid, err := uuid.Parse(id)
+	uid := c.Param("trn_add_fuel_uid")
+	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
-
-	var existing models.VmsTrnTripDetail
-	if err := config.DB.Where("trn_add_fuel_uid = ?", uid).First(&existing).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
+	var existing models.VmsTrnAddFuel
+	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&existing).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
 		return
 	}
 
 	if err := config.DB.Model(&existing).UpdateColumns(map[string]interface{}{
-		"is_deleted": true,
+		"is_deleted": "1",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
@@ -473,18 +536,29 @@ func (h *VehicleInUseHandler) DeleteVehicleAddFuel(c *gin.Context) {
 // GetVehicleAddFuelDetails godoc
 // @Summary Retrieve a list of Add Fuel entries
 // @Description Fetch a list of Add Fuel entries in TrnRequestUID.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID"
-// @Router /api/vehicle-in-use/add-fuel-details/{trn_request_uid} [get]
-func (h *VehicleInUseHandler) GetVehicleAddFuelDetails(c *gin.Context) {
-	id := c.Param("trn_request_uid")
+// @Param search query string false "Search keyword (matches tax_invoice_no)"
+// @Router /api/vehicle-in-use-user/add-fuel-details/{trn_request_uid} [get]
+func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
+	uid := c.Param("trn_request_uid")
+	trnRequestUid, err := uuid.Parse(uid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		return
+	}
+
+	query := config.DB.Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0")
+	if search := c.Query("search"); search != "" {
+		query = query.Where("tax_invoice_no LIKE ?", "%"+search+"%")
+	}
 
 	var fuels []models.VmsTrnAddFuel
-	if err := config.DB.Where("trn_request_uid = ? AND is_deleted = false", id).Find(&fuels).Error; err != nil {
+	if err := query.Find(&fuels).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entries not found"})
 		return
 	}
@@ -495,18 +569,22 @@ func (h *VehicleInUseHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 // GetVehicleAddFuelDetail godoc
 // @Summary Retrieve details of a specific Add Fuel entry
 // @Description Fetch detailed information about an Add Fuel entry using its unique TrnAddFuelUID.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_add_fuel_uid path string true "TrnAddFuelUID"
-// @Router /api/vehicle-in-use/add-fuel-detail/{trn_add_fuel_uid} [get]
-func (h *VehicleInUseHandler) GetVehicleAddFuelDetail(c *gin.Context) {
-	id := c.Param("trn_add_fuel_uid")
-
+// @Router /api/vehicle-in-use-user/add-fuel-detail/{trn_add_fuel_uid} [get]
+func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetail(c *gin.Context) {
+	uid := c.Param("trn_add_fuel_uid")
+	trnAddFuelUid, err := uuid.Parse(uid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		return
+	}
 	var fuel models.VmsTrnAddFuel
-	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = false", id).First(&fuel).Error; err != nil {
+	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&fuel).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
 		return
 	}
@@ -517,52 +595,52 @@ func (h *VehicleInUseHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 // GetTravelCard godoc
 // @Summary Retrieve a travel-card of pecific booking request
 // @Description This endpoint fetches a travel-card of pecific booking request using its unique identifier (TrnRequestUID).
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
-// @Router /api/vehicle-in-use/travel-card/{trn_request_uid} [get]
-func (h *VehicleInUseHandler) GetTravelCard(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/travel-card/{trn_request_uid} [get]
+func (h *VehicleInUseUserHandler) GetTravelCard(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
 	id := c.Param("trn_request_uid")
-	trnRequestUID, err := uuid.Parse(id)
+	trnRequestUid, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
 	var request models.VmsTrnTravelCard
 	if err := config.DB.
-		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		First(&request, "trn_request_uid = ?", trnRequestUid).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.VehicleUserImageURL = config.DefaultURL
+	request.VehicleUserImageURL = config.DefaultAvatarURL
 	c.JSON(http.StatusOK, request)
 }
 
-// UpdateVehicleTripDetail godoc
+// UpdateSatisfactionSurvey godoc
 // @Summary Update Satisfaction Survey for a booking request
 // @Description This endpoint allows to Update Satisfaction Survey for a booking request.
-// @Tags Vehicle-in-use
+// @Tags Vehicle-in-use-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID"
 // @Param data body []models.VmsTrnSatisfactionSurveyAnswers true "Array of VmsTrnSatisfactionSurveyAnswers data"
-// @Router /api/vehicle-in-use/update_satisfaction_survey/{trn_request_uid} [put]
-func (h *VehicleInUseHandler) UpdateSatisfactionSurvey(c *gin.Context) {
+// @Router /api/vehicle-in-use-user/update-satisfaction-survey/{trn_request_uid} [put]
+func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	id := c.Param("trn_request_uid")
-	trnRequestUID, err := uuid.Parse(id)
+	uid := c.Param("trn_request_uid")
+	trnRequestUID, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
-	var existing models.VmsTrnRequest_Response
-	if err := config.DB.First(&existing, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
@@ -574,8 +652,8 @@ func (h *VehicleInUseHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 	}
 
 	for _, req := range reqs {
-		var existingAnswer models.VmsTrnSatisfactionSurveyAnswers
-		if err := config.DB.First(&existingAnswer, "trn_request_uid = ? AND mas_satisfaction_survey_questions_code = ?", trnRequestUID, req.MasSatisfactionSurveyQuestionsCode).Error; err != nil {
+		var existing models.VmsTrnSatisfactionSurveyAnswers
+		if err := config.DB.First(&existing, "trn_request_uid = ? AND mas_satisfaction_survey_questions_code = ?", trnRequestUID, req.MasSatisfactionSurveyQuestionsCode).Error; err != nil {
 			if gorm.ErrRecordNotFound == err {
 				// Handle record not found logic (create new record)
 				req.TrnSatisfactionSurveyAnswersUID = uuid.NewString()
@@ -593,16 +671,83 @@ func (h *VehicleInUseHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 			}
 		} else {
 			// Handle record exists (update logic)
-			existingAnswer.TrnRequestUID = trnRequestUID.String()
-			existingAnswer.SurveyAnswer = req.SurveyAnswer
-			existingAnswer.SurveyAnswerDate = time.Now()
-			existingAnswer.SurveyAnswerEmpID = user.EmpID
+			existing.TrnRequestUID = trnRequestUID.String()
+			existing.SurveyAnswer = req.SurveyAnswer
+			existing.SurveyAnswerDate = time.Now()
+			existing.SurveyAnswerEmpID = user.EmpID
 
-			if err := config.DB.Save(&existingAnswer).Error; err != nil {
+			if err := config.DB.Save(&existing).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update record: %v", err)})
 				return
 			}
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": reqs})
+}
+
+// ReturnedVehicle godoc
+// @Summary Update returned vehicle for a booking request
+// @Description This endpoint allows to update the returned vehicle details.
+// @Tags Vehicle-in-use-user
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnReturnedVehicle true "VmsTrnReturnedVehicle data"
+// @Router /api/vehicle-in-use-user/returned-vehicle [put]
+func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnReturnedVehicle
+	var result struct {
+		models.VmsTrnReturnedVehicle
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	request.RefRequestStatusCode = "70"
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	empUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.ReturnedVehicleEmpID = empUser.EmpID
+	request.ReturnedVehicleEmpName = empUser.FullName
+	request.ReturnedVehicleDeptSAP = empUser.DeptSAP
+	request.ReturnedVehicleDeptSAPShort = empUser.DeptSAPShort
+	request.ReturnedVehicleDeptSAPFull = empUser.DeptSAPFull
+	for i := range request.VehicleImages {
+		request.VehicleImages[i].TrnVehicleImgReturnedUID = uuid.New().String()
+		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID
+	}
+
+	if len(request.VehicleImages) > 0 {
+		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images"})
+			return
+		}
+	}
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.
+		Preload("VehicleImages").
+		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"ส่งคืนกุญแจและยานพาหนะแล้ว รอตรวจสอบและยืนยันการส่งคืน",
+		user.EmpID)
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

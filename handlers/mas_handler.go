@@ -43,7 +43,7 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].ImageURL = config.DefaultURL
+		lists[i].ImageURL = config.DefaultAvatarURL
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -79,7 +79,7 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].ImageURL = config.DefaultURL
+		lists[i].ImageURL = config.DefaultAvatarURL
 		lists[i].AnnualDriver.AnnualYYYY = 2568
 		lists[i].AnnualDriver.DriverLicenseNo = "A123456"
 		lists[i].AnnualDriver.RequestAnnualDriverNo = "B00001"
@@ -257,4 +257,43 @@ func (h *MasHandler) ListVmsMasSatisfactionSurveyQuestions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, list)
+}
+
+// ListVehicleDepartment godoc
+// @Summary Retrieve the Vehicle Departments
+// @Description This endpoint allows a user to retrieve Vehicle Departments.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/mas/vehicle-departments [get]
+func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
+
+	var vehicleDepts []models.VmsMasVehicleDepartmentList
+	var carpools []models.VmsMasVehicleDepartmentList
+
+	// First Query
+	if err := config.DB.Table("vms_mas_vehicle_department AS vd").
+		Select("vd.vehicle_owner_dept_sap, MAX(d.dept_short) AS dept_sap_short, MAX(d.dept_full) AS dept_sap_full, 'PEA' AS dept_type").
+		Joins("INNER JOIN vms_mas_department d ON d.dept_sap = vd.vehicle_owner_dept_sap").
+		Where("vd.is_deleted = ? AND vd.is_active = ? AND d.is_deleted = ?", "0", "1", "0").
+		Group("vd.vehicle_owner_dept_sap").
+		Order("vd.vehicle_owner_dept_sap").
+		Find(&vehicleDepts).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve vehicle departments"})
+		return
+	}
+
+	// Second Query
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("CAST(mas_carpool_uid AS TEXT) AS vehicle_owner_dept_sap, carpool_name AS dept_sap_short, carpool_name AS dept_sap_full, 'Car pool' AS dept_type").
+		Where("is_deleted = ? AND is_active = ?", "0", "1").
+		Find(&carpools).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve carpools"})
+		return
+	}
+	results := append(vehicleDepts, carpools...)
+
+	c.JSON(http.StatusOK, results)
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -13,128 +12,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BookingApproverHandler struct {
+type ReceivedKeyAdminHandler struct {
 	Role string
-}
-
-var MenuNameMapApprover = map[string]string{
-	"20": "คำขอใช้ยานพาหนะ",
-	"21": "คำขอใช้ยานพาหนะ",
-	"30": "คำขอใช้ยานพาหนะ",
-	"00": "ใบอนุญาตขับขี่",
-}
-
-var StatusNameMapApprover = map[string]string{
-	"20": "รออนุมัติ",
-	"21": "ตีกลับ",
-	"30": "อนุมัติแล้ว",
-	"90": "ยกเลิกคำขอ",
-}
-
-// MenuRequests godoc
-// @Summary Summary booking requests by request status code
-// @Description Summary booking requests, counts grouped by request status code
-// @Tags Booking-approver
-// @Accept  json
-// @Produce  json
-// @Security ApiKeyAuth
-// @Security AuthorizationAuth
-// @Router /api/booking-approver/menu-requests [get]
-func (h *BookingApproverHandler) MenuRequests(c *gin.Context) {
-	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
-
-	statusNameMap := MenuNameMapApprover
-	var summary []models.VmsTrnRequestSummary
-
-	// Create a mapping to group status codes by their names
-	groupedStatusCodes := make(map[string][]string)
-	for code, name := range statusNameMap {
-		groupedStatusCodes[name] = append(groupedStatusCodes[name], code)
-	}
-
-	// Initialize a map to store counts and minimum code grouped by status name
-	groupedCounts := make(map[string]struct {
-		Count   int
-		MinCode string
-	})
-
-	// Build the query for all status codes
-	allStatusCodes := make([]string, 0, len(statusNameMap))
-	for code := range statusNameMap {
-		allStatusCodes = append(allStatusCodes, code)
-	}
-
-	// Execute the query for all status codes
-	dbSummary := []struct {
-		RefRequestStatusCode string `gorm:"column:ref_request_status_code"`
-		Count                int    `gorm:"column:count"`
-	}{}
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", allStatusCodes).
-		Group("req.ref_request_status_code")
-
-	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Aggregate counts and find the minimum `RefRequestStatusCode` for each `RefRequestStatusName`
-	for _, dbItem := range dbSummary {
-		for name, codes := range groupedStatusCodes {
-			for _, code := range codes {
-				if dbItem.RefRequestStatusCode == code {
-					if groupedCounts[name].Count == 0 || code < groupedCounts[name].MinCode {
-						groupedCounts[name] = struct {
-							Count   int
-							MinCode string
-						}{
-							Count:   groupedCounts[name].Count + dbItem.Count,
-							MinCode: code,
-						}
-					}
-					break
-				}
-			}
-		}
-	}
-
-	// Ensure every status name is included, even with Count = 0
-	for name, codes := range groupedStatusCodes {
-		if _, exists := groupedCounts[name]; !exists {
-			groupedCounts[name] = struct {
-				Count   int
-				MinCode string
-			}{
-				Count:   0,
-				MinCode: codes[0], // Use the first code as default for MinCode
-			}
-		}
-	}
-
-	// Build the summary grouped by status name with minimum code
-	for name, data := range groupedCounts {
-		summary = append(summary, models.VmsTrnRequestSummary{
-			RefRequestStatusName: name,
-			RefRequestStatusCode: data.MinCode,
-			Count:                data.Count,
-		})
-	}
-
-	// Sort the summary by RefRequestStatusCode
-	sort.Slice(summary, func(i, j int) bool {
-		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
-	})
-
-	// Respond with the grouped summary
-	c.JSON(http.StatusOK, summary)
 }
 
 // SearchRequests godoc
 // @Summary Search booking requests and get summary counts by request status code
 // @Description Search for requests using a keyword and get the summary of counts grouped by request status code
-// @Tags Booking-approver
+// @Tags Received-key-admin
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
@@ -143,18 +28,21 @@ func (h *BookingApproverHandler) MenuRequests(c *gin.Context) {
 // @Param ref_request_status_code query string false "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')"
 // @Param startdate query string false "Filter by start datetime (YYYY-MM-DD format)"
 // @Param enddate query string false "Filter by end datetime (YYYY-MM-DD format)"
+// @Param vehicle_owner_dept_sap query string false "Filter by vehicle owner department SAP"
+// @Param received_key_start_datetime query string false "Filter by received key start datetime (YYYY-MM-DD format)"
+// @Param received_key_end_datetime query string false "Filter by received key end datetime (YYYY-MM-DD format)"
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Number of records per page (default: 10)"
-// @Router /api/booking-approver/search-requests [get]
-func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
+// @Router /api/received-key-admin/search-requests [get]
+func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
-
+	var statusNameMap = StatusNameMapReceivedKeyUser
 	var requests []models.VmsTrnRequestList
 	var summary []models.VmsTrnRequestSummary
 
-	statusNameMap := StatusNameMapApprover
+	// Use the keys from statusNameMap as the list of valid status codes
 	statusCodes := make([]string, 0, len(statusNameMap))
 	for code := range statusNameMap {
 		statusCodes = append(statusCodes, code)
@@ -176,11 +64,14 @@ func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("enddate"); endDate != "" {
 		query = query.Where("req.start_datetime <= ?", endDate)
 	}
-	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
-		// Split the comma-separated codes into a slice
-		codes := strings.Split(refRequestStatusCodes, ",")
-		query = query.Where("req.ref_request_status_code IN (?)", codes)
+
+	if receivedKeyStartDatetime := c.Query("received_key_start_datetime"); receivedKeyStartDatetime != "" {
+		query = query.Where("req.received_key_start_datetime >= ?", receivedKeyStartDatetime)
 	}
+	if receivedKeyEndDatetime := c.Query("received_key_end_datetime"); receivedKeyEndDatetime != "" {
+		query = query.Where("req.received_key_end_datetime <= ?", receivedKeyEndDatetime)
+	}
+
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -277,66 +168,33 @@ func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
 // GetRequest godoc
 // @Summary Retrieve a specific booking request
 // @Description This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).
-// @Tags Booking-approver
+// @Tags Received-key-admin
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
-// @Router /api/booking-approver/request/{trn_request_uid} [get]
-func (h *BookingApproverHandler) GetRequest(c *gin.Context) {
+// @Router /api/received-key-admin/request/{trn_request_uid} [get]
+func (h *ReceivedKeyAdminHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	request, err := funcs.GetRequest(c, StatusNameMapApprover)
-	if err != nil {
-		return
-	}
-	if request.RefRequestStatusCode == "20" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "0", ProgressName: "รออนุมัติ"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
-		}
-	}
-	if request.RefRequestStatusCode == "21" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
-		}
-	}
-	if request.RefRequestStatusCode == "30" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
-		}
-	}
-	if request.RefRequestStatusCode == "90" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "2", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
-			{ProgressIcon: "1", ProgressName: "คำขอใช้ถูกยกเลิกจากผู้ใช้ยานพาหนะ"},
-			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
-		}
-	}
-	c.JSON(http.StatusOK, request)
+	funcs.GetRequest(c, StatusNameMapReceivedKeyUser)
 }
 
-// UpdateSendedBack godoc
-// @Summary Update sended back status for an item
-// @Description This endpoint allows users to update the sended back status of an item.
-// @Tags Booking-approver
+// UpdateRecieivedKey godoc
+// @Summary Update key pickup driver for a booking request
+// @Description This endpoint allows to update key pickup driver.
+// @Tags Received-key-admin
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequestSendedBack true "VmsTrnRequestSendedBack data"
-// @Router /api/booking-approver/update-sended-back [put]
-func (h *BookingApproverHandler) UpdateSendedBack(c *gin.Context) {
+// @Param data body models.VmsTrnRequestUpdateRecieivedKey true "VmsTrnRequestUpdateRecieivedKey data"
+// @Router /api/received-key-admin/update-recieived-key [put]
+func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, trnRequest models.VmsTrnRequestSendedBack
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKey
 	var result struct {
-		models.VmsTrnRequestSendedBack
+		models.VmsTrnRequestUpdateRecieivedKey
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -348,13 +206,7 @@ func (h *BookingApproverHandler) UpdateSendedBack(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.RefRequestStatusCode = "21"
-	request.SendedBackRequestEmpID = empUser.EmpID
-	request.SendedBackRequestEmpName = empUser.FullName
-	request.SendedBackRequestDeptSAP = empUser.DeptSAP
-	request.SendedBackRequestDeptSAPShort = empUser.DeptSAPShort
-	request.SendedBackRequestDeptSAPFull = empUser.DeptSAPFull
+
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -362,33 +214,30 @@ func (h *BookingApproverHandler) UpdateSendedBack(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.SendedBackRequestReason,
-		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
-// UpdateApproved godoc
-// @Summary Update sended back status for an item
-// @Description This endpoint allows users to update the sended back status of an item.
-// @Tags Booking-approver
+// UpdateRecieivedKeyDetail godoc
+// @Summary Update received key details for a booking request
+// @Description This endpoint allows to update received key details for a booking request.
+// @Tags Received-key-admin
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequestApproved true "VmsTrnRequestApproved data"
-// @Router /api/booking-approver/update-approved [put]
-func (h *BookingApproverHandler) UpdateApproved(c *gin.Context) {
+// @Param data body models.VmsTrnRequestUpdateRecieivedKeyDetail true "VmsTrnRequestUpdateRecieivedKeyDetail data"
+// @Router /api/received-key-admin/update-recieived-key-detail [put]
+func (h *ReceivedKeyAdminHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, trnRequest models.VmsTrnRequestApproved
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyDetail
 	var result struct {
-		models.VmsTrnRequestApproved
+		models.VmsTrnRequestUpdateRecieivedKeyDetail
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -401,13 +250,50 @@ func (h *BookingApproverHandler) UpdateApproved(c *gin.Context) {
 		return
 	}
 
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.RefRequestStatusCode = "30" // ยืนยันคำขอแล้ว รอตรวจสอบคำขอ
-	request.ApprovedRequestEmpID = empUser.EmpID
-	request.ApprovedRequestEmpName = empUser.FullName
-	request.ApprovedRequestDeptSAP = empUser.DeptSAP
-	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
-	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// UpdateKeyPickupDriver godoc
+// @Summary Update key pickup driver for a booking request
+// @Description This endpoint allows to update key pickup driver.
+// @Tags Received-key-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnReceivedKeyDriver true "VmsTrnReceivedKeyDriver data"
+// @Router /api/received-key-admin/update-key-pickup-driver [put]
+func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnReceivedKeyDriver
+	var result struct {
+		models.VmsTrnReceivedKeyDriver
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+	request.ReceiverKeyType = 1         // Driver
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -422,23 +308,121 @@ func (h *BookingApproverHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnLog(result.TrnRequestUID,
 		result.RefRequestStatusCode,
-		"ต้นสังกัดยืนยันคำขอแล้ว",
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
 		user.EmpID)
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
 
+// UpdateKeyPickupPEA godoc
+// @Summary Update key pickup emp user for a booking request
+// @Description This endpoint allows to update key pickup emp user.
+// @Tags Received-key-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnReceivedKeyPEA true "VmsTrnReceivedKeyPEA data"
+// @Router /api/received-key-admin/update-key-pickup-pea [put]
+func (h *ReceivedKeyAdminHandler) UpdateKeyPickupPEA(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnReceivedKeyPEA
+	var result struct {
+		models.VmsTrnReceivedKeyPEA
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+	request.ReceiverKeyType = 2         // PEA
+	empUser := funcs.GetUserEmpInfo(request.ReceivedKeyEmpID)
+	request.ReceivedKeyEmpID = empUser.EmpID
+	request.ReceivedKeyEmpName = empUser.FullName
+	request.ReceivedKeyDeptSAP = empUser.DeptSAP
+	request.ReceivedKeyDeptSAPShort = empUser.DeptSAPShort
+	request.ReceivedKeyDeptSAPFull = empUser.DeptSAPFull
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
+		user.EmpID)
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// UpdateKeyPickupOutSider godoc
+// @Summary Update key pickup outsource for a booking request
+// @Description This endpoint allows to update key pickup outsource.
+// @Tags Received-key-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnReceivedKeyOutSider true "VmsTrnReceivedKeyOutSider data"
+// @Router /api/received-key-admin/update-key-pickup-outsider [put]
+func (h *ReceivedKeyAdminHandler) UpdateKeyPickupOutSider(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnReceivedKeyOutSider
+	var result struct {
+		models.VmsTrnReceivedKeyOutSider
+		models.VmsTrnRequestRequestNo
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+	request.ReceiverKeyType = 3         // Outsider
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
+		user.EmpID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
 // UpdateCanceled godoc
 // @Summary Update cancel status for an item
 // @Description This endpoint allows users to update the cancel status of an item.
-// @Tags Booking-approver
+// @Tags Received-key-admin
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsTrnRequestCanceled true "VmsTrnRequestCanceled data"
-// @Router /api/booking-approver/update-canceled [put]
-func (h *BookingApproverHandler) UpdateCanceled(c *gin.Context) {
+// @Router /api/received-key-admin/update-canceled [put]
+func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
@@ -455,15 +439,16 @@ func (h *BookingApproverHandler) UpdateCanceled(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+
+	request.RefRequestStatusCode = "90" // ยกเลิกคำขอ
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.RefRequestStatusCode = "90"
-	request.UpdatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
 	request.CanceledRequestEmpID = empUser.EmpID
 	request.CanceledRequestEmpName = empUser.FullName
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})

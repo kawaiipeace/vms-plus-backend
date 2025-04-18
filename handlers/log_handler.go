@@ -12,6 +12,23 @@ import (
 type LogHandler struct {
 }
 
+func GetRoleOfCreater(refRequestStatusCode string) string {
+	switch refRequestStatusCode {
+	case "20":
+		return "ผู้สร้างคำขอ"
+	case "21":
+	case "30":
+		return "ผู้อนุมัติต้นสังกัด"
+	case "40":
+		return "ผู้ดูแลยานพาหนะ"
+	case "90":
+		return "ผู้สร้างคำขอ"
+	default:
+		return ""
+	}
+	return ""
+}
+
 // GetLogRequest godoc
 // @Summary Get log requests by trnRequestUID
 // @Tags Log
@@ -42,6 +59,10 @@ func (h *LogHandler) GetLogRequest(c *gin.Context) {
 		Find(&logRequests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	for i := range logRequests {
+		logRequests[i].RoleOfCreater = GetRoleOfCreater(logRequests[i].Status.RefRequestStatusCode)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

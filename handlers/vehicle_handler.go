@@ -71,10 +71,11 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	// Respond with JSON
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
-			"total":      total,
-			"page":       page,
-			"limit":      limit,
-			"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+			"total":       total,
+			"totalGroups": 2,
+			"page":        page,
+			"limit":       limit,
+			"totalPages":  (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 		},
 		"vehicles": vehicles,
 	})

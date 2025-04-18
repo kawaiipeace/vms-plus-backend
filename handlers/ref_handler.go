@@ -113,3 +113,41 @@ func (h *RefHandler) ListOilStationBrand(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, lists)
 }
+
+// ListVehicleImgSide godoc
+// @Summary Retrieve all vehicle image sides
+// @Description This endpoint retrieves all vehicle image sides.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/vehicle-img-side [get]
+func (h *RefHandler) ListVehicleImgSide(c *gin.Context) {
+	var lists []models.VmsRefVehicleImgSide
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListPaymentTypeCode godoc
+// @Summary Retrieve all payment type codes
+// @Description This endpoint retrieves all payment type codes.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/payment-type-code [get]
+func (h *RefHandler) ListPaymentTypeCode(c *gin.Context) {
+	var lists []models.VmsRefPaymentType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}

@@ -40,7 +40,7 @@ func AssignVehicleImageFromIndex(vehicles []VmsMasVehicle_List) []VmsMasVehicle_
 }
 
 type VmsRefVehicleType struct {
-	RefVehicleTypeCode int    `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
+	RefVehicleTypeCode int    `gorm:"column:ref_vehicle_type_code;primarykey" json:"ref_vehicle_type_code"`
 	RefVehicleTypeName string `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
 	AvailableUnits     int    `gorm:"column:available_units" json:"available_units"`
 	VehicleTypeImage   string `json:"vehicle_type_image"`

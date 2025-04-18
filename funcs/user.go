@@ -114,3 +114,11 @@ func GetAuthenUser(c *gin.Context, role string) *models.AuthenUserEmp {
 
 	return &empUser
 }
+
+func GetUserEmpInfo(empID string) models.AuthenUserEmp {
+	var empUser models.AuthenUserEmp
+	if err := config.DB.First(&empUser, "emp_id = ?", empID).Error; err != nil {
+		return models.AuthenUserEmp{}
+	}
+	return empUser
+}
