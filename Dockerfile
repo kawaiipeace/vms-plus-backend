@@ -2,17 +2,17 @@ FROM registry.pea.co.th/developer/vms-plus/api/backend/base:stable AS builder
 
 USER root
 
+COPY . .
+
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vms-plus main.go
 
 FROM alpine:3.21.3
 
 RUN apk --no-cache add ca-certificates
 
-ARG APP_PATH=/app
-
 USER 65532
 
-WORKDIR $APP_PATH
+WORKDIR /app
 
 COPY --chown=65532:65532 --from=builder /app/vms-plus . 
 
