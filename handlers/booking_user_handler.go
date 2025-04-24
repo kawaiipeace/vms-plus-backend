@@ -20,17 +20,17 @@ type BookingUserHandler struct {
 }
 
 var MenuNameMapUser = map[string]string{
-	"20": "รออนุมัติ",
-	"21": "รออนุมัติ",
-	"30": "รออนุมัติ",
-	"31": "รออนุมัติ",
-	"40": "รออนุมัติ",
-	"41": "รออนุมัติ",
-	"50": "รับกุญแจ",
-	"51": "รับกุญแจ",
-	"60": "เดินทาง",
-	"70": "คืนยานพาหนะ",
-	"71": "คืนยานพาหนะ",
+	"20": "กำลังดำเนินการ",
+	"21": "กำลังดำเนินการ",
+	"30": "กำลังดำเนินการ",
+	"31": "กำลังดำเนินการ",
+	"40": "กำลังดำเนินการ",
+	"41": "กำลังดำเนินการ",
+	"50": "กำลังดำเนินการ",
+	"51": "กำลังดำเนินการ",
+	"60": "กำลังดำเนินการ",
+	"70": "กำลังดำเนินการ",
+	"71": "กำลังดำเนินการ",
 	"80": "เสร็จสิ้น",
 	"90": "ยกเลิกคำขอ",
 }
@@ -38,6 +38,16 @@ var MenuNameMapUser = map[string]string{
 var StatusNameMapUser = map[string]string{
 	"20": "รออนุมัติ",
 	"21": "ถูกตีกลับ",
+	"30": "รออนุมัติ",
+	"31": "ถูกตีกลับ",
+	"40": "รออนุมัติ",
+	"41": "ถูกตีกลับ",
+	"50": "รอรับกุญแจ",
+	"51": "รอรับยานพาหนะ",
+	"60": "เดินทาง",
+	"70": "รอตรวจสอบ",
+	"71": "คืนยานพาหนะไม่สำเร็จ",
+	"80": "เสร็จสิ้น",
 	"90": "ยกเลิกคำขอ",
 }
 
@@ -265,6 +275,22 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := StatusNameMapUser[code]; exists {
+				for key, value := range StatusNameMapUser {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		fmt.Println("codes", codes)
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
 	// Ordering
@@ -329,18 +355,39 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Create a complete summary with all statuses from statusNameMap
-	for code, name := range statusNameMap {
-		count := 0
-		for _, dbItem := range dbSummary {
-			if dbItem.RefRequestStatusCode == code {
-				count = dbItem.Count
-				break
+	groupedSummary := make(map[string]struct {
+		Count   int
+		MinCode string
+	})
+
+	// Aggregate counts and find the minimum RefRequestStatusCode for each RefRequestStatusName
+	for _, dbItem := range dbSummary {
+		name := statusNameMap[dbItem.RefRequestStatusCode]
+		if data, exists := groupedSummary[name]; exists {
+			groupedSummary[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   data.Count + dbItem.Count,
+				MinCode: min(data.MinCode, dbItem.RefRequestStatusCode),
+			}
+		} else {
+			groupedSummary[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   dbItem.Count,
+				MinCode: dbItem.RefRequestStatusCode,
 			}
 		}
+	}
+
+	// Build the summary from the grouped data
+	for name, data := range groupedSummary {
 		summary = append(summary, models.VmsTrnRequestSummary{
-			RefRequestStatusCode: code,
 			RefRequestStatusName: name,
-			Count:                count,
+			RefRequestStatusCode: data.MinCode,
+			Count:                data.Count,
 		})
 	}
 	// Sort the summary by RefRequestStatusCode

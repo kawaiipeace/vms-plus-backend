@@ -169,3 +169,36 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	//c.JSON(http.StatusOK, request)
 	return request, nil
 }
+
+func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnRequestVehicleInUseResponse, error) {
+	id := c.Param("trn_request_uid")
+	var request models.VmsTrnRequestVehicleInUseResponse
+	trnRequestUID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID"})
+		return request, err
+	}
+
+	if err := config.DB.
+		Preload("VmsMasVehicle.RefFuelType").
+		Preload("VMSMasDriver").
+		Preload("RefRequestStatus").
+		Preload("RequestVehicleType").
+		Preload("VehicleImagesReceived").
+		Preload("VehicleImagesReturned").
+		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		return request, err
+	}
+	if request.VMSMasDriver.DriverBirthdate != (time.Time{}) {
+		request.VMSMasDriver.Age = request.VMSMasDriver.CalculateAgeInYearsMonths()
+	}
+	request.NumberOfAvailableDrivers = 2
+	request.DriverImageURL = config.DefaultAvatarURL
+	request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	request.CanCancelRequest = true
+	request.RefRequestStatusName = statusNameMap[request.RefRequestStatusCode]
+	UpdateTrnRequestData(request.TrnRequestUID)
+	//c.JSON(http.StatusOK, request)
+	return request, nil
+}

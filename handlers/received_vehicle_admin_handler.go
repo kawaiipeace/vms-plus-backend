@@ -44,7 +44,7 @@ var StatusNameMapReceivedVehicleAdmin = map[string]string{
 func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
 	statusNameMap := StatusNameMapReceivedVehicleAdmin
-	var requests []models.VmsTrnRequestList
+	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -113,6 +113,17 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		if requests[i].IsAdminChooseDriver == 1 && requests[i].IsPEAEmployeeDriver == 0 && (requests[i].MasCarpoolDriverUID == "" || requests[i].MasCarpoolDriverUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Driver = true
+		}
+		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Vehicle = true
+		}
+		if requests[i].TripType == 1 {
+			requests[i].TripTypeName = "ไป-กลับ"
+		} else if requests[i].TripType == 2 {
+			requests[i].TripTypeName = "ค้างแรม"
+		}
 	}
 
 	// Build the summary query
@@ -175,7 +186,11 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-vehicle-admin/request/{trn_request_uid} [get]
 func (h *ReceivedVehicleAdminHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	funcs.GetRequest(c, StatusNameMapReceivedVehicleAdmin)
+	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedVehicleAdmin)
+	if err != nil {
+		return
+	}
+	c.JSON(http.StatusOK, request)
 }
 
 // ReceivedVehicle godoc

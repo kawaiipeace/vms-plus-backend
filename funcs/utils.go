@@ -1,6 +1,7 @@
 package funcs
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -37,4 +38,22 @@ func TrimStringFields(model interface{}) {
 }
 func DefaultUUID() string {
 	return "00000000-0000-0000-0000-000000000000"
+}
+
+func CalculateAge(date time.Time) string {
+	today := time.Now()
+	years := today.Year() - date.Year()
+	months := today.Month() - date.Month()
+
+	// Adjust if birthday hasn't occurred yet this year
+	if today.Day() < date.Day() {
+		months--
+	}
+
+	if months < 0 {
+		years--
+		months += 12
+	}
+
+	return fmt.Sprintf("%d ปี %d เดือน", years, months)
 }

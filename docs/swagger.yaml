@@ -84,6 +84,385 @@ definitions:
         example: http://vms.pea.co.th/side_image.jpg
         type: string
     type: object
+  models.VmsDriverLicenseAnnualApproved:
+    properties:
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
+    type: object
+  models.VmsDriverLicenseAnnualApprover:
+    properties:
+      approved_request_emp_id:
+        example: "990003"
+        type: string
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
+    type: object
+  models.VmsDriverLicenseAnnualCanceled:
+    properties:
+      canceled_request_reason:
+        example: Test Cancel
+        type: string
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
+    type: object
+  models.VmsDriverLicenseAnnualConfirmed:
+    properties:
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
+    type: object
+  models.VmsDriverLicenseAnnualRejected:
+    properties:
+      rejected_request_reason:
+        example: Test Reject
+        type: string
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
+    type: object
+  models.VmsDriverLicenseAnnualRequest:
+    properties:
+      annual_yyyy:
+        example: 2568
+        type: integer
+      approved_request_emp_id:
+        example: "990001"
+        type: string
+      confirmed_request_emp_id:
+        example: "990002"
+        type: string
+      driver_certificate_expire_date:
+        example: "2024-12-31T00:00:00Z"
+        type: string
+      driver_certificate_img:
+        example: certificate_image_url
+        type: string
+      driver_certificate_issue_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      driver_certificate_name:
+        example: Safety Certificate
+        type: string
+      driver_certificate_no:
+        example: CERT12345
+        type: string
+      driver_certificate_type_code:
+        example: 1
+        type: integer
+      driver_license_expire_date:
+        example: "2025-12-31T00:00:00Z"
+        type: string
+      driver_license_img:
+        example: image_url
+        type: string
+      driver_license_no:
+        example: DL12345678
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
+      request_expire_date:
+        example: "2023-12-31T00:00:00Z"
+        type: string
+      request_issue_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  models.VmsMasCarpoolActive:
+    properties:
+      is_active:
+        example: "1"
+        type: string
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
+  models.VmsMasCarpoolAdmin:
+    properties:
+      admin_emp_no:
+        example: "990003"
+        type: string
+      internal_contact_number:
+        example: "1234"
+        type: string
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+      mobile_contact_number:
+        example: "9876543210"
+        type: string
+    type: object
+  models.VmsMasCarpoolApprover:
+    properties:
+      approver_emp_no:
+        example: "990004"
+        type: string
+      internal_contact_number:
+        example: "5678"
+        type: string
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+      mobile_contact_number:
+        example: "9876543211"
+        type: string
+    type: object
+  models.VmsMasCarpoolRequest:
+    properties:
+      carpool_contact_number:
+        example: "111"
+        type: string
+      carpool_contact_place:
+        example: city
+        type: string
+      carpool_dept_sap:
+        example: "10001"
+        type: string
+      carpool_main_business_area:
+        example: "0000"
+        type: string
+      carpool_name:
+        example: carpool_name
+        type: string
+      ref_carpool_choose_car_id:
+        example: 1
+        type: integer
+      ref_carpool_choose_driver_id:
+        example: 1
+        type: integer
+      remark:
+        example: remark
+        type: string
+    type: object
+  models.VmsMasCarpoolVehicle:
+    properties:
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+      mas_vehicle_uid:
+        example: 334632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
+  models.VmsMasDriverCertificateRequest:
+    properties:
+      driver_certificate_expire_date:
+        example: "2025-12-31T23:59:59Z"
+        type: string
+      driver_certificate_image:
+        example: https://example.com/certificate_image.jpg
+        type: string
+      driver_certificate_issue_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      ref_driver_certificate_type_code:
+        example: "1"
+        type: string
+    type: object
+  models.VmsMasDriverContractUpdate:
+    properties:
+      approved_job_driver_end_date:
+        example: "2023-12-31T23:59:59Z"
+        type: string
+      approved_job_driver_start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      contract_no:
+        example: CON123456
+        type: string
+      driver_dept_sap_short_name_hire:
+        example: HR
+        type: string
+      driver_dept_sap_short_name_work:
+        example: กยจ.
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      mas_vendor_code:
+        example: VENDOR123
+        type: string
+      ref_other_use_code:
+        example: 1
+        type: integer
+    type: object
+  models.VmsMasDriverDelete:
+    properties:
+      driver_name:
+        example: John Doe
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+    type: object
+  models.VmsMasDriverDetailUpdate:
+    properties:
+      driver_birthdate:
+        example: "1990-01-01T00:00:00Z"
+        type: string
+      driver_contact_number:
+        example: "+1234567890"
+        type: string
+      driver_identification_no:
+        example: ID123456789
+        type: string
+      driver_image:
+        example: https://example.com/driver_image.jpg
+        type: string
+      driver_name:
+        example: John Doe
+        type: string
+      driver_nickname:
+        example: Johnny
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      work_type:
+        example: 1
+        type: integer
+    type: object
+  models.VmsMasDriverIsActiveUpdate:
+    properties:
+      is_active:
+        example: "1"
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+    type: object
+  models.VmsMasDriverLayoffStatusUpdate:
+    properties:
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      replace_mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      replaced_mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+    type: object
+  models.VmsMasDriverLeaveStatusUpdate:
+    properties:
+      leave_end_date:
+        example: "2023-12-31T23:59:59Z"
+        type: string
+      leave_reason:
+        example: Vacation
+        type: string
+      leave_start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      ref_driver_status_code:
+        example: 1
+        type: integer
+      replace_mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      time_type:
+        example: "1"
+        type: string
+    type: object
+  models.VmsMasDriverLicenseRequest:
+    properties:
+      driver_license_end_date:
+        example: "2025-12-31T23:59:59Z"
+        type: string
+      driver_license_image:
+        example: https://example.com/license_image.jpg
+        type: string
+      driver_license_no:
+        example: D123456789
+        type: string
+      driver_license_start_date:
+        example: "2020-01-01T00:00:00Z"
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
+    type: object
+  models.VmsMasDriverLicenseUpdate:
+    properties:
+      driver_license_end_date:
+        example: "2025-12-31T23:59:59Z"
+        type: string
+      driver_license_no:
+        example: D123456789
+        type: string
+      driver_license_start_date:
+        example: "2020-01-01T00:00:00Z"
+        type: string
+      mas_driver_license_uid:
+        example: 3e89ebe5-d597-4ee2-b0a1-c3a5628cf131
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
+    type: object
+  models.VmsMasDriverRequest:
+    properties:
+      approved_job_driver_end_date:
+        example: "2023-12-31T23:59:59Z"
+        type: string
+      approved_job_driver_start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      contract_no:
+        example: CON123456
+        type: string
+      driver_birthdate:
+        example: "1990-01-01T00:00:00Z"
+        type: string
+      driver_certificate:
+        $ref: '#/definitions/models.VmsMasDriverCertificateRequest'
+      driver_contact_number:
+        example: "+1234567890"
+        type: string
+      driver_dept_sap_short_name_hire:
+        example: HR
+        type: string
+      driver_dept_sap_short_name_work:
+        example: กยจ.
+        type: string
+      driver_identification_no:
+        example: ID123456789
+        type: string
+      driver_image:
+        example: https://example.com/driver_image.jpg
+        type: string
+      driver_license:
+        $ref: '#/definitions/models.VmsMasDriverLicenseRequest'
+      driver_name:
+        example: John Doe
+        type: string
+      driver_nickname:
+        example: Johnny
+        type: string
+      mas_vendor_code:
+        example: VENDOR123
+        type: string
+      ref_other_use_code:
+        example: "1"
+        type: string
+      work_type:
+        example: 1
+        type: integer
+    type: object
+  models.VmsMasDriverResignStatusUpdate:
+    properties:
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      replaced_mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+    type: object
   models.VmsTrnAddFuel:
     properties:
       add_fuel_date_time:
@@ -194,24 +573,14 @@ definitions:
       received_key_remark:
         example: OutSider received the key
         type: string
-      ref_request_status_code:
-        type: string
       trn_request_uid:
         example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
         type: string
     type: object
   models.VmsTrnReceivedKeyPEA:
     properties:
-      received_key_dept_sap:
-        type: string
-      received_key_dept_sap_full:
-        type: string
-      received_key_dept_sap_short:
-        type: string
       received_key_emp_id:
-        example: "1234567890"
-        type: string
-      received_key_emp_name:
+        example: "990001"
         type: string
       received_key_internal_contact_number:
         example: "5551234"
@@ -222,10 +591,8 @@ definitions:
       received_key_remark:
         example: Employee received the key
         type: string
-      ref_request_status_code:
-        type: string
       trn_request_uid:
-        example: 3 w
+        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
         type: string
     type: object
   models.VmsTrnReceivedVehicle:
@@ -291,8 +658,6 @@ definitions:
     type: object
   models.VmsTrnRequestApproved:
     properties:
-      approved_request_emp_id:
-        type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
         type: string
@@ -322,20 +687,10 @@ definitions:
     type: object
   models.VmsTrnRequestCanceled:
     properties:
-      canceled_request_dept_sap:
-        type: string
-      canceled_request_dept_sap_full:
-        type: string
-      canceled_request_dept_sap_short:
-        type: string
       canceled_request_emp_id:
-        type: string
-      canceled_request_emp_name:
         type: string
       canceled_request_reason:
         example: Test Cancel
-        type: string
-      ref_request_status_code:
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -607,23 +962,13 @@ definitions:
       mile_end:
         example: 12000
         type: integer
-      ref_request_status_code:
-        type: string
       returned_cleanliness_level:
         example: 1
         type: integer
       returned_vehicle_datetime:
         example: "2025-04-16T14:30:00Z"
         type: string
-      returned_vehicle_dept_sap:
-        type: string
-      returned_vehicle_dept_sap_full:
-        type: string
-      returned_vehicle_dept_sap_short:
-        type: string
       returned_vehicle_emp_id:
-        type: string
-      returned_vehicle_emp_name:
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -1930,6 +2275,1243 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-user
+  /api/carpool-management/admin-create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new admin carpool and save it to the database
+      parameters:
+      - description: VmsMasCarpoolAdmin array
+        in: body
+        name: carpool
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsMasCarpoolAdmin'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new admin carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/admin-delete/{mas_carpool_admin_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes an admin carpool using its unique identifier
+        (MasCarpoolAdminUID).
+      parameters:
+      - description: MasCarpoolAdminUID (mas_carpool_admin_uid)
+        in: path
+        name: mas_carpool_admin_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete an admin carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/admin-detail/{mas_carpool_admin_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific admin carpool using
+        its unique identifier (MasCarpoolAdminUID).
+      parameters:
+      - description: MasCarpoolAdminUID (mas_carpool_admin_uid)
+        in: path
+        name: mas_carpool_admin_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific admin carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/admin-search/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Search admin carpools with pagination and filters
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Search query for admin_emp_no or admin_name
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Order by fields: admin_emp_no, admin_name'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search admin carpools
+      tags:
+      - Carpool-management
+  /api/carpool-management/admin-update/{mas_carpool_admin_uid}:
+    put:
+      consumes:
+      - application/json
+      description: Update an admin carpool's details in the database
+      parameters:
+      - description: MasCarpoolAdminUID (mas_carpool_admin_uid)
+        in: path
+        name: mas_carpool_admin_uid
+        required: true
+        type: string
+      - description: VmsMasCarpoolAdmin data
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolAdmin'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update an admin carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/approver-create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new carpool approver and save it to the database
+      parameters:
+      - description: VmsMasCarpoolApprover array
+        in: body
+        name: approver
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsMasCarpoolApprover'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new carpool approver
+      tags:
+      - Carpool-management
+  /api/carpool-management/approver-delete/{mas_carpool_approver_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes a carpool approver using its unique identifier
+        (MasCarpoolApproverUID).
+      parameters:
+      - description: MasCarpoolApproverUID (mas_carpool_approver_uid)
+        in: path
+        name: mas_carpool_approver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete a carpool approver
+      tags:
+      - Carpool-management
+  /api/carpool-management/approver-detail/{mas_carpool_approver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific carpool approver using
+        its unique identifier (MasCarpoolApproverUID).
+      parameters:
+      - description: MasCarpoolApproverUID (mas_carpool_approver_uid)
+        in: path
+        name: mas_carpool_approver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific carpool approver
+      tags:
+      - Carpool-management
+  /api/carpool-management/approver-search/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Search carpool approvers with pagination and filters
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Search query for approver_emp_no or approver_name
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Order by fields: approver_emp_no, approver_name'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search carpool approvers
+      tags:
+      - Carpool-management
+  /api/carpool-management/approver-update/{mas_carpool_approver_uid}:
+    put:
+      consumes:
+      - application/json
+      description: Update a carpool approver's details in the database
+      parameters:
+      - description: MasCarpoolApproverUID (mas_carpool_approver_uid)
+        in: path
+        name: mas_carpool_approver_uid
+        required: true
+        type: string
+      - description: VmsMasCarpoolApprover data
+        in: body
+        name: approver
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolApprover'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update a carpool approver
+      tags:
+      - Carpool-management
+  /api/carpool-management/carpool/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific carpool using its unique
+        identifier (MasCarpoolUID).
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Retrieve a specific carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new carpool and save it to the database
+      parameters:
+      - description: VmsMasCarpoolRequest data
+        in: body
+        name: carpool
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/delete/{mas_carpool_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes a carpool using its unique identifier (MasCarpoolUID).
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete a carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/search:
+    get:
+      consumes:
+      - application/json
+      description: Search carpool management by criteria
+      parameters:
+      - description: Search query for carpool_name or emp_name
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Order by fields: carpool_name, number_of_drivers, number_of_vehicles'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search carpool management
+      tags:
+      - Carpool-management
+  /api/carpool-management/set-active:
+    put:
+      consumes:
+      - application/json
+      description: Update the active status of a carpool using its unique identifier
+        (MasCarpoolUID).
+      parameters:
+      - description: VmsMasCarpoolActive data
+        in: body
+        name: active
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolActive'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Set active status for a carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/update/{mas_carpool_uid}:
+    put:
+      consumes:
+      - application/json
+      description: Update an existing carpool's details in the database
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: VmsMasCarpoolRequest data
+        in: body
+        name: carpool
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update an existing carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new carpool vehicle and save it to the database
+      parameters:
+      - description: VmsMasCarpoolVehicle array
+        in: body
+        name: vehicle
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsMasCarpoolVehicle'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new carpool vehicle
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-delete/{mas_carpool_vehicle_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes a carpool vehicle using its unique identifier
+        (MasCarpoolVehicleUID).
+      parameters:
+      - description: MasCarpoolVehicleUID (mas_carpool_vehicle_uid)
+        in: path
+        name: mas_carpool_vehicle_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete a carpool vehicle
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-detail/{mas_carpool_vehicle_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific carpool vehicle using
+        its unique identifier (MasCarpoolVehicleUID).
+      parameters:
+      - description: MasCarpoolVehicleUID (mas_carpool_vehicle_uid)
+        in: path
+        name: mas_carpool_vehicle_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific carpool vehicle
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-search/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Search carpool vehicles with pagination and filters
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Search query for vehicle_no or vehicle_owner_dept_short
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Order by fields: vehicle_license_plate'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search carpool vehicles
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-update/{mas_carpool_vehicle_uid}:
+    put:
+      consumes:
+      - application/json
+      description: Update a carpool vehicle's details in the database
+      parameters:
+      - description: MasCarpoolVehicleUID (mas_carpool_vehicle_uid)
+        in: path
+        name: mas_carpool_vehicle_uid
+        required: true
+        type: string
+      - description: VmsMasCarpoolVehicle data
+        in: body
+        name: vehicle
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolVehicle'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update a carpool vehicle
+      tags:
+      - Carpool-management
+  /api/driver-license-approver/license-annual/{trn_request_annual_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get the details of a driver license annual record by its unique
+        identifier
+      parameters:
+      - description: trnRequestAnnualDriverUID (trn_request_annual_driver_uid)
+        in: path
+        name: trn_request_annual_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver license annual record
+      tags:
+      - Driver-license-approver
+  /api/driver-license-approver/search-requests:
+    get:
+      consumes:
+      - application/json
+      description: Search for annual driver license requests using a keyword and get
+        the summary of counts grouped by request status code
+      parameters:
+      - description: Search keyword (matches request_annual_driver_no, created_request_emp_name)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          '10,11,20')
+        in: query
+        name: ref_request_annual_driver_status_code
+        type: string
+      - description: Filter by multiple license type codes (comma-separated, e.g.,
+          '1,2,3')
+        in: query
+        name: ref_driver_license_type_code
+        type: string
+      - description: Filter by annual yyyy
+        in: query
+        name: annual_yyyy
+        type: string
+      - description: Filter by start created datetime (YYYY-MM-DD format)
+        in: query
+        name: start_created_request_datetime
+        type: string
+      - description: Filter by end created datetime (YYYY-MM-DD format)
+        in: query
+        name: end_created_request_datetime
+        type: string
+      - description: Filter by start license expire datetime (YYYY-MM-DD format)
+        in: query
+        name: start_driver_license_expire_date
+        type: string
+      - description: Filter by end license expire datetime (YYYY-MM-DD format)
+        in: query
+        name: end_driver_license_expire_date
+        type: string
+      - description: Order by request_annual_driver_no, driver_license_expire_date
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search driver license annual requests and get summary counts by request
+        status code
+      tags:
+      - Driver-license-approver
+  /api/driver-license-approver/update-license-annual-approved:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the approved status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualApproved data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualApproved'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update approved status for a driver license annual record
+      tags:
+      - Driver-license-approver
+  /api/driver-license-approver/update-license-annual-canceled:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the cancel status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualCanceled data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualCanceled'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update cancel status for a driver license annual record
+      tags:
+      - Driver-license-approver
+  /api/driver-license-approver/update-license-annual-rejected:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the reject status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualRejected data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualRejected'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update reject status for a driver license annual record
+      tags:
+      - Driver-license-approver
+  /api/driver-license-confirm/license-annual/{trn_request_annual_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get the details of a driver license annual record by its unique
+        identifier
+      parameters:
+      - description: trnRequestAnnualDriverUID (trn_request_annual_driver_uid)
+        in: path
+        name: trn_request_annual_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver license annual record
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-confirm/search-requests:
+    get:
+      consumes:
+      - application/json
+      description: Search for annual driver license requests using a keyword and get
+        the summary of counts grouped by request status code
+      parameters:
+      - description: Search keyword (matches request_annual_driver_no, created_request_emp_name)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          '10,11,20')
+        in: query
+        name: ref_request_annual_driver_status_code
+        type: string
+      - description: Filter by multiple license type codes (comma-separated, e.g.,
+          '1,2,3')
+        in: query
+        name: ref_driver_license_type_code
+        type: string
+      - description: Filter by annual yyyy
+        in: query
+        name: annual_yyyy
+        type: string
+      - description: Filter by start created datetime (YYYY-MM-DD format)
+        in: query
+        name: start_created_request_datetime
+        type: string
+      - description: Filter by end created datetime (YYYY-MM-DD format)
+        in: query
+        name: end_created_request_datetime
+        type: string
+      - description: Filter by start license expire datetime (YYYY-MM-DD format)
+        in: query
+        name: start_driver_license_expire_date
+        type: string
+      - description: Filter by end license expire datetime (YYYY-MM-DD format)
+        in: query
+        name: end_driver_license_expire_date
+        type: string
+      - description: Order by request_annual_driver_no, driver_license_expire_date
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search driver license annual requests and get summary counts by request
+        status code
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-confirm/update-license-annual-approver:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows a confirmer to update the confirmer details
+        of a driver license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualApprover data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualApprover'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update approver for a driver license annual record
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-confirm/update-license-annual-canceled:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the cancel status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualCanceled data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualCanceled'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update cancel status for a driver license annual record
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-confirm/update-license-annual-confirmed:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the confirmed status of a
+        driver license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualConfirmed data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualConfirmed'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update confirmed status for a driver license annual record
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-confirm/update-license-annual-rejected:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the reject status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualRejected data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualRejected'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update reject status for a driver license annual record
+      tags:
+      - Driver-license-confirm
+  /api/driver-license-user/card:
+    get:
+      consumes:
+      - application/json
+      description: Get the driver's license card details
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve driver's license card
+      tags:
+      - Driver-license-user
+  /api/driver-license-user/create-license-annual:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows creating a new driver license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualRequest data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new driver license annual record
+      tags:
+      - Driver-license-user
+  /api/driver-license-user/license-annual/{trn_request_annual_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get the details of a driver license annual record by its unique
+        identifier
+      parameters:
+      - description: trnRequestAnnualDriverUID (trn_request_annual_driver_uid)
+        in: path
+        name: trn_request_annual_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver license annual record
+      tags:
+      - Driver-license-user
+  /api/driver-license-user/update-license-annual-canceled:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the cancel status of a driver
+        license annual record.
+      parameters:
+      - description: VmsDriverLicenseAnnualCanceled data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualCanceled'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update cancel status for a driver license annual record
+      tags:
+      - Driver-license-user
+  /api/driver-management/create-driver:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint allows creating a new driver.
+      parameters:
+      - description: VmsMasDriverRequest data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new driver
+      tags:
+      - Drivers-management
+  /api/driver-management/delete-driver:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes a driver using its unique identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverDelete data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverDelete'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete a driver
+      tags:
+      - Drivers-management
+  /api/driver-management/driver/{mas_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: MasDriverUID (mas_driver_uid)
+        in: path
+        name: mas_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver
+      tags:
+      - Drivers-management
+  /api/driver-management/search:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of drivers filtered by name with pagination
+      parameters:
+      - description: driver_name,driver_nickname,driver_dept_sap_short_name_work to
+          search
+        in: query
+        name: search
+        type: string
+      - description: Filter by driver department SAP
+        in: query
+        name: driver_dept_sap_work
+        type: string
+      - description: 'work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type
+          (comma-separated, e.g., ''1,2'')'
+        in: query
+        name: work_type
+        type: string
+      - description: Filter by driver status code (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_driver_status_code
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: Filter by  driver license end date (YYYY-MM-DD)
+        in: query
+        name: driver_license_end_date
+        type: string
+      - description: Filter by approved job driver end date (YYYY-MM-DD)
+        in: query
+        name: approved_job_driver_end_date
+        type: string
+      - description: Order by driver_name, driver_license_end_date, approved_job_driver_end_date,
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get drivers by name with pagination
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-contract:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the contract details of a driver using its
+        unique identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverContractUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverContractUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver contract details
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-detail:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the details of a driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverDetailUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverDetailUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver details
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-is-active:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the active status of a driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverIsActiveUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverIsActiveUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver active status
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-layoff-status:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the layoff status of a driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverLayoffStatusUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverLayoffStatusUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver layoff status
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-leave-status:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the leave status of a driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverLeaveStatusUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverLeaveStatusUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver leave status
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-license:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the license details of a driver using its
+        unique identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverLicenseUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverLicenseUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver license details
+      tags:
+      - Drivers-management
+  /api/driver-management/update-driver-resign-status:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the resign status of a driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: VmsMasDriverResignStatusUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasDriverResignStatusUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver resign status
+      tags:
+      - Drivers-management
   /api/driver/{mas_driver_uid}:
     get:
       consumes:
@@ -1960,6 +3542,10 @@ paths:
       - description: Driver name to search
         in: query
         name: name
+        type: string
+      - description: 'work type to search (1: ค้างคืน, 2: ไป-กลับ)'
+        in: query
+        name: work_type
         type: string
       - description: 'Page number (default: 1)'
         in: query
@@ -3182,6 +4768,34 @@ paths:
       summary: Retrieve a travel-card of pecific booking request
       tags:
       - Received-vehicle-admin
+  /api/ref/carpool-choose-car:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all carpool choose car options.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all carpool choose car options
+      tags:
+      - REF
+  /api/ref/carpool-choose-driver:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all carpool choose driver options.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all carpool choose driver options
+      tags:
+      - REF
   /api/ref/cost-type:
     get:
       consumes:
@@ -3215,6 +4829,34 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve a specific cost type
+      tags:
+      - REF
+  /api/ref/driver-license-type:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all driver license types.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all driver license types
+      tags:
+      - REF
+  /api/ref/driver-other-use:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all payment type codes.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all payment type codes
       tags:
       - REF
   /api/ref/fuel-type:
@@ -4884,6 +6526,59 @@ paths:
       summary: Retrieve details of a specific trip detail
       tags:
       - Vehicle-inspection-admin
+  /api/vehicle-management/search:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of vehicles filtered by license plate, brand, or model
+        with pagination
+      parameters:
+      - description: vehicle_license_plate,vehicle_brand_name,vehicle_model_name to
+          search
+        in: query
+        name: search
+        type: string
+      - description: Filter by vehicle owner department SAP
+        in: query
+        name: vehicle_owner_dept_sap
+        type: string
+      - description: Filter by Car type
+        in: query
+        name: ref_vehicle_category_code
+        type: string
+      - description: Filter by vehicle status code (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_vehicle_status_code
+        type: string
+      - description: Filter by ref_fuel_type_id
+        in: query
+        name: ref_fuel_type_id
+        type: string
+      - description: Order by vehicle_license_plate, vehicle_mileage, age,is_active
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicles by license plate, brand, or model with pagination
+      tags:
+      - Vehicle-management
   /api/vehicle/{mas_vehicle_uid}:
     get:
       consumes:

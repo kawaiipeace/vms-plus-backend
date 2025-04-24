@@ -4,6 +4,117 @@ import (
 	"time"
 )
 
+// VmsTrnRequestVehicleInUseResponse
+type VmsTrnRequestVehicleInUseResponse struct {
+	TrnRequestUID                    string    `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
+	RequestNo                        string    `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpName               string    `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name" example:"John Smith"`
+	VehicleUserDeptSAP               string    `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap" example:"HR"`
+	VehicleUserEmpID                 string    `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"700001"`
+	VehicleUserDeptSAPShort          string    `gorm:"column:vehicle_user_dept_sap_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
+	VehicleUserDeptSAPFull           string    `gorm:"column:vehicle_user_dept_sap_name_full" json:"vehicle_user_dept_sap_full" example:"Finance"`
+	CarUserMobileContactNumber       string    `gorm:"column:car_user_mobile_contact_number" json:"car_user_mobile_contact_number" example:"9876543210"`
+	CarUserInternalContactNumber     string    `gorm:"column:car_user_internal_contact_number" json:"car_user_internal_contact_number" example:"9876543210"`
+	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
+	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	ApprovedRequestEmpID             string    `gorm:"column:approved_request_emp_id" json:"approved_request_emp_id" example:"EMP67890"`
+	ApprovedRequestEmpName           string    `gorm:"column:approved_request_emp_name" json:"approved_request_emp_name" example:"Jane Doe"`
+	ApprovedRequestDeptSAP           string    `gorm:"column:approved_request_dept_sap" json:"approved_request_dept_sap" example:"Finance"`
+	ApprovedRequestDeptSAPShort      string    `gorm:"column:approved_request_dept_sap_short" json:"approved_request_dept_sap_short" example:"Finance"`
+	ApprovedRequestDeptSAPFull       string    `gorm:"column:approved_request_dept_sap_full" json:"approved_request_dept_sap_full" example:"Finance"`
+	StartDateTime                    time.Time `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00Z"`
+	EndDateTime                      time.Time `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00Z"`
+	DateRange                        string    `gorm:"column:date_range" json:"date_range" example:"2025-02-16 to 2025-02-17"`
+	TripType                         int       `gorm:"column:trip_type" json:"trip_type" example:"1"`
+	WorkPlace                        string    `gorm:"column:work_place" json:"work_place" example:"Office"`
+	Objective                        string    `gorm:"column:objective" json:"objective" example:"Project meeting"`
+	Remark                           string    `gorm:"column:remark" json:"remark" example:"Special request for parking spot"`
+	NumberOfPassengers               int       `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"4"`
+	PickupPlace                      string    `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
+	PickupDateTime                   time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:00:00Z"`
+	ReferenceNumber                  string    `gorm:"column:reference_number" json:"reference_number" example:"REF123456"`
+	AttachedDocument                 string    `gorm:"column:attached_document" json:"attached_document" example:"document.pdf"`
+	IsPEAEmployeeDriver              string    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
+	IsAdminChooseDriver              string    `gorm:"column:is_admin_choose_driver" json:"is_admin_choose_driver" example:"1"`
+	NumberOfAvailableDrivers         int       `gorm:"-" json:"number_of_available_drivers" example:"2"`
+	RefCostTypeCode                  string    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"COST123"`
+	CostNo                           string    `gorm:"column:cost_no" json:"cost_no" example:"COSTNO123"`
+
+	MasCarpoolDriverUID  string            `gorm:"column:mas_carpool_driver_uid;type:uuid" json:"mas_carpool_driver_uid"`
+	VMSMasDriver         VmsMasDriver      `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
+	IsAdminChooseVehicle string            `gorm:"column:is_admin_choose_vehicle" json:"is_admin_choose_vehicle" example:"0"`
+	RequestVehicleTypeID int               `gorm:"column:requested_vehicle_type_id" json:"requested_vehicle_type_id" example:"1"`
+	RequestVehicleType   VmsRefVehicleType `gorm:"foreignKey:RequestVehicleTypeID;references:RefVehicleTypeCode" json:"request_vehicle_type"`
+
+	DriverEmpID           string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+	DriverEmpName         string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
+	DriverDeptSAP         string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"DPT001"`
+	DriverInternalContact string `gorm:"column:driver_internal_contact_number" json:"driver_internal_contact_number" example:"1234567890"`
+	DriverMobileContact   string `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
+	DriverImageURL        string `gorm:"-" json:"driver_image_url"`
+
+	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
+	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
+	VehicleDepartmentDeptSapShort string        `gorm:"column:vehicle_department_dept_sap_short" json:"mas_vehicle_department_dept_sap_short"`
+	VehicleDepartmentDeptSapFull  string        `gorm:"column:vehicle_department_dept_sap_full" json:"mas_vehicle_department_dept_sap_full"`
+	VmsMasVehicle                 VmsMasVehicle `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
+
+	ReceivedKeyPlace         string    `gorm:"column:received_key_place" json:"received_key_place"`
+	ReceivedKeyStartDatetime time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
+	ReceivedKeyEndDatetime   time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
+	RefVehicleKeyTypeCode    int       `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
+	ReceivedKeyDatetime      time.Time `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00Z"`
+
+	ReceiverKeyType               int                    `gorm:"column:receiver_key_type" json:"receiver_key_type" example:"3"`
+	ReceivedKeyEmpID              string                 `gorm:"column:received_key_emp_id" json:"received_key_emp_id" example:"1234567890"`
+	ReceivedKeyEmpName            string                 `gorm:"column:received_key_emp_name" json:"received_key_emp_name"`
+	ReceivedKeyDeptSAP            string                 `gorm:"column:received_key_dept_sap" json:"received_key_dept_sap"`
+	ReceivedKeyDeptSAPShort       string                 `gorm:"column:received_key_dept_sap_short" json:"received_key_dept_sap_short"`
+	ReceivedKeyDeptSAPFull        string                 `gorm:"column:received_key_dept_sap_full" json:"received_key_dept_sap_full"`
+	ReceivedKeyInternalContactNum string                 `gorm:"column:received_key_internal_contact_number" json:"received_key_internal_contact_number" example:"5551234"`
+	ReceivedKeyMobileContactNum   string                 `gorm:"column:received_key_mobile_contact_number" json:"received_key_mobile_contact_number" example:"0812345678"`
+	ReceivedKeyRemark             string                 `gorm:"column:received_key_remark" json:"received_key_remark" example:"Employee received the key"`
+	ReceivedKeyImageURL           string                 `gorm:"-" json:"received_key_image_url"`
+	VehicleImagesReceived         []VehicleImageReceived `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images_received"`
+	ReceivedVehicleEmpID          string                 `gorm:"column:received_vehicle_emp_id" json:"received_vehicle_emp_id"`
+	ReceivedVehicleEmpName        string                 `gorm:"column:received_vehicle_emp_name" json:"received_vehicle_emp_name"`
+	ReceivedVehicleDeptSAP        string                 `gorm:"column:received_vehicle_dept_sap" json:"received_vehicle_dept_sap"`
+	ReceivedVehicleDeptSAPShort   string                 `gorm:"column:received_vehicle_dept_sap_short" json:"received_vehicle_dept_sap_short"`
+	ReceivedVehicleDeptSAPFull    string                 `gorm:"column:received_vehicle_dept_sap_full" json:"received_vehicle_dept_sap_full"`
+
+	ReturnedVehicleDatetime     time.Time              `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
+	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
+	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
+	ReturnedCleanlinessLevel    int                    `gorm:"column:returned_cleanliness_level" json:"returned_cleanliness_level" example:"1"`
+	CommentOnReturnedVehicle    string                 `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
+	VehicleImagesReturned       []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images_returned"`
+	ReturnedVehicleEmpID        string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
+	ReturnedVehicleEmpName      string                 `gorm:"column:returned_vehicle_emp_name" json:"returned_vehicle_emp_name"`
+	ReturnedVehicleDeptSAP      string                 `gorm:"column:returned_vehicle_dept_sap" json:"returned_vehicle_dept_sap"`
+	ReturnedVehicleDeptSAPShort string                 `gorm:"column:returned_vehicle_dept_sap_short" json:"returned_vehicle_dept_sap_short"`
+	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"returned_vehicle_dept_sap_full"`
+
+	AcceptedVehicleDatetime     time.Time `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
+	AcceptedVehicleEmpID        string    `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
+	AcceptedVehicleEmpName      string    `gorm:"column:accepted_vehicle_emp_name" json:"accepted_vehicle_emp_name"`
+	AcceptedVehicleDeptSAP      string    `gorm:"column:accepted_vehicle_dept_sap" json:"accepted_vehicle_dept_sap"`
+	AcceptedVehicleDeptSAPShort string    `gorm:"column:accepted_vehicle_dept_sap_short" json:"accepted_vehicle_dept_sap_short"`
+	AcceptedVehicleDeptSAPFull  string    `gorm:"column:accepted_vehicle_dept_sap_full" json:"accepted_vehicle_dept_sap_full"`
+
+	CanCancelRequest        bool                    `gorm:"-" json:"can_cancel_request"`
+	RefRequestStatusCode    string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatus        VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
+	RefRequestStatusName    string                  `json:"ref_request_status_name"`
+	SendedBackRequestReason string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
+	CanceledRequestReason   string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	ProgressRequestStatus   []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+}
+
+func (VmsTrnRequestVehicleInUseResponse) TableName() string {
+	return "public.vms_trn_request"
+}
+
 // VmsTrnTripDetail_List
 type VmsTrnTripDetailList struct {
 	TrnTripDetailUID     string    `gorm:"column:trn_trip_detail_uid;primaryKey" json:"trn_trip_detail_uid" example:"123e4567-e89b-12d3-a456-426614174000"`
@@ -129,11 +240,11 @@ type VmsTrnReturnedVehicle struct {
 	CommentOnReturnedVehicle    string                 `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
 	VehicleImages               []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
 	ReturnedVehicleEmpID        string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
-	ReturnedVehicleEmpName      string                 `gorm:"column:returned_vehicle_emp_name" json:"returned_vehicle_emp_name"`
-	ReturnedVehicleDeptSAP      string                 `gorm:"column:returned_vehicle_dept_sap" json:"returned_vehicle_dept_sap"`
-	ReturnedVehicleDeptSAPShort string                 `gorm:"column:returned_vehicle_dept_sap_short" json:"returned_vehicle_dept_sap_short"`
-	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"returned_vehicle_dept_sap_full"`
-	RefRequestStatusCode        string                 `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	ReturnedVehicleEmpName      string                 `gorm:"column:returned_vehicle_emp_name" json:"-"`
+	ReturnedVehicleDeptSAP      string                 `gorm:"column:returned_vehicle_dept_sap" json:"-"`
+	ReturnedVehicleDeptSAPShort string                 `gorm:"column:returned_vehicle_dept_sap_short" json:"-"`
+	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"-"`
+	RefRequestStatusCode        string                 `gorm:"column:ref_request_status_code" json:"-"`
 	UpdatedAt                   time.Time              `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                   string                 `gorm:"column:updated_by" json:"-"`
 }

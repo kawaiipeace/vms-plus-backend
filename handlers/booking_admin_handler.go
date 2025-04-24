@@ -26,7 +26,7 @@ var MenuNameMapAdmin = map[string]string{
 	"70": "ตรวจสอบยานพาหนะ",
 	"71": "ตรวจสอบยานพาหนะ",
 	"80": "เสร็จสิ้น",
-	"90": "ยกเลิกคำขอ",
+	"90": "ยกเลิก",
 }
 
 var StatusNameMapAdmin = map[string]string{
@@ -49,7 +49,7 @@ func (h *BookingAdminHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
 	// funcs.GetAuthenUser(c, h.Role)
 
-	statusNameMap := MenuNameMapApprover
+	statusNameMap := MenuNameMapAdmin
 	var summary []models.VmsTrnRequestSummary
 
 	// Create a mapping to group status codes by their names
@@ -173,7 +173,9 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	query := config.DB.Table("public.vms_trn_request AS req").
 		Select(
 			`req.*, status.ref_request_status_desc, case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_name,
-			 case req.is_pea_employee_driver when '1' then req.driver_mas_dept_sap_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_dept_name
+			 case req.is_pea_employee_driver when '1' then req.driver_mas_dept_sap_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_dept_name,
+			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_dept_name,
+			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_carpool_name
 			`).
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
@@ -227,7 +229,7 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		return
 	}
 
-	query = query.Offset(offset).Limit(pageSizeInt)
+	query = query.Offset(offset).Limit(pageSizeInt).Debug()
 
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
@@ -241,6 +243,11 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		}
 		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
 			requests[i].Can_Choose_Vehicle = true
+		}
+		if requests[i].TripType == 1 {
+			requests[i].TripTypeName = "ไป-กลับ"
+		} else if requests[i].TripType == 2 {
+			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}
 
@@ -305,25 +312,25 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 // @Router /api/booking-admin/request/{trn_request_uid} [get]
 func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	request, err := funcs.GetRequest(c, StatusNameMapUser)
+	request, err := funcs.GetRequest(c, StatusNameMapAdmin)
 	if err != nil {
 		return
 	}
-	if request.RefRequestStatusCode == "20" {
+	if request.RefRequestStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "0", ProgressName: "รออนุมัติ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 		}
 	}
-	if request.RefRequestStatusCode == "21" {
+	if request.RefRequestStatusCode == "31" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 		}
 	}
-	if request.RefRequestStatusCode == "30" {
+	if request.RefRequestStatusCode == "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
@@ -520,7 +527,6 @@ func (h *BookingAdminHandler) UpdateVehicleUser(c *gin.Context) {
 	var request, trnRequest models.VmsTrnRequestVehicleUser
 	var result struct {
 		models.VmsTrnRequestVehicleUser
-		models.VmsTrnRequestRequestNo
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {

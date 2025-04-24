@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type VmsMasVehicle_List struct {
+type VmsMasVehicleList struct {
 	MasVehicleUID       string `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
 	VehicleLicensePlate string `gorm:"column:vehicle_license_plate;uniqueIndex" json:"vehicle_license_plate"`
 	VehicleBrandName    string `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
@@ -17,10 +17,10 @@ type VmsMasVehicle_List struct {
 	IsAdminChooseDriver bool   `json:"is_admin_choose_driver"`
 }
 
-func (VmsMasVehicle_List) TableName() string {
+func (VmsMasVehicleList) TableName() string {
 	return "vms_mas_vehicle"
 }
-func AssignVehicleImageFromIndex(vehicles []VmsMasVehicle_List) []VmsMasVehicle_List {
+func AssignVehicleImageFromIndex(vehicles []VmsMasVehicleList) []VmsMasVehicleList {
 	// List of random URLs
 	imageUrls := []string{
 		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",

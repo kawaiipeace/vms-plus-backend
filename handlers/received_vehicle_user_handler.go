@@ -174,7 +174,11 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-vehicle-user/request/{trn_request_uid} [get]
 func (h *ReceivedVehicleUserHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	funcs.GetRequest(c, StatusNameMapReceivedVehicleUser)
+	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedVehicleUser)
+	if err != nil {
+		return
+	}
+	c.JSON(http.StatusOK, request)
 }
 
 // ReceivedVehicle godoc

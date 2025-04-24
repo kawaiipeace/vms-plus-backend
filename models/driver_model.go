@@ -49,16 +49,6 @@ func (VmsMasDriverLicense) TableName() string {
 	return "vms_mas_driver_license"
 }
 
-type VmsRefDriverLicenseType struct {
-	RefDriverLicenseTypeCode string `gorm:"column:ref_driver_license_type_code;primaryKey;type:varchar(2)" json:"ref_driver_license_type_code"`
-	RefDriverLicenseTypeName string `gorm:"column:ref_driver_license_type_name;type:varchar(50)" json:"ref_driver_license_type_name"`
-	RefDriverLicenseTypeDesc string `gorm:"column:ref_driver_license_type_desc;type:varchar(350)" json:"ref_driver_license_type_desc"`
-}
-
-func (VmsRefDriverLicenseType) TableName() string {
-	return "vms_ref_driver_license_type"
-}
-
 type VmsDriverTripDetail struct {
 	TrnRequestUID string     `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"456e4567-e89b-12d3-a456-426614174001"`
 	RequestNo     string     `gorm:"column:request_no" json:"request_no"`

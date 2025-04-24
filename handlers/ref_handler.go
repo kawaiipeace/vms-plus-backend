@@ -151,3 +151,79 @@ func (h *RefHandler) ListPaymentTypeCode(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, lists)
 }
+
+// ListDriverOtherUse godoc
+// @Summary Retrieve all payment type codes
+// @Description This endpoint retrieves all payment type codes.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/driver-other-use [get]
+func (h *RefHandler) ListDriverOtherUse(c *gin.Context) {
+	var lists []models.VmsRefOtherUse
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListDriverLicenseType godoc
+// @Summary Retrieve all driver license types
+// @Description This endpoint retrieves all driver license types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/driver-license-type [get]
+func (h *RefHandler) ListDriverLicenseType(c *gin.Context) {
+	var lists []models.VmsRefDriverLicenseType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListCarpoolChooseCar godoc
+// @Summary Retrieve all carpool choose car options
+// @Description This endpoint retrieves all carpool choose car options.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/carpool-choose-car [get]
+func (h *RefHandler) ListCarpoolChooseCar(c *gin.Context) {
+	var lists []models.VmsRefCarpoolChooseCar
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListCarpoolChooseDriver godoc
+// @Summary Retrieve all carpool choose driver options
+// @Description This endpoint retrieves all carpool choose driver options.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/carpool-choose-driver [get]
+func (h *RefHandler) ListCarpoolChooseDriver(c *gin.Context) {
+	var lists []models.VmsRefCarpoolChooseDriver
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}

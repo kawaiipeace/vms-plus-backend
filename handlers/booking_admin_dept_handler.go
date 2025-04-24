@@ -30,7 +30,7 @@ func (h *BookingAdminDeptHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
 	// funcs.GetAuthenUser(c, h.Role)
 
-	statusNameMap := MenuNameMapApprover
+	statusNameMap := MenuNameMapAdmin
 	var summary []models.VmsTrnRequestSummary
 
 	// Create a mapping to group status codes by their names
@@ -139,7 +139,7 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
 	statusNameMap := StatusNameMapAdmin
 
-	var requests []models.VmsTrnRequestList
+	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -150,7 +150,12 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select(
+			`req.*, status.ref_request_status_desc, case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_name,
+			 case req.is_pea_employee_driver when '1' then req.driver_mas_dept_sap_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_dept_name,
+			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_dept_name,
+			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_carpool_name
+			`).
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -212,6 +217,17 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		if requests[i].IsAdminChooseDriver == 1 && requests[i].IsPEAEmployeeDriver == 0 && (requests[i].MasCarpoolDriverUID == "" || requests[i].MasCarpoolDriverUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Driver = true
+		}
+		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Vehicle = true
+		}
+		if requests[i].TripType == 1 {
+			requests[i].TripTypeName = "ไป-กลับ"
+		} else if requests[i].TripType == 2 {
+			requests[i].TripTypeName = "ค้างแรม"
+		}
 	}
 
 	// Build the summary query

@@ -198,7 +198,11 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-driver/request/{trn_request_uid} [get]
 func (h *ReceivedKeyDriverHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
-	funcs.GetRequest(c, StatusNameMapDriver)
+	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapDriver)
+	if err != nil {
+		return
+	}
+	c.JSON(http.StatusOK, request)
 }
 
 // UpdateRecieivedKeyDetail godoc

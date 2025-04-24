@@ -46,7 +46,7 @@ var StatusNameMapVehicelInUseAdmin = map[string]string{
 func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
 	statusNameMap := StatusNameMapVehicelInUseAdmin
-	var requests []models.VmsTrnRequestList
+	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -115,6 +115,17 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		if requests[i].IsAdminChooseDriver == 1 && requests[i].IsPEAEmployeeDriver == 0 && (requests[i].MasCarpoolDriverUID == "" || requests[i].MasCarpoolDriverUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Driver = true
+		}
+		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
+			requests[i].Can_Choose_Vehicle = true
+		}
+		if requests[i].TripType == 1 {
+			requests[i].TripTypeName = "ไป-กลับ"
+		} else if requests[i].TripType == 2 {
+			requests[i].TripTypeName = "ค้างแรม"
+		}
 	}
 
 	// Build the summary query

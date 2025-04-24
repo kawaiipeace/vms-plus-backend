@@ -619,5 +619,6 @@ func (h *LoginHandler) Logout(c *gin.Context) {
 // @Router /api/login/profile [get]
 func (h *LoginHandler) Profile(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, "")
+	user.LicenseStatus = "อนุมัติแล้ว"
 	c.JSON(http.StatusOK, user)
 }

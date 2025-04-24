@@ -24,6 +24,7 @@ type DriverHandler struct {
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param name query string false "Driver name to search"
+// @Param work_type query string false "work type to search (1: ค้างคืน, 2: ไป-กลับ)"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search [get]
@@ -44,6 +45,10 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
             driver_id LIKE ?`,
 			searchTerm, searchTerm)
 	}
+	if workType := c.Query("work_type"); workType != "" {
+		query = query.Where("work_type = ?", workType)
+	}
+
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -41,10 +41,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
 	offset := (page - 1) * limit                            // Calculate offset
 
-	var vehicles []models.VmsMasVehicle_List
+	var vehicles []models.VmsMasVehicleList
 	var total int64
 
-	query := config.DB.Model(&models.VmsMasVehicle_List{})
+	query := config.DB.Model(&models.VmsMasVehicleList{})
 	query = query.Where("is_deleted = '0'")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
