@@ -20,8 +20,9 @@ type LogRequest struct {
 	LogRemark     string        `gorm:"column:log_remark" json:"log_remark"`
 	CreatedAt     string        `gorm:"autoCreateTime" json:"created_at"`
 	CreatedBy     string        `gorm:"column:created_by" json:"created_by"`
-	CreatedByEmp  EmpUsr        `gorm:"foreignKey:CreatedBy;references:EmpNo" json:"created_by_emp"`
+	CreatedByEmp  EmpUsr        `gorm:"foreignKey:CreatedBy;references:EmpID" json:"created_by_emp"`
 	Status        RequestStatus `gorm:"foreignKey:RefStatusCode;references:RefRequestStatusCode" json:"status"`
+	RoleOfCreater string        `gorm:"-" json:"role_of_creater"`
 }
 
 func (LogRequest) TableName() string {
@@ -29,13 +30,13 @@ func (LogRequest) TableName() string {
 }
 
 type EmpUsr struct {
-	EmpNo   string `gorm:"primaryKey;column:emp_no" json:"emp_no"`
-	EmpName string `gorm:"column:emp_name" json:"emp_name"`
+	EmpID   string `gorm:"primaryKey;column:emp_id" json:"emp_id"`
+	EmpName string `gorm:"column:full_name" json:"emp_name"`
 	DeptSAP string `gorm:"column:dept_sap" json:"dept_sap"`
 }
 
 func (EmpUsr) TableName() string {
-	return "vms_user.mas_emp"
+	return "vms_user.mas_employee"
 }
 
 type RequestStatus struct {

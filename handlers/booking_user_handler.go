@@ -3,7 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -17,6 +19,38 @@ type BookingUserHandler struct {
 	Role string
 }
 
+var MenuNameMapUser = map[string]string{
+	"20": "กำลังดำเนินการ",
+	"21": "กำลังดำเนินการ",
+	"30": "กำลังดำเนินการ",
+	"31": "กำลังดำเนินการ",
+	"40": "กำลังดำเนินการ",
+	"41": "กำลังดำเนินการ",
+	"50": "กำลังดำเนินการ",
+	"51": "กำลังดำเนินการ",
+	"60": "กำลังดำเนินการ",
+	"70": "กำลังดำเนินการ",
+	"71": "กำลังดำเนินการ",
+	"80": "เสร็จสิ้น",
+	"90": "ยกเลิกคำขอ",
+}
+
+var StatusNameMapUser = map[string]string{
+	"20": "รออนุมัติ",
+	"21": "ถูกตีกลับ",
+	"30": "รออนุมัติ",
+	"31": "ถูกตีกลับ",
+	"40": "รออนุมัติ",
+	"41": "ถูกตีกลับ",
+	"50": "รอรับกุญแจ",
+	"51": "รอรับยานพาหนะ",
+	"60": "เดินทาง",
+	"70": "รอตรวจสอบ",
+	"71": "คืนยานพาหนะไม่สำเร็จ",
+	"80": "เสร็จสิ้น",
+	"90": "ยกเลิกคำขอ",
+}
+
 // CreateRequest godoc
 // @Summary Create a new booking request
 // @Description This endpoint allows a booking user to create a new request.
@@ -25,13 +59,13 @@ type BookingUserHandler struct {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Request true "VmsTrnRequest_Request data"
+// @Param data body models.VmsTrnRequestRequest true "VmsTrnRequestRequest data"
 // @Router /api/booking-user/create-request [post]
 func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var req models.VmsTrnRequest_Request
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var request models.VmsTrnRequestRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
 		return
 	}
@@ -41,14 +75,16 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 			CreatedAt: time.Now(),
 			CreatedBy: user.EmpID,
 		}
-	vms_trn_req := models.VmsTrnRequest_Create{
+
+	empUser := funcs.GetUserEmpInfo(user.EmpID)
+	vms_trn_req := models.VmsTrnRequestCreate{
 		TrnRequestUID:              uuid.New().String(),
-		VmsTrnRequest_Request:      req,
-		CreatedRequestEmpID:        user.EmpID,
-		CreatedRequestEmpName:      user.FullName(),
-		CreatedRequestDeptSAP:      user.DeptSAP,
-		CreatedRequestDeptSAPShort: user.DeptSAPShort,
-		CreatedRequestDeptSAPFull:  user.DeptSAPFull,
+		VmsTrnRequestRequest:       request,
+		CreatedRequestEmpID:        empUser.EmpID,
+		CreatedRequestEmpName:      empUser.FullName,
+		CreatedRequestDeptSAP:      empUser.DeptSAP,
+		CreatedRequestDeptSAPShort: empUser.DeptSAPShort,
+		CreatedRequestDeptSAPFull:  empUser.DeptSAPFull,
 		LogCreate:                  logCreate,
 	}
 	vms_trn_req.IsAdminChooseDriver = "0"
@@ -83,24 +119,110 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 
 	funcs.CreateTrnLog(vms_trn_req.TrnRequestUID,
 		vms_trn_req.RefRequestStatusCode,
-		"Create new request",
+		"สร้างคำขอแล้ว รอผู้มีอำนาจยืนยันคำขอ",
 		user.EmpID)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Request created successfully", "data": vms_trn_req})
 }
 
-// ListRequest godoc
-// @Summary Get a list of booking requests
-// @Description This endpoint retrieves a list of booking requests for the authenticated user.
+// MenuRequests godoc
+// @Summary Summary booking requests by request status code
+// @Description Summary booking requests, counts grouped by request status code
 // @Tags Booking-user
-// @Accept json
-// @Produce json
+// @Accept  json
+// @Produce  json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Router /api/booking-user/requests [get]
-func (h *BookingUserHandler) ListRequest(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
-	funcs.ListRequest(c)
+// @Router /api/booking-user/menu-requests [get]
+func (h *BookingUserHandler) MenuRequests(c *gin.Context) {
+	// Get authenticated user role if needed
+	// funcs.GetAuthenUser(c, h.Role)
+
+	statusNameMap := MenuNameMapUser
+	var summary []models.VmsTrnRequestSummary
+
+	// Create a mapping to group status codes by their names
+	groupedStatusCodes := make(map[string][]string)
+	for code, name := range statusNameMap {
+		groupedStatusCodes[name] = append(groupedStatusCodes[name], code)
+	}
+
+	// Initialize a map to store counts and minimum code grouped by status name
+	groupedCounts := make(map[string]struct {
+		Count   int
+		MinCode string
+	})
+
+	// Build the query for all status codes
+	allStatusCodes := make([]string, 0, len(statusNameMap))
+	for code := range statusNameMap {
+		allStatusCodes = append(allStatusCodes, code)
+	}
+
+	// Execute the query for all status codes
+	dbSummary := []struct {
+		RefRequestStatusCode string `gorm:"column:ref_request_status_code"`
+		Count                int    `gorm:"column:count"`
+	}{}
+	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+		Select("req.ref_request_status_code, COUNT(*) as count").
+		Where("req.ref_request_status_code IN (?)", allStatusCodes).
+		Group("req.ref_request_status_code")
+
+	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Aggregate counts and find the minimum `RefRequestStatusCode` for each `RefRequestStatusName`
+	for _, dbItem := range dbSummary {
+		for name, codes := range groupedStatusCodes {
+			for _, code := range codes {
+				if dbItem.RefRequestStatusCode == code {
+					if groupedCounts[name].Count == 0 || code < groupedCounts[name].MinCode {
+						groupedCounts[name] = struct {
+							Count   int
+							MinCode string
+						}{
+							Count:   groupedCounts[name].Count + dbItem.Count,
+							MinCode: code,
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// Ensure every status name is included, even with Count = 0
+	for name, codes := range groupedStatusCodes {
+		if _, exists := groupedCounts[name]; !exists {
+			groupedCounts[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   0,
+				MinCode: codes[0], // Use the first code as default for MinCode
+			}
+		}
+	}
+
+	// Build the summary grouped by status name with minimum code
+	for name, data := range groupedCounts {
+		summary = append(summary, models.VmsTrnRequestSummary{
+			RefRequestStatusName: name,
+			RefRequestStatusCode: data.MinCode,
+			Count:                data.Count,
+		})
+	}
+
+	// Sort the summary by RefRequestStatusCode
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
+	})
+
+	// Respond with the grouped summary
+	c.JSON(http.StatusOK, summary)
 }
 
 // SearchRequests godoc
@@ -119,17 +241,14 @@ func (h *BookingUserHandler) ListRequest(c *gin.Context) {
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
+// @Param limit2 query int false "Number2 of records per page (default: 20)"
 // @Router /api/booking-user/search-requests [get]
 func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	// funcs.GetAuthenUser(c, h.Role)
-	statusNameMap := map[string]string{
-		"20": "รออนุมัติ",
-		"21": "ถูกตีกลับ",
-		"90": "ยกเลิกคำขอ",
-	}
+	statusNameMap := StatusNameMapUser
 
-	var requests []models.VmsTrnRequest_List
-	var summary []models.VmsTrnRequest_Summary
+	var requests []models.VmsTrnRequestList
+	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
 	statusCodes := make([]string, 0, len(statusNameMap))
@@ -153,7 +272,27 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("enddate"); endDate != "" {
 		query = query.Where("req.start_datetime <= ?", endDate)
 	}
-
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := StatusNameMapUser[code]; exists {
+				for key, value := range StatusNameMapUser {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		fmt.Println("codes", codes)
+		query = query.Where("req.ref_request_status_code IN (?)", codes)
+	}
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -216,20 +355,45 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Create a complete summary with all statuses from statusNameMap
-	for code, name := range statusNameMap {
-		count := 0
-		for _, dbItem := range dbSummary {
-			if dbItem.RefRequestStatusCode == code {
-				count = dbItem.Count
-				break
+	groupedSummary := make(map[string]struct {
+		Count   int
+		MinCode string
+	})
+
+	// Aggregate counts and find the minimum RefRequestStatusCode for each RefRequestStatusName
+	for _, dbItem := range dbSummary {
+		name := statusNameMap[dbItem.RefRequestStatusCode]
+		if data, exists := groupedSummary[name]; exists {
+			groupedSummary[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   data.Count + dbItem.Count,
+				MinCode: min(data.MinCode, dbItem.RefRequestStatusCode),
+			}
+		} else {
+			groupedSummary[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   dbItem.Count,
+				MinCode: dbItem.RefRequestStatusCode,
 			}
 		}
-		summary = append(summary, models.VmsTrnRequest_Summary{
-			RefRequestStatusCode: code,
+	}
+
+	// Build the summary from the grouped data
+	for name, data := range groupedSummary {
+		summary = append(summary, models.VmsTrnRequestSummary{
 			RefRequestStatusName: name,
-			Count:                count,
+			RefRequestStatusCode: data.MinCode,
+			Count:                data.Count,
 		})
 	}
+	// Sort the summary by RefRequestStatusCode
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
+	})
 
 	// Return both the filtered requests and the complete summary
 	c.JSON(http.StatusOK, gin.H{
@@ -252,11 +416,44 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "TrnRequestUID (trn_request_uid)"
-// @Router /api/booking-user/request/{id} [get]
+// @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
+// @Router /api/booking-user/request/{trn_request_uid} [get]
 func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
-	funcs.GetRequest(c)
+	request, err := funcs.GetRequest(c, StatusNameMapUser)
+	if err != nil {
+		return
+	}
+	if request.RefRequestStatusCode == "20" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "0", ProgressName: "รออนุมัติ"},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+		}
+	}
+	if request.RefRequestStatusCode == "21" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+		}
+	}
+	if request.RefRequestStatusCode == "30" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+		}
+	}
+	if request.RefRequestStatusCode == "90" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "2", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+			{ProgressIcon: "1", ProgressName: "คำขอใช้ถูกยกเลิกจากผู้ใช้ยานพาหนะ"},
+			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+		}
+	}
+	c.JSON(http.StatusOK, request)
 }
 
 // UpdateVehicleUser godoc
@@ -267,44 +464,46 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_VehicleUser true "VmsTrnRequest_Update_VehicleUser data"
+// @Param data body models.VmsTrnRequestVehicleUser true "VmsTrnRequestVehicleUser data"
 // @Router /api/booking-user/update-vehicle-user [put]
 func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var request models.VmsTrnRequest_Update_VehicleUser
+	var request, trnRequest models.VmsTrnRequestVehicleUser
+	var result struct {
+		models.VmsTrnRequestVehicleUser
+		models.VmsTrnRequestRequestNo
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var existing models.VmsTrnRequest_Update_VehicleUser
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_VehicleUser
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_VehicleUser: request,
-			LogUpdate:                        logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+
+	empUser := funcs.GetUserEmpInfo(request.VehicleUserEmpID)
+	request.VehicleUserEmpName = empUser.FullName
+	request.VehicleUserDeptSAP = empUser.DeptSAP
+	request.VehicleUserDeptSAPNameShort = empUser.DeptSAPShort
+	request.VehicleUserDeptSAPNameFull = empUser.DeptSAPFull
+
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -316,42 +515,34 @@ func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_Trip true "VmsTrnRequest_Update_Trip data"
+// @Param data body models.VmsTrnRequestTrip true "VmsTrnRequestTrip data"
 // @Router /api/booking-user/update-trip [put]
 func (h *BookingUserHandler) UpdateTrip(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var request models.VmsTrnRequest_Update_Trip
+	var request, trnRequest models.VmsTrnRequestTrip
+	var result struct {
+		models.VmsTrnRequestTrip
+		models.VmsTrnRequestRequestNo
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Update_Trip
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
 
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_Trip
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_Trip: request,
-			LogUpdate:                 logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -367,35 +558,32 @@ func (h *BookingUserHandler) UpdateTrip(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_Pickup true "VmsTrnRequest_Update_Pickup data"
+// @Param data body models.VmsTrnRequestPickup true "VmsTrnRequestPickup data"
 // @Router /api/booking-user/update-pickup [put]
 func (h *BookingUserHandler) UpdatePickup(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request models.VmsTrnRequest_Update_Pickup
-
+	var request, trnRequest models.VmsTrnRequestPickup
+	var result struct {
+		models.VmsTrnRequestPickup
+		models.VmsTrnRequestRequestNo
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_Pickup
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.FullName(),
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_Pickup: request,
-			LogUpdate:                   logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	var result Data_Update
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -411,41 +599,32 @@ func (h *BookingUserHandler) UpdatePickup(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_Document true "VmsTrnRequest_Update_Document data"
+// @Param data body models.VmsTrnRequestDocument true "VmsTrnRequestDocument data"
 // @Router /api/booking-user/update-document [put]
 func (h *BookingUserHandler) UpdateDocument(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request models.VmsTrnRequest_Update_Document
-
+	var request, trnRequest models.VmsTrnRequestDocument
+	var result struct {
+		models.VmsTrnRequestDocument
+		models.VmsTrnRequestRequestNo
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Update_Document
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
 
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_Document
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_Document: request,
-			LogUpdate:                     logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -461,41 +640,33 @@ func (h *BookingUserHandler) UpdateDocument(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_Document true "VmsTrnRequest_Update_Document data"
+// @Param data body models.VmsTrnRequestCost true "VmsTrnRequestCost data"
 // @Router /api/booking-user/update-cost [put]
 func (h *BookingUserHandler) UpdateCost(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request models.VmsTrnRequest_Update_Cost
+	var request, trnRequest models.VmsTrnRequestCost
+	var result struct {
+		models.VmsTrnRequestCost
+		models.VmsTrnRequestRequestNo
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Update_Cost
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
 
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_Cost
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_Cost: request,
-			LogUpdate:                 logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -511,41 +682,33 @@ func (h *BookingUserHandler) UpdateCost(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_VehicleType true "VmsTrnRequest_Update_VehicleType data"
+// @Param data body models.VmsTrnRequestVehicleType true "VmsTrnRequestVehicleType data"
 // @Router /api/booking-user/update-vehicle-type [put]
 func (h *BookingUserHandler) UpdateVehicleType(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 
-	var request models.VmsTrnRequest_Update_VehicleType
-
+	var request, trnRequest models.VmsTrnRequestVehicleType
+	var result struct {
+		models.VmsTrnRequestVehicleType
+		models.VmsTrnRequestRequestNo
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Update_VehicleType
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_VehicleType
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_VehicleType: request,
-			LogUpdate:                        logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -561,42 +724,39 @@ func (h *BookingUserHandler) UpdateVehicleType(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Update_Approver true "VmsTrnRequest_Update_Approver data"
+// @Param data body models.VmsTrnRequestApprover true "VmsTrnRequestApprover data"
 // @Router /api/booking-user/update-approver [put]
 func (h *BookingUserHandler) UpdateApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-
-	var request models.VmsTrnRequest_Update_Approver
-
+	var request, trnRequest models.VmsTrnRequestApprover
+	var result struct {
+		models.VmsTrnRequestApprover
+		models.VmsTrnRequestRequestNo
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Update_Approver
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	empUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
+	request.ApprovedRequestEmpID = empUser.EmpID
+	request.ApprovedRequestEmpName = empUser.FullName
+	request.ApprovedRequestDeptSAP = empUser.DeptSAP
+	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
+	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
 
-	type Data_Update struct {
-		models.VmsTrnRequest_Update_Approver
-		models.LogUpdate
-	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&Data_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(Data_Update{
-			VmsTrnRequest_Update_Approver: request,
-			LogUpdate:                     logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result Data_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -612,44 +772,41 @@ func (h *BookingUserHandler) UpdateApprover(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_SendedBack true "VmsTrnRequest_SendedBack data"
+// @Param data body models.VmsTrnRequestSendedBack true "VmsTrnRequestSendedBack data"
 // @Router /api/booking-user/update-sended-back [put]
 func (h *BookingUserHandler) UpdateSendedBack(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request models.VmsTrnRequest_SendedBack
+	var request, trnRequest models.VmsTrnRequestSendedBack
+	var result struct {
+		models.VmsTrnRequestSendedBack
+		models.VmsTrnRequestRequestNo
+	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_SendedBack
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	request.RefRequestStatusCode = "20"
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
 
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
+	empUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.SendedBackRequestEmpID = empUser.EmpID
+	request.SendedBackRequestEmpName = empUser.FullName
+	request.SendedBackRequestDeptSAP = empUser.DeptSAP
+	request.SendedBackRequestDeptSAPShort = empUser.DeptSAPShort
+	request.SendedBackRequestDeptSAPFull = empUser.DeptSAPFull
 
-	if err := config.DB.Model(&models.VmsTrnRequest_SendedBack_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(models.VmsTrnRequest_SendedBack_Update{
-			VmsTrnRequest_SendedBack:      request,
-			RefRequestStatusCode:          "20", //
-			SendedBackRequestEmpID:        user.EmpID,
-			SendedBackRequestEmpName:      user.FullName(),
-			SendedBackRequestDeptSAP:      user.DeptSAP,
-			SendedBackRequestDeptSAPShort: user.DeptSAPShort,
-			SendedBackRequestDeptSAPFull:  user.DeptSAPFull,
-			LogUpdate:                     logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result models.VmsTrnRequest_SendedBack_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
@@ -658,6 +815,7 @@ func (h *BookingUserHandler) UpdateSendedBack(c *gin.Context) {
 		result.RefRequestStatusCode,
 		result.SendedBackRequestReason,
 		user.EmpID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -669,49 +827,49 @@ func (h *BookingUserHandler) UpdateSendedBack(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequest_Canceled true "VmsTrnRequest_Canceled data"
+// @Param data body models.VmsTrnRequestCanceled true "VmsTrnRequestCanceled data"
 // @Router /api/booking-user/update-canceled [put]
 func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, h.Role)
-	var request models.VmsTrnRequest_Canceled
 
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnRequestCanceled
+	var result struct {
+		models.VmsTrnRequestCanceled
+		models.VmsTrnRequestRequestNo
+	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.VmsTrnRequest_Canceled
-	if err := config.DB.First(&existing, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	logUpdate := models.LogUpdate{
-		UpdatedAt: time.Now(),
-		UpdatedBy: user.EmpID,
-	}
-	if err := config.DB.Model(&models.VmsTrnRequest_Canceled_Update{}).
-		Where("trn_request_uid = ?", request.TrnRequestUID).
-		Updates(models.VmsTrnRequest_Canceled_Update{
-			VmsTrnRequest_Canceled:      request,
-			RefRequestStatusCode:        "90", // ยกเลิกคำขอ
-			CanceledRequestEmpID:        user.EmpID,
-			CanceledRequestEmpName:      user.FullName(),
-			CanceledRequestDeptSAP:      user.DeptSAP,
-			CanceledRequestDeptSAPShort: user.DeptSAPShort,
-			CanceledRequestDeptSAPFull:  user.DeptSAPFull,
-			LogUpdate:                   logUpdate,
-		}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+	request.RefRequestStatusCode = "90"
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	empUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.CanceledRequestEmpID = empUser.EmpID
+	request.CanceledRequestEmpName = empUser.FullName
+	request.CanceledRequestDeptSAP = empUser.DeptSAP
+	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
+	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-	var result models.VmsTrnRequest_SendedBack_Update
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 	funcs.CreateTrnLog(result.TrnRequestUID,
 		result.RefRequestStatusCode,
-		result.SendedBackRequestReason,
+		result.CanceledRequestReason,
 		user.EmpID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

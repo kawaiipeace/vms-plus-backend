@@ -41,10 +41,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
 	offset := (page - 1) * limit                            // Calculate offset
 
-	var vehicles []models.VmsMasVehicle_List
+	var vehicles []models.VmsMasVehicleList
 	var total int64
 
-	query := config.DB.Model(&models.VmsMasVehicle_List{})
+	query := config.DB.Model(&models.VmsMasVehicleList{})
 	query = query.Where("is_deleted = '0'")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
@@ -71,10 +71,11 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	// Respond with JSON
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
-			"total":      total,
-			"page":       page,
-			"limit":      limit,
-			"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+			"total":       total,
+			"totalGroups": 2,
+			"page":        page,
+			"limit":       limit,
+			"totalPages":  (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 		},
 		"vehicles": vehicles,
 	})
@@ -88,10 +89,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "Vehicle ID (mas_vehicle_uid)"
-// @Router /api/vehicle/{id} [get]
+// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
+// @Router /api/vehicle/{mas_vehicle_uid} [get]
 func (h *VehicleHandler) GetVehicle(c *gin.Context) {
-	vehicleID := c.Param("id")
+	vehicleID := c.Param("mas_vehicle_uid")
 
 	// Parse the string ID to uuid.UUID
 	parsedID, err := uuid.Parse(vehicleID)
@@ -205,8 +206,8 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "MasVehicleUID (mas_vehicle_uid)"
-// @Router /api/vehicle-info/{id} [get]
+// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
+// @Router /api/vehicle-info/{mas_vehicle_uid} [get]
 func (h *VehicleHandler) GetVehicleInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"number_of_available_drivers": 2})
 }

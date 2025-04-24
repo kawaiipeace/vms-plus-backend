@@ -12,6 +12,23 @@ import (
 type LogHandler struct {
 }
 
+func GetRoleOfCreater(refRequestStatusCode string) string {
+	switch refRequestStatusCode {
+	case "20":
+		return "ผู้สร้างคำขอ"
+	case "21":
+	case "30":
+		return "ผู้อนุมัติต้นสังกัด"
+	case "40":
+		return "ผู้ดูแลยานพาหนะ"
+	case "90":
+		return "ผู้สร้างคำขอ"
+	default:
+		return ""
+	}
+	return ""
+}
+
 // GetLogRequest godoc
 // @Summary Get log requests by trnRequestUID
 // @Tags Log
@@ -19,13 +36,13 @@ type LogHandler struct {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "Transaction Request UID"
+// @Param trn_request_uid path string true "trn_request_uid"
 // @Param page query int false "Page number"
 // @Param limit query int false "Limit per page"
-// @Router /api/log/request/{id} [get]
+// @Router /api/log/request/{trn_request_uid} [get]
 func (h *LogHandler) GetLogRequest(c *gin.Context) {
 	var logRequests []models.LogRequest
-	trnRequestUID := c.Param("id")
+	trnRequestUID := c.Param("trn_request_uid")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
@@ -42,6 +59,10 @@ func (h *LogHandler) GetLogRequest(c *gin.Context) {
 		Find(&logRequests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	for i := range logRequests {
+		logRequests[i].RoleOfCreater = GetRoleOfCreater(logRequests[i].Status.RefRequestStatusCode)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
