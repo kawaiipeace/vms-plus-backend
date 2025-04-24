@@ -49,7 +49,7 @@ func (VmsTrnSatisfactionSurveyAnswersResponse) TableName() string {
 type VmsTrnRequestAccepted struct {
 	TrnRequestUID               string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
 	AcceptedVehicleDatetime     time.Time `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
-	AcceptedVehicleEmpID        string    `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
+	AcceptedVehicleEmpID        string    `gorm:"column:accepted_vehicle_emp_id" json:"-"`
 	AcceptedVehicleEmpName      string    `gorm:"column:accepted_vehicle_emp_name" json:"-"`
 	AcceptedVehicleDeptSAP      string    `gorm:"column:accepted_vehicle_dept_sap" json:"-"`
 	AcceptedVehicleDeptSAPShort string    `gorm:"column:accepted_vehicle_dept_sap_short" json:"-"`

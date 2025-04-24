@@ -353,7 +353,7 @@ func (VmsTrnRequestApprovedWithRecieiveKey) TableName() string {
 type VmsTrnRequestCanceled struct {
 	TrnRequestUID               string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
 	CanceledRequestReason       string    `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	CanceledRequestEmpID        string    `gorm:"column:canceled_request_emp_id" json:"canceled_request_emp_id"`
+	CanceledRequestEmpID        string    `gorm:"column:canceled_request_emp_id" json:"-"`
 	CanceledRequestEmpName      string    `gorm:"column:canceled_request_emp_name" json:"-"`
 	CanceledRequestDeptSAP      string    `gorm:"column:canceled_request_dept_sap" json:"-"`
 	CanceledRequestDeptSAPShort string    `gorm:"column:canceled_request_dept_sap_short" json:"-"`
