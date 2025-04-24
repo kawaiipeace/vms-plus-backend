@@ -556,8 +556,6 @@ definitions:
     type: object
   models.VmsTrnReceivedKeyDriver:
     properties:
-      ref_request_status_code:
-        type: string
       trn_request_uid:
         example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
         type: string
@@ -650,8 +648,6 @@ definitions:
       accepted_vehicle_datetime:
         example: "2025-04-16T14:30:00Z"
         type: string
-      accepted_vehicle_emp_id:
-        type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
         type: string
@@ -687,8 +683,6 @@ definitions:
     type: object
   models.VmsTrnRequestCanceled:
     properties:
-      canceled_request_emp_id:
-        type: string
       canceled_request_reason:
         example: Test Cancel
         type: string
@@ -902,6 +896,18 @@ definitions:
       received_key_start_datetime:
         example: "2025-02-16T08:00:00Z"
         type: string
+      trn_request_uid:
+        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        type: string
+    type: object
+  models.VmsTrnRequestUpdateRecieivedKeyConfirmed:
+    properties:
+      received_key_datetime:
+        example: "2025-02-16T08:00:00Z"
+        type: string
+      ref_vehicle_key_type_code:
+        example: 1
+        type: integer
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
         type: string
@@ -4143,8 +4149,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: This endpoint allows to update received key details for a booking
-        request.
+      description: This endpoint allows confirming the update of the key pickup driver
+        for a specific booking request.
       parameters:
       - description: VmsTrnRequestUpdateRecieivedKeyDetail data
         in: body
@@ -4158,7 +4164,7 @@ paths:
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update received key details for a booking request
+      summary: Confirm the update of key pickup driver for a booking request
       tags:
       - Received-key-admin
   /api/received-key-driver/request/{trn_request_uid}:
@@ -4240,26 +4246,26 @@ paths:
       summary: Search booking requests and get summary counts by request status code
       tags:
       - Received-key-driver
-  /api/received-key-driver/update-recieived-key-detail:
+  /api/received-key-driver/update-recieived-key-confirmed:
     put:
       consumes:
       - application/json
-      description: This endpoint allows to update received key details for a booking
-        request.
+      description: This endpoint allows confirming the update of the key pickup driver
+        for a specific booking request.
       parameters:
-      - description: VmsTrnRequestUpdateRecieivedKeyDetail data
+      - description: VmsTrnRequestUpdateRecieivedKeyConfirmed data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestUpdateRecieivedKeyDetail'
+          $ref: '#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed'
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update received key details for a booking request
+      summary: Confirm the update of key pickup driver for a booking request
       tags:
       - Received-key-driver
   /api/received-key-user/request/{trn_request_uid}:
@@ -4417,6 +4423,28 @@ paths:
       summary: Update key pickup emp user for a booking request
       tags:
       - Received-key-user
+  /api/received-key-user/update-recieived-key-confirmed:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows confirming the update of the key pickup driver
+        for a specific booking request.
+      parameters:
+      - description: VmsTrnRequestUpdateRecieivedKeyConfirmed data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Confirm the update of key pickup driver for a booking request
+      tags:
+      - Received-key-admin
   /api/received-vehicle-admin/received-vehicle:
     put:
       consumes:
@@ -4928,6 +4956,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve all vehicle image sides
+      tags:
+      - REF
+  /api/ref/vehicle-key-type:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all vehicle key types.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all vehicle key types
       tags:
       - REF
   /api/upload:

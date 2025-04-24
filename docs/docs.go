@@ -4915,7 +4915,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows to update received key details for a booking request.",
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4925,7 +4925,7 @@ const docTemplate = `{
                 "tags": [
                     "Received-key-admin"
                 ],
-                "summary": "Update received key details for a booking request",
+                "summary": "Confirm the update of key pickup driver for a booking request",
                 "parameters": [
                     {
                         "description": "VmsTrnRequestUpdateRecieivedKeyDetail data",
@@ -5059,7 +5059,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/received-key-driver/update-recieived-key-detail": {
+        "/api/received-key-driver/update-recieived-key-confirmed": {
             "put": {
                 "security": [
                     {
@@ -5069,7 +5069,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows to update received key details for a booking request.",
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5079,15 +5079,15 @@ const docTemplate = `{
                 "tags": [
                     "Received-key-driver"
                 ],
-                "summary": "Update received key details for a booking request",
+                "summary": "Confirm the update of key pickup driver for a booking request",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestUpdateRecieivedKeyDetail data",
+                        "description": "VmsTrnRequestUpdateRecieivedKeyConfirmed data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyDetail"
+                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed"
                         }
                     }
                 ],
@@ -5335,6 +5335,41 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnReceivedKeyPEA"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key-user/update-recieived-key-confirmed": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key-admin"
+                ],
+                "summary": "Confirm the update of key pickup driver for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestUpdateRecieivedKeyConfirmed data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed"
                         }
                     }
                 ],
@@ -6154,6 +6189,30 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve all vehicle image sides",
+                "responses": {}
+            }
+        },
+        "/api/ref/vehicle-key-type": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all vehicle key types.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all vehicle key types",
                 "responses": {}
             }
         },
@@ -9730,9 +9789,6 @@ const docTemplate = `{
         "models.VmsTrnReceivedKeyDriver": {
             "type": "object",
             "properties": {
-                "ref_request_status_code": {
-                    "type": "string"
-                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "3045a994-ba0b-431d-acf2-98768a9c5fc9"
@@ -9863,9 +9919,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-04-16T14:30:00Z"
                 },
-                "accepted_vehicle_emp_id": {
-                    "type": "string"
-                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
@@ -9917,9 +9970,6 @@ const docTemplate = `{
         "models.VmsTrnRequestCanceled": {
             "type": "object",
             "properties": {
-                "canceled_request_emp_id": {
-                    "type": "string"
-                },
                 "canceled_request_reason": {
                     "type": "string",
                     "example": "Test Cancel"
@@ -10210,6 +10260,23 @@ const docTemplate = `{
                 "received_key_start_datetime": {
                     "type": "string",
                     "example": "2025-02-16T08:00:00Z"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                }
+            }
+        },
+        "models.VmsTrnRequestUpdateRecieivedKeyConfirmed": {
+            "type": "object",
+            "properties": {
+                "received_key_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
+                },
+                "ref_vehicle_key_type_code": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "trn_request_uid": {
                     "type": "string",

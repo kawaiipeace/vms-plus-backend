@@ -105,3 +105,13 @@ type VmsRefCarpoolChooseDriver struct {
 func (VmsRefCarpoolChooseDriver) TableName() string {
 	return "vms_ref_carpool_choose_driver"
 }
+
+// RefVehicleKeyType
+type VmsRefVehicleKeyType struct {
+	RefVehicleKeyTypeCode string `gorm:"column:ref_vehicle_key_type_code;primaryKey" json:"ref_vehicle_key_type_code"`
+	RefVehicleKeyTypeName string `gorm:"column:ref_vehicle_key_type_name" json:"ref_vehicle_key_type_name"`
+}
+
+func (VmsRefVehicleKeyType) TableName() string {
+	return "vms_ref_vehicle_key_type"
+}

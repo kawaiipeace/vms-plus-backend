@@ -128,6 +128,7 @@ func main() {
 	router.PUT("/api/received-key-user/update-key-pickup-outsider", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupOutSider)
 	router.PUT("/api/received-key-user/update-key-pickup-driver", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupDriver)
 	router.PUT("/api/received-key-user/update-canceled", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateCanceled)
+	router.PUT("/api/received-key-user/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateRecieivedKeyConfirmed)
 
 	//ReceivedKeyAdminHandler
 	receivedKeyAdminHandler := handlers.ReceivedKeyAdminHandler{}
@@ -144,7 +145,7 @@ func main() {
 	receivedKeyDriverHandler := handlers.ReceivedKeyDriverHandler{}
 	router.GET("/api/received-key-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.SearchRequests)
 	router.GET("/api/received-key-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.GetRequest)
-	router.PUT("/api/received-key-driver/update-recieived-key-detail", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.UpdateRecieivedKeyDetail)
+	router.PUT("/api/received-key-driver/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.UpdateRecieivedKeyConfirmed)
 
 	//ReceivedVehicleUserHandler
 	receivedVehicleUserHandler := handlers.ReceivedVehicleUserHandler{}
@@ -351,6 +352,7 @@ func main() {
 	router.GET("/api/ref/driver-license-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverLicenseType)
 	router.GET("/api/ref/carpool-choose-driver", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseDriver)
 	router.GET("/api/ref/carpool-choose-car", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseCar)
+	router.GET("/api/ref/vehicle-key-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleKeyType)
 
 	//LogHandler
 	logHandler := handlers.LogHandler{}

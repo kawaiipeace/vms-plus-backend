@@ -238,8 +238,8 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 }
 
 // UpdateRecieivedKeyDetail godoc
-// @Summary Update received key details for a booking request
-// @Description This endpoint allows to update received key details for a booking request.
+// @Summary Confirm the update of key pickup driver for a booking request
+// @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
 // @Tags Received-key-admin
 // @Accept json
 // @Produce json
@@ -249,7 +249,7 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 // @Router /api/received-key-admin/update-recieived-key-detail [put]
 func (h *ReceivedKeyAdminHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyDetail
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKeyDetail
 		models.VmsTrnRequestRequestNo
