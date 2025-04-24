@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/models"
@@ -40,11 +41,9 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		return
 	}
 
-	defaultURL := "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
-
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].Image_url = defaultURL
+		lists[i].ImageURL = config.DefaultAvatarURL
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -78,11 +77,9 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 		return
 	}
 
-	defaultURL := "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
-
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].Image_url = defaultURL
+		lists[i].ImageURL = config.DefaultAvatarURL
 		lists[i].AnnualDriver.AnnualYYYY = 2568
 		lists[i].AnnualDriver.DriverLicenseNo = "A123456"
 		lists[i].AnnualDriver.RequestAnnualDriverNo = "B00001"
@@ -213,11 +210,11 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param id path string true "EmpID (EmpID)"
-// @Router /api/mas/user/{id} [get]
+// @Param emp_id path string true "EmpID (emp_id)"
+// @Router /api/mas/user/{emp_id} [get]
 func (h *MasHandler) GetUserEmp(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
-	EmpID := c.Param("id")
+	EmpID := c.Param("emp_id")
 
 	var userEmp models.MasUserEmp
 	if err := config.DB.
@@ -226,4 +223,77 @@ func (h *MasHandler) GetUserEmp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, userEmp)
+}
+
+// GetVmsMasSatisfactionSurveyQuestions godoc
+// @Summary Retrieve a specific user
+// @Description This endpoint fetches details of a user.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/mas/satisfaction_survey_questions [get]
+func (h *MasHandler) ListVmsMasSatisfactionSurveyQuestions(c *gin.Context) {
+	//funcs.GetAuthenUser(c, h.Role)
+
+	var list []models.VmsMasSatisfactionSurveyQuestions
+	if err := config.DB.
+		Order("ordering").
+		Find(&list, "is_deleted = ? AND is_active = ?", "0", "1").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Questions not found"})
+		return
+	}
+	// Process the splitting
+	for i := range list {
+		desc := list[i].MasSatisfactionSurveyQuestionsDesc
+		parts := strings.SplitN(desc, ":", 2)
+		list[i].MasSatisfactionSurveyQuestionsTitle = parts[0] // Title before colon
+		if len(parts) > 1 {
+			list[i].MasSatisfactionSurveyQuestionsDesc = parts[1] // Remaining description after colon
+		} else {
+			list[i].MasSatisfactionSurveyQuestionsDesc = "" // Empty if no colon found
+		}
+	}
+
+	c.JSON(http.StatusOK, list)
+}
+
+// ListVehicleDepartment godoc
+// @Summary Retrieve the Vehicle Departments
+// @Description This endpoint allows a user to retrieve Vehicle Departments.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/mas/vehicle-departments [get]
+func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
+
+	var vehicleDepts []models.VmsMasVehicleDepartmentList
+	var carpools []models.VmsMasVehicleDepartmentList
+
+	// First Query
+	if err := config.DB.Table("vms_mas_vehicle_department AS vd").
+		Select("vd.vehicle_owner_dept_sap, MAX(d.dept_short) AS dept_sap_short, MAX(d.dept_full) AS dept_sap_full, 'PEA' AS dept_type").
+		Joins("INNER JOIN vms_mas_department d ON d.dept_sap = vd.vehicle_owner_dept_sap").
+		Where("vd.is_deleted = ? AND vd.is_active = ? AND d.is_deleted = ?", "0", "1", "0").
+		Group("vd.vehicle_owner_dept_sap").
+		Order("vd.vehicle_owner_dept_sap").
+		Find(&vehicleDepts).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve vehicle departments"})
+		return
+	}
+
+	// Second Query
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("CAST(mas_carpool_uid AS TEXT) AS vehicle_owner_dept_sap, carpool_name AS dept_sap_short, carpool_name AS dept_sap_full, 'Car pool' AS dept_type").
+		Where("is_deleted = ? AND is_active = ?", "0", "1").
+		Find(&carpools).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve carpools"})
+		return
+	}
+	results := append(vehicleDepts, carpools...)
+
+	c.JSON(http.StatusOK, results)
 }
