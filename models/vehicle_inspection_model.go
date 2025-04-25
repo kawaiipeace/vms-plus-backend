@@ -62,3 +62,27 @@ type VmsTrnRequestAccepted struct {
 func (VmsTrnRequestAccepted) TableName() string {
 	return "public.vms_trn_request"
 }
+
+// VmsTrnInsVehicle
+type VmsTrnInspectVehicleImages struct {
+	TrnRequestUID string                `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
+	VehicleImages []VehicleImageInspect `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
+	UpdatedAt     time.Time             `gorm:"column:updated_at" json:"-"`
+	UpdatedBy     string                `gorm:"column:updated_by" json:"-"`
+}
+
+func (VmsTrnInspectVehicleImages) TableName() string {
+	return "public.vms_trn_request"
+}
+
+// VehicleImageReturned
+type VehicleImageInspect struct {
+	TrnVehicleImgReturnedUID string `gorm:"column:trn_vehicle_img_returned_uid;primaryKey" json:"-"`
+	TrnRequestUID            string `gorm:"column:trn_request_uid;" json:"-"`
+	RefVehicleImgSideCode    int    `gorm:"column:ref_vehicle_img_side_code" json:"ref_vehicle_img_side_code" example:"1"`
+	VehicleImgFile           string `gorm:"column:vehicle_img_file" json:"vehicle_img_file" example:"http://vms.pea.co.th/side_image.jpg"`
+}
+
+func (VehicleImageInspect) TableName() string {
+	return "public.vms_trn_vehicle_img_returned"
+}

@@ -2436,7 +2436,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/carpool-management/delete/{mas_carpool_uid}": {
+        "/api/carpool-management/delete": {
             "delete": {
                 "security": [
                     {
@@ -2459,11 +2459,221 @@ const docTemplate = `{
                 "summary": "Delete a carpool",
                 "parameters": [
                     {
+                        "description": "VmsMasCarpoolDelete data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsMasCarpoolDelete"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-create": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Create a new carpool driver and save it to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Create a new carpool driver",
+                "parameters": [
+                    {
+                        "description": "VmsMasCarpoolDriver array",
+                        "name": "driver",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.VmsMasCarpoolDriver"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-delete/{mas_carpool_driver_uid}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint deletes a carpool driver using its unique identifier (MasCarpoolDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Delete a carpool driver",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolDriverUID (mas_carpool_driver_uid)",
+                        "name": "mas_carpool_driver_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-mas-detail/{mas_driver_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint fetches details of a specific driver using its unique identifier (MasDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Retrieve a specific driver",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasDriverUID (mas_driver_uid)",
+                        "name": "mas_driver_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-search/{mas_carpool_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Search carpool drivers with pagination and filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Search carpool drivers",
+                "parameters": [
+                    {
                         "type": "string",
                         "description": "MasCarpoolUID (mas_carpool_uid)",
                         "name": "mas_carpool_uid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query for driver_name or driver_license_no",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by fields: driver_name",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-set-active": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Update the active status of a carpool driver using its unique identifier (MasCarpoolDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Set active status for a carpool driver",
+                "parameters": [
+                    {
+                        "description": "VmsMasCarpoolDriverActive data",
+                        "name": "active",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsMasCarpoolDriverActive"
+                        }
                     }
                 ],
                 "responses": {}
@@ -2679,7 +2889,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/carpool-management/vehicle-detail/{mas_carpool_vehicle_uid}": {
+        "/api/carpool-management/vehicle-mas-detail/{mas_vehicle_uid}": {
             "get": {
                 "security": [
                     {
@@ -2689,7 +2899,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint fetches details of a specific carpool vehicle using its unique identifier (MasCarpoolVehicleUID).",
+                "description": "This endpoint fetches details of a specific carpool vehicle using its unique identifier (MasVehicleUID).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2703,8 +2913,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "MasCarpoolVehicleUID (mas_carpool_vehicle_uid)",
-                        "name": "mas_carpool_vehicle_uid",
+                        "description": "MasVehicleUID (mas_carpool_vehicle_uid)",
+                        "name": "mas_vehicle_uid",
                         "in": "path",
                         "required": true
                     }
@@ -2781,7 +2991,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/carpool-management/vehicle-update/{mas_carpool_vehicle_uid}": {
+        "/api/carpool-management/vehicle-set-active": {
             "put": {
                 "security": [
                     {
@@ -2791,7 +3001,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "Update a carpool vehicle's details in the database",
+                "description": "Update the active status of a carpool vehicle using its unique identifier (MasCarpoolVehicleUID).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2801,22 +3011,15 @@ const docTemplate = `{
                 "tags": [
                     "Carpool-management"
                 ],
-                "summary": "Update a carpool vehicle",
+                "summary": "Set active status for a carpool vehicle",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "MasCarpoolVehicleUID (mas_carpool_vehicle_uid)",
-                        "name": "mas_carpool_vehicle_uid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "VmsMasCarpoolVehicle data",
-                        "name": "vehicle",
+                        "description": "VmsMasCarpoolVehicleActive data",
+                        "name": "active",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsMasCarpoolVehicle"
+                            "$ref": "#/definitions/models.VmsMasCarpoolVehicleActive"
                         }
                     }
                 ],
@@ -3722,6 +3925,51 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-management/update-driver-documents/{mas_driver_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint updates the document details of a driver using its unique identifier (MasDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Update driver document details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasDriverUID (mas_driver_uid)",
+                        "name": "mas_driver_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VmsMasDriverDocument array",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.VmsMasDriverDocument"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/driver-management/update-driver-is-active": {
             "put": {
                 "security": [
@@ -3786,41 +4034,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsMasDriverLayoffStatusUpdate"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/driver-management/update-driver-leave-status": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint updates the leave status of a driver using its unique identifier (MasDriverUID).",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Drivers-management"
-                ],
-                "summary": "Update driver leave status",
-                "parameters": [
-                    {
-                        "description": "VmsMasDriverLeaveStatusUpdate data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsMasDriverLeaveStatusUpdate"
                         }
                     }
                 ],
@@ -4915,7 +5128,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows to update received key details for a booking request.",
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4925,7 +5138,7 @@ const docTemplate = `{
                 "tags": [
                     "Received-key-admin"
                 ],
-                "summary": "Update received key details for a booking request",
+                "summary": "Confirm the update of key pickup driver for a booking request",
                 "parameters": [
                     {
                         "description": "VmsTrnRequestUpdateRecieivedKeyDetail data",
@@ -5059,7 +5272,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/received-key-driver/update-recieived-key-detail": {
+        "/api/received-key-driver/update-recieived-key-confirmed": {
             "put": {
                 "security": [
                     {
@@ -5069,7 +5282,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows to update received key details for a booking request.",
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5079,15 +5292,15 @@ const docTemplate = `{
                 "tags": [
                     "Received-key-driver"
                 ],
-                "summary": "Update received key details for a booking request",
+                "summary": "Confirm the update of key pickup driver for a booking request",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestUpdateRecieivedKeyDetail data",
+                        "description": "VmsTrnRequestUpdateRecieivedKeyConfirmed data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyDetail"
+                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed"
                         }
                     }
                 ],
@@ -5335,6 +5548,41 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnReceivedKeyPEA"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/received-key-user/update-recieived-key-confirmed": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows confirming the update of the key pickup driver for a specific booking request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key-admin"
+                ],
+                "summary": "Confirm the update of key pickup driver for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestUpdateRecieivedKeyConfirmed data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestUpdateRecieivedKeyConfirmed"
                         }
                     }
                 ],
@@ -6061,6 +6309,30 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/ref/leave-time-type": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all leave time types.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all leave time types",
+                "responses": {}
+            }
+        },
         "/api/ref/oil-station-brand": {
             "get": {
                 "security": [
@@ -6154,6 +6426,30 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve all vehicle image sides",
+                "responses": {}
+            }
+        },
+        "/api/ref/vehicle-key-type": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all vehicle key types.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all vehicle key types",
                 "responses": {}
             }
         },
@@ -8537,6 +8833,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle-inspection-admin/update-inspect-vehicle-images": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update vehicle inspect.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-inspection-admin"
+                ],
+                "summary": "Update vehicle inspect for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnInspectVehicleImages data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnInspectVehicleImages"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle-inspection-admin/update-returned-vehicle": {
             "put": {
                 "security": [
@@ -8797,6 +9128,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle-management/update-vehicle-is-active": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint updates the active status of a vehicle.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-management"
+                ],
+                "summary": "Update vehicle active status",
+                "parameters": [
+                    {
+                        "description": "VmsMasVehicleIsActiveUpdate data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsMasVehicleIsActiveUpdate"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle/departments": {
             "get": {
                 "security": [
@@ -9048,6 +9414,19 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VehicleImageInspect": {
+            "type": "object",
+            "properties": {
+                "ref_vehicle_img_side_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "vehicle_img_file": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/side_image.jpg"
+                }
+            }
+        },
         "models.VehicleImageReceived": {
             "type": "object",
             "properties": {
@@ -9251,9 +9630,63 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsMasCarpoolAuthorizedDept": {
+            "type": "object",
+            "properties": {
+                "dept_sap": {
+                    "type": "string",
+                    "example": "10001"
+                }
+            }
+        },
+        "models.VmsMasCarpoolDelete": {
+            "type": "object",
+            "properties": {
+                "carpool_name": {
+                    "type": "string",
+                    "example": "carpool name 1"
+                },
+                "mas_carpool_uid": {
+                    "type": "string",
+                    "example": "164632c9-1d33-477e-b335-97a4e79a5845"
+                }
+            }
+        },
+        "models.VmsMasCarpoolDriver": {
+            "type": "object",
+            "properties": {
+                "mas_carpool_uid": {
+                    "type": "string",
+                    "example": "164632c9-1d33-477e-b335-97a4e79a5845"
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "334632c9-1d33-477e-b335-97a4e79a5845"
+                }
+            }
+        },
+        "models.VmsMasCarpoolDriverActive": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "mas_carpool_driver_uid": {
+                    "type": "string",
+                    "example": "164632c9-1d33-477e-b335-97a4e79a5845"
+                }
+            }
+        },
         "models.VmsMasCarpoolRequest": {
             "type": "object",
             "properties": {
+                "carpool_authorized_depts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolAuthorizedDept"
+                    }
+                },
                 "carpool_contact_number": {
                     "type": "string",
                     "example": "111"
@@ -9301,24 +9734,16 @@ const docTemplate = `{
                 }
             }
         },
-        "models.VmsMasDriverCertificateRequest": {
+        "models.VmsMasCarpoolVehicleActive": {
             "type": "object",
             "properties": {
-                "driver_certificate_expire_date": {
-                    "type": "string",
-                    "example": "2025-12-31T23:59:59Z"
-                },
-                "driver_certificate_image": {
-                    "type": "string",
-                    "example": "https://example.com/certificate_image.jpg"
-                },
-                "driver_certificate_issue_date": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "ref_driver_certificate_type_code": {
+                "is_active": {
                     "type": "string",
                     "example": "1"
+                },
+                "mas_carpool_vehicle_uid": {
+                    "type": "string",
+                    "example": "164632c9-1d33-477e-b335-97a4e79a5845"
                 }
             }
         },
@@ -9409,6 +9834,23 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsMasDriverDocument": {
+            "type": "object",
+            "properties": {
+                "driver_document_file": {
+                    "type": "string",
+                    "example": "https://example.com/document.pdf"
+                },
+                "driver_document_name": {
+                    "type": "string",
+                    "example": "CardID.pdf"
+                },
+                "driver_document_no": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "models.VmsMasDriverIsActiveUpdate": {
             "type": "object",
             "properties": {
@@ -9436,39 +9878,6 @@ const docTemplate = `{
                 "replaced_mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
-                }
-            }
-        },
-        "models.VmsMasDriverLeaveStatusUpdate": {
-            "type": "object",
-            "properties": {
-                "leave_end_date": {
-                    "type": "string",
-                    "example": "2023-12-31T23:59:59Z"
-                },
-                "leave_reason": {
-                    "type": "string",
-                    "example": "Vacation"
-                },
-                "leave_start_date": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "mas_driver_uid": {
-                    "type": "string",
-                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
-                },
-                "ref_driver_status_code": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "replace_mas_driver_uid": {
-                    "type": "string",
-                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
-                },
-                "time_type": {
-                    "type": "string",
-                    "example": "1"
                 }
             }
         },
@@ -9541,9 +9950,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1990-01-01T00:00:00Z"
                 },
-                "driver_certificate": {
-                    "$ref": "#/definitions/models.VmsMasDriverCertificateRequest"
-                },
                 "driver_contact_number": {
                     "type": "string",
                     "example": "+1234567890"
@@ -9555,6 +9961,12 @@ const docTemplate = `{
                 "driver_dept_sap_short_name_work": {
                     "type": "string",
                     "example": "กยจ."
+                },
+                "driver_documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasDriverDocument"
+                    }
                 },
                 "driver_identification_no": {
                     "type": "string",
@@ -9599,6 +10011,19 @@ const docTemplate = `{
                 "replaced_mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                }
+            }
+        },
+        "models.VmsMasVehicleIsActiveUpdate": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "mas_vehicle_uid": {
+                    "type": "string",
+                    "example": "f3b29096-140e-49dc-97ee-17fa9352aff6"
                 }
             }
         },
@@ -9727,12 +10152,24 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsTrnInspectVehicleImages": {
+            "type": "object",
+            "properties": {
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                },
+                "vehicle_images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VehicleImageInspect"
+                    }
+                }
+            }
+        },
         "models.VmsTrnReceivedKeyDriver": {
             "type": "object",
             "properties": {
-                "ref_request_status_code": {
-                    "type": "string"
-                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "3045a994-ba0b-431d-acf2-98768a9c5fc9"
@@ -9863,9 +10300,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-04-16T14:30:00Z"
                 },
-                "accepted_vehicle_emp_id": {
-                    "type": "string"
-                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
@@ -9917,9 +10351,6 @@ const docTemplate = `{
         "models.VmsTrnRequestCanceled": {
             "type": "object",
             "properties": {
-                "canceled_request_emp_id": {
-                    "type": "string"
-                },
                 "canceled_request_reason": {
                     "type": "string",
                     "example": "Test Cancel"
@@ -10210,6 +10641,23 @@ const docTemplate = `{
                 "received_key_start_datetime": {
                     "type": "string",
                     "example": "2025-02-16T08:00:00Z"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                }
+            }
+        },
+        "models.VmsTrnRequestUpdateRecieivedKeyConfirmed": {
+            "type": "object",
+            "properties": {
+                "received_key_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
+                },
+                "ref_vehicle_key_type_code": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "trn_request_uid": {
                     "type": "string",

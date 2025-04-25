@@ -172,20 +172,21 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverLicense.IsDeleted = "0"
 	driver.DriverLicense.IsActive = "1"
 
-	driver.DriverCertificate.MasDriverUID = driver.MasDriverUID
-	driver.DriverCertificate.MasDriverCertificateUID = uuid.New().String()
-	driver.DriverCertificate.CreatedBy = user.EmpID
-	driver.DriverCertificate.UpdatedBy = user.EmpID
-	driver.DriverCertificate.CreatedAt = time.Now()
-	driver.DriverCertificate.UpdatedAt = time.Now()
-	driver.DriverCertificate.IsDeleted = "0"
-	driver.DriverCertificate.IsActive = "1"
+	for i := range driver.DriverDocuments {
+		driver.DriverDocuments[i].MasDriverUID = driver.MasDriverUID
+		driver.DriverDocuments[i].MasDriverDocumentUID = uuid.New().String()
+		driver.DriverDocuments[i].CreatedBy = user.EmpID
+		driver.DriverDocuments[i].UpdatedBy = user.EmpID
+		driver.DriverDocuments[i].CreatedAt = time.Now()
+		driver.DriverDocuments[i].UpdatedAt = time.Now()
+		driver.DriverDocuments[i].IsDeleted = "0"
+	}
 
 	driverLicense := driver.DriverLicense
-	driverCertificate := driver.DriverCertificate
+	driverDocuments := driver.DriverDocuments
 
 	driver.DriverLicense = models.VmsMasDriverLicenseRequest{}
-	driver.DriverCertificate = models.VmsMasDriverCertificateRequest{}
+	driver.DriverDocuments = []models.VmsMasDriverDocument{}
 
 	if err := config.DB.Create(&driver).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver"})
@@ -196,7 +197,7 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.Create(&driverCertificate).Error; err != nil {
+	if err := config.DB.Create(&driverDocuments).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate"})
 		return
 	}
@@ -353,19 +354,67 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
-// UpdateDriverLeaveStatus godoc
-// @Summary Update driver leave status
-// @Description This endpoint updates the leave status of a driver using its unique identifier (MasDriverUID).
+// UpdateDriverDocuments godoc
+// @Summary Update driver document details
+// @Description This endpoint updates the document details of a driver using its unique identifier (MasDriverUID).
 // @Tags Drivers-management
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsMasDriverLeaveStatusUpdate true "VmsMasDriverLeaveStatusUpdate data"
-// @Router /api/driver-management/update-driver-leave-status [put]
+// @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
+// @Param data body []models.VmsMasDriverDocument true "VmsMasDriverDocument array"
+// @Router /api/driver-management/update-driver-documents/{mas_driver_uid} [put]
+func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, result []models.VmsMasDriverDocument
+	var driver models.VmsMasDriver
+	masDriverUID := c.Param("mas_driver_uid")
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", masDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver document not found"})
+		return
+	}
+
+	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
+		Delete(&models.VmsMasDriverDocument{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete existing documents: %v", err)})
+		return
+	}
+
+	// Add new documents
+	for i := range request {
+		request[i].MasDriverUID = masDriverUID
+		request[i].MasDriverDocumentUID = uuid.New().String()
+		request[i].CreatedBy = user.EmpID
+		request[i].UpdatedBy = user.EmpID
+		request[i].CreatedAt = time.Now()
+		request[i].UpdatedAt = time.Now()
+		request[i].IsDeleted = "0"
+	}
+
+	if err := config.DB.Create(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		return
+	}
+
+	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").Find(&result).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
 func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, driver, result models.VmsMasDriverLeaveStatusUpdate
+	var driver models.VmsMasDriver
+	var request, result models.VmsMasDriverLeaveStatusUpdate
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -376,16 +425,20 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
 		return
 	}
+	request.TrnDriverLeaveUID = uuid.NewString()
+	request.CreatedAt = time.Now()
+	request.CreatedBy = user.EmpID
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 	request.RefDriverStatusCode = 2
+	request.IsDeleted = "0"
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
 
-	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
+	if err := config.DB.First(&result, "trn_driver_leave_uid = ?", request.TrnDriverLeaveUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
 		return
 

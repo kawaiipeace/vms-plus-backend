@@ -205,8 +205,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 1         // Driver
+	request.ReceiverKeyType = 1 // Driver
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -219,10 +218,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -251,8 +247,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 2         // PEA
+	request.ReceiverKeyType = 2 // PEA
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
@@ -271,10 +266,6 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -305,8 +296,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 3         // Outsider
+	request.ReceiverKeyType = 3 // Outsider
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -319,11 +309,6 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -378,6 +363,54 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	funcs.CreateTrnLog(result.TrnRequestUID,
 		result.RefRequestStatusCode,
 		result.CanceledRequestReason,
+		user.EmpID)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// UpdateRecieivedKeyConfirmed godoc
+// @Summary Confirm the update of key pickup driver for a booking request
+// @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
+// @Tags Received-key-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnRequestUpdateRecieivedKeyConfirmed true "VmsTrnRequestUpdateRecieivedKeyConfirmed data"
+// @Router /api/received-key-user/update-recieived-key-confirmed [put]
+func (h *ReceivedKeyUserHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+	var result struct {
+		models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
 		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})

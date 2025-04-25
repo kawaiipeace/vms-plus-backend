@@ -128,6 +128,7 @@ func main() {
 	router.PUT("/api/received-key-user/update-key-pickup-outsider", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupOutSider)
 	router.PUT("/api/received-key-user/update-key-pickup-driver", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupDriver)
 	router.PUT("/api/received-key-user/update-canceled", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateCanceled)
+	router.PUT("/api/received-key-user/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateRecieivedKeyConfirmed)
 
 	//ReceivedKeyAdminHandler
 	receivedKeyAdminHandler := handlers.ReceivedKeyAdminHandler{}
@@ -144,7 +145,7 @@ func main() {
 	receivedKeyDriverHandler := handlers.ReceivedKeyDriverHandler{}
 	router.GET("/api/received-key-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.SearchRequests)
 	router.GET("/api/received-key-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.GetRequest)
-	router.PUT("/api/received-key-driver/update-recieived-key-detail", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.UpdateRecieivedKeyDetail)
+	router.PUT("/api/received-key-driver/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.UpdateRecieivedKeyConfirmed)
 
 	//ReceivedVehicleUserHandler
 	receivedVehicleUserHandler := handlers.ReceivedVehicleUserHandler{}
@@ -242,6 +243,7 @@ func main() {
 	router.GET("/api/vehicle-inspection-admin/satisfaction-survey/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetSatisfactionSurvey)
 	router.PUT("/api/vehicle-inspection-admin/update-sended-back", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateSendedBack)
 	router.PUT("/api/vehicle-inspection-admin/update-accepted", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateAccepted)
+	router.PUT("/api/vehicle-inspection-admin/update-inspect-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateInspectVehicleImages)
 
 	//VehicleHandler
 	vehicleHandler := handlers.VehicleHandler{}
@@ -254,8 +256,8 @@ func main() {
 	//VehicleManagementHandler
 	vehicleManagementHandler := handlers.VehicleManagementHandler{}
 	router.GET("/api/vehicle-management/search", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.SearchVehicles)
+	router.PUT("/api/vehicle-management/update-vehicle-is-active", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.UpdateVehicleIsActive)
 
-	//DriverHandler
 	driverHandler := handlers.DriverHandler{}
 	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDrivers)
 	router.GET("/api/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriver)
@@ -270,6 +272,7 @@ func main() {
 	router.PUT("/api/driver-management/update-driver-detail", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverDetail)
 	router.PUT("/api/driver-management/update-driver-contract", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverContract)
 	router.PUT("/api/driver-management/update-driver-license", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverLicense)
+	router.PUT("/api/driver-management/update-driver-documents/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverDocuments)
 	router.PUT("/api/driver-management/update-driver-leave-status", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverLeaveStatus)
 	router.PUT("/api/driver-management/update-driver-is-active", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverIsActive)
 	router.DELETE("/api/driver-management/delete-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.DeleteDriver)
@@ -306,13 +309,14 @@ func main() {
 	router.POST("/api/carpool-management/create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpool)
 	router.GET("/api/carpool-management/carpool/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpool)
 	router.PUT("/api/carpool-management/update/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpool)
-	router.DELETE("/api/carpool-management/delete/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpool)
+	router.DELETE("/api/carpool-management/delete", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpool)
 
 	router.GET("/api/carpool-management/admin-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolAdmin)
 	router.GET("/api/carpool-management/admin-detail/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolAdmin)
 	router.POST("/api/carpool-management/admin-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolAdmin)
 	router.PUT("/api/carpool-management/admin-update/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolAdmin)
 	router.DELETE("/api/carpool-management/admin-delete/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolAdmin)
+	router.PUT("/api/carpool-management/set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpool)
 
 	router.GET("/api/carpool-management/approver-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolApprover)
 	router.GET("/api/carpool-management/approver-detail/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolApprover)
@@ -321,11 +325,16 @@ func main() {
 	router.DELETE("/api/carpool-management/approver-delete/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolApprover)
 
 	router.GET("/api/carpool-management/vehicle-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolVehicle)
-	router.GET("/api/carpool-management/vehicle-detail/:mas_carpool_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolVehicle)
 	router.POST("/api/carpool-management/vehicle-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolVehicle)
-	router.PUT("/api/carpool-management/vehicle-update/:mas_carpool_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolVehicle)
+	router.PUT("/api/carpool-management/vehicle-set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpoolVehicle)
 	router.DELETE("/api/carpool-management/vehicle-delete/:mas_carpool_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolVehicle)
-	router.PUT("/api/carpool-management/set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpool)
+	router.GET("/api/carpool-management/vehicle-mas-detail/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasVehicleDetail)
+
+	router.GET("/api/carpool-management/driver-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolDriver)
+	router.POST("/api/carpool-management/driver-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolDriver)
+	router.PUT("/api/carpool-management/driver-set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpoolDriver)
+	router.DELETE("/api/carpool-management/driver-delete/:mas_carpool_driver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolDriver)
+	router.GET("/api/carpool-management/driver-mas-detail/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasDriverDetail)
 
 	//MasHandler
 	masHandler := handlers.MasHandler{}
@@ -351,6 +360,8 @@ func main() {
 	router.GET("/api/ref/driver-license-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverLicenseType)
 	router.GET("/api/ref/carpool-choose-driver", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseDriver)
 	router.GET("/api/ref/carpool-choose-car", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseCar)
+	router.GET("/api/ref/vehicle-key-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleKeyType)
+	router.GET("/api/ref/leave-time-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListLeaveTimeType)
 
 	//LogHandler
 	logHandler := handlers.LogHandler{}

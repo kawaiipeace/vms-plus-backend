@@ -227,3 +227,41 @@ func (h *RefHandler) ListCarpoolChooseDriver(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, lists)
 }
+
+// ListVehicleKeyType godoc
+// @Summary Retrieve all vehicle key types
+// @Description This endpoint retrieves all vehicle key types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/vehicle-key-type [get]
+func (h *RefHandler) ListVehicleKeyType(c *gin.Context) {
+	var lists []models.VmsRefVehicleKeyType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListLeaveTimeType godoc
+// @Summary Retrieve all leave time types
+// @Description This endpoint retrieves all leave time types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/leave-time-type [get]
+func (h *RefHandler) ListLeaveTimeType(c *gin.Context) {
+	var lists []models.VmsRefLeaveTimeType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}

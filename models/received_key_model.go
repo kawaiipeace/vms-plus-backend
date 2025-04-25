@@ -6,7 +6,7 @@ import "time"
 type VmsTrnReceivedKeyDriver struct {
 	TrnRequestUID        string    `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid" example:"3045a994-ba0b-431d-acf2-98768a9c5fc9"`
 	ReceiverKeyType      int       `gorm:"column:receiver_key_type" json:"-" example:"1"`
-	RefRequestStatusCode string    `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusCode string    `gorm:"column:ref_request_status_code" json:"-"`
 	UpdatedAt            time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 }
@@ -76,5 +76,19 @@ type VmsTrnRequestUpdateRecieivedKeyDetail struct {
 }
 
 func (VmsTrnRequestUpdateRecieivedKeyDetail) TableName() string {
+	return "public.vms_trn_request"
+}
+
+// VmsTrnRequestUpdateRecieivedKeyConfirmed
+type VmsTrnRequestUpdateRecieivedKeyConfirmed struct {
+	TrnRequestUID         string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
+	RefVehicleKeyTypeCode int       `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
+	ReceivedKeyDatetime   time.Time `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00Z"`
+	RefRequestStatusCode  string    `gorm:"column:ref_request_status_code" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
+}
+
+func (VmsTrnRequestUpdateRecieivedKeyConfirmed) TableName() string {
 	return "public.vms_trn_request"
 }

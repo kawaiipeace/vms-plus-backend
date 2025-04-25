@@ -181,17 +181,17 @@ type VmsTrnRequestResponse struct {
 	VehicleDepartmentDeptSapFull  string        `gorm:"column:vehicle_department_dept_sap_full" json:"mas_vehicle_department_dept_sap_full"`
 	VmsMasVehicle                 VmsMasVehicle `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
 
-	ReceivedKeyPlace         string    `gorm:"column:received_key_place" json:"received_key_place"`
-	ReceivedKeyStartDatetime time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
-	ReceivedKeyEndDatetime   time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
-
-	CanCancelRequest        bool                    `gorm:"-" json:"can_cancel_request"`
-	RefRequestStatusCode    string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatus        VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
-	RefRequestStatusName    string                  `json:"ref_request_status_name"`
-	SendedBackRequestReason string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
-	CanceledRequestReason   string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	ProgressRequestStatus   []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	ReceivedKeyPlace         string                  `gorm:"column:received_key_place" json:"received_key_place"`
+	ReceivedKeyStartDatetime time.Time               `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
+	ReceivedKeyEndDatetime   time.Time               `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
+	IsUseDriver              bool                    `gorm:"column:is_use_driver" json:"is_use_driver"`
+	CanCancelRequest         bool                    `gorm:"-" json:"can_cancel_request"`
+	RefRequestStatusCode     string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatus         VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
+	RefRequestStatusName     string                  `json:"ref_request_status_name"`
+	SendedBackRequestReason  string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
+	CanceledRequestReason    string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	ProgressRequestStatus    []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
 }
 
 func (VmsTrnRequestResponse) TableName() string {

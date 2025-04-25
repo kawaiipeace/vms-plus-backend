@@ -95,20 +95,20 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReturnedVehicleDeptSAPShort string                 `gorm:"column:returned_vehicle_dept_sap_short" json:"returned_vehicle_dept_sap_short"`
 	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"returned_vehicle_dept_sap_full"`
 
-	AcceptedVehicleDatetime     time.Time `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
-	AcceptedVehicleEmpID        string    `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
-	AcceptedVehicleEmpName      string    `gorm:"column:accepted_vehicle_emp_name" json:"accepted_vehicle_emp_name"`
-	AcceptedVehicleDeptSAP      string    `gorm:"column:accepted_vehicle_dept_sap" json:"accepted_vehicle_dept_sap"`
-	AcceptedVehicleDeptSAPShort string    `gorm:"column:accepted_vehicle_dept_sap_short" json:"accepted_vehicle_dept_sap_short"`
-	AcceptedVehicleDeptSAPFull  string    `gorm:"column:accepted_vehicle_dept_sap_full" json:"accepted_vehicle_dept_sap_full"`
-
-	CanCancelRequest        bool                    `gorm:"-" json:"can_cancel_request"`
-	RefRequestStatusCode    string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatus        VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
-	RefRequestStatusName    string                  `json:"ref_request_status_name"`
-	SendedBackRequestReason string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
-	CanceledRequestReason   string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	ProgressRequestStatus   []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	AcceptedVehicleDatetime     time.Time               `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
+	AcceptedVehicleEmpID        string                  `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
+	AcceptedVehicleEmpName      string                  `gorm:"column:accepted_vehicle_emp_name" json:"accepted_vehicle_emp_name"`
+	AcceptedVehicleDeptSAP      string                  `gorm:"column:accepted_vehicle_dept_sap" json:"accepted_vehicle_dept_sap"`
+	AcceptedVehicleDeptSAPShort string                  `gorm:"column:accepted_vehicle_dept_sap_short" json:"accepted_vehicle_dept_sap_short"`
+	AcceptedVehicleDeptSAPFull  string                  `gorm:"column:accepted_vehicle_dept_sap_full" json:"accepted_vehicle_dept_sap_full"`
+	IsUseDriver                 bool                    `gorm:"column:is_use_driver" json:"is_use_driver"`
+	CanCancelRequest            bool                    `gorm:"-" json:"can_cancel_request"`
+	RefRequestStatusCode        string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatus            VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
+	RefRequestStatusName        string                  `json:"ref_request_status_name"`
+	SendedBackRequestReason     string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
+	CanceledRequestReason       string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	ProgressRequestStatus       []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
 }
 
 func (VmsTrnRequestVehicleInUseResponse) TableName() string {
