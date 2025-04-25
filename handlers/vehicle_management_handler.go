@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
 	"vms_plus_be/models"
@@ -133,4 +135,41 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 			"vehicles": vehicles,
 		})
 	}
+}
+
+// UpdateVehicleIsActive godoc
+// @Summary Update vehicle active status
+// @Description This endpoint updates the active status of a vehicle.
+// @Tags Vehicle-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsMasVehicleIsActiveUpdate true "VmsMasVehicleIsActiveUpdate data"
+// @Router /api/vehicle-management/update-vehicle-is-active [put]
+func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, vehicle, result models.VmsMasVehicleIsActiveUpdate
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? and is_deleted = ?", request.MasVehicleUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		return
+	}
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Model(&vehicle).Update("is_active", request.IsActive).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "mas_vehicle_uid = ?", request.MasVehicleUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

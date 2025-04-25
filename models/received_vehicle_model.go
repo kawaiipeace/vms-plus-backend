@@ -4,11 +4,12 @@ import "time"
 
 //VmsTrnReceivedVehicle
 type VmsTrnReceivedVehicle struct {
-	TrnRequestUID               string                 `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
-	PickupDatetime              time.Time              `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
-	MileStart                   int                    `gorm:"column:mile_start" json:"mile_start" example:"10000"`
-	FuelStart                   int                    `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
-	CommentOnReceivedVehicle    string                 `gorm:"column:comment_on_received_vehicle" json:"comment_on_received_vehicle" example:"Minor scratch on bumper"`
+	TrnRequestUID            string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
+	PickupDatetime           time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
+	MileStart                int       `gorm:"column:mile_start" json:"mile_start" example:"10000"`
+	FuelStart                int       `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
+	CommentOnReceivedVehicle string    `gorm:"column:comment_on_received_vehicle" json:"comment_on_received_vehicle" example:"Minor scratch on bumper"`
+
 	VehicleImages               []VehicleImageReceived `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
 	ReceivedVehicleEmpID        string                 `gorm:"column:received_vehicle_emp_id" json:"-"`
 	ReceivedVehicleEmpName      string                 `gorm:"column:received_vehicle_emp_name" json:"-"`

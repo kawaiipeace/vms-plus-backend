@@ -115,3 +115,24 @@ type VmsRefVehicleKeyType struct {
 func (VmsRefVehicleKeyType) TableName() string {
 	return "vms_ref_vehicle_key_type"
 }
+
+// VmsRefLeaveTimeType
+type VmsRefLeaveTimeType struct {
+	LeaveTimeTypeCode int    `gorm:"primaryKey;column:leave_time_type_code" json:"leave_time_type_code"`
+	LeaveTimeTypeName string `gorm:"column:leave_time_type_name" json:"leave_time_type_name"`
+}
+
+func (VmsRefLeaveTimeType) TableName() string {
+	return "vms_ref_leave_time_type"
+}
+
+// VmsRefVehicleStatus
+type VmsRefVehicleStatus struct {
+	RefVehicleStatusCode      int    `gorm:"primaryKey;column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
+	RefVehicleStatusName      string `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
+	RefVehicleStatusShortName string `gorm:"column:ref_vehicle_status_short_name" json:"ref_vehicle_status_short_name"`
+}
+
+func (VmsRefVehicleStatus) TableName() string {
+	return "vms_ref_vehicle_status"
+}

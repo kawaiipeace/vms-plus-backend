@@ -884,3 +884,60 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
+
+// UpdateInspectVehicleImages godoc
+// @Summary Update vehicle inspect for a booking request
+// @Description This endpoint allows to update vehicle inspect.
+// @Tags Vehicle-inspection-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnInspectVehicleImages true "VmsTrnInspectVehicleImages data"
+// @Router /api/vehicle-inspection-admin/update-inspect-vehicle-images [put]
+func (h *VehicleInspectionAdminHandler) UpdateInspectVehicleImages(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	var request, trnRequest models.VmsTrnInspectVehicleImages
+	var result struct {
+		models.VmsTrnInspectVehicleImages
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	for i := range request.VehicleImages {
+		request.VehicleImages[i].TrnVehicleImgReturnedUID = uuid.New().String()
+		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID
+	}
+
+	if len(request.VehicleImages) > 0 {
+		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images"})
+			return
+		}
+	}
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.
+		Preload("VehicleImages").
+		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}

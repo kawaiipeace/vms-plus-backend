@@ -66,6 +66,15 @@ definitions:
     required:
     - redirect_uri
     type: object
+  models.VehicleImageInspect:
+    properties:
+      ref_vehicle_img_side_code:
+        example: 1
+        type: integer
+      vehicle_img_file:
+        example: http://vms.pea.co.th/side_image.jpg
+        type: string
+    type: object
   models.VehicleImageReceived:
     properties:
       ref_vehicle_img_side_code:
@@ -210,8 +219,45 @@ definitions:
         example: "9876543211"
         type: string
     type: object
+  models.VmsMasCarpoolAuthorizedDept:
+    properties:
+      dept_sap:
+        example: "10001"
+        type: string
+    type: object
+  models.VmsMasCarpoolDelete:
+    properties:
+      carpool_name:
+        example: carpool name 1
+        type: string
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
+  models.VmsMasCarpoolDriver:
+    properties:
+      mas_carpool_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+      mas_driver_uid:
+        example: 334632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
+  models.VmsMasCarpoolDriverActive:
+    properties:
+      is_active:
+        example: "1"
+        type: string
+      mas_carpool_driver_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
   models.VmsMasCarpoolRequest:
     properties:
+      carpool_authorized_depts:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolAuthorizedDept'
+        type: array
       carpool_contact_number:
         example: "111"
         type: string
@@ -246,19 +292,13 @@ definitions:
         example: 334632c9-1d33-477e-b335-97a4e79a5845
         type: string
     type: object
-  models.VmsMasDriverCertificateRequest:
+  models.VmsMasCarpoolVehicleActive:
     properties:
-      driver_certificate_expire_date:
-        example: "2025-12-31T23:59:59Z"
-        type: string
-      driver_certificate_image:
-        example: https://example.com/certificate_image.jpg
-        type: string
-      driver_certificate_issue_date:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      ref_driver_certificate_type_code:
+      is_active:
         example: "1"
+        type: string
+      mas_carpool_vehicle_uid:
+        example: 164632c9-1d33-477e-b335-97a4e79a5845
         type: string
     type: object
   models.VmsMasDriverContractUpdate:
@@ -324,6 +364,18 @@ definitions:
         example: 1
         type: integer
     type: object
+  models.VmsMasDriverDocument:
+    properties:
+      driver_document_file:
+        example: https://example.com/document.pdf
+        type: string
+      driver_document_name:
+        example: CardID.pdf
+        type: string
+      driver_document_no:
+        example: 1
+        type: integer
+    type: object
   models.VmsMasDriverIsActiveUpdate:
     properties:
       is_active:
@@ -343,30 +395,6 @@ definitions:
         type: string
       replaced_mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
-        type: string
-    type: object
-  models.VmsMasDriverLeaveStatusUpdate:
-    properties:
-      leave_end_date:
-        example: "2023-12-31T23:59:59Z"
-        type: string
-      leave_reason:
-        example: Vacation
-        type: string
-      leave_start_date:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      mas_driver_uid:
-        example: 8d14e6df-5d65-486e-b079-393d9c817a09
-        type: string
-      ref_driver_status_code:
-        example: 1
-        type: integer
-      replace_mas_driver_uid:
-        example: 8d14e6df-5d65-486e-b079-393d9c817a09
-        type: string
-      time_type:
-        example: "1"
         type: string
     type: object
   models.VmsMasDriverLicenseRequest:
@@ -419,8 +447,6 @@ definitions:
       driver_birthdate:
         example: "1990-01-01T00:00:00Z"
         type: string
-      driver_certificate:
-        $ref: '#/definitions/models.VmsMasDriverCertificateRequest'
       driver_contact_number:
         example: "+1234567890"
         type: string
@@ -430,6 +456,10 @@ definitions:
       driver_dept_sap_short_name_work:
         example: กยจ.
         type: string
+      driver_documents:
+        items:
+          $ref: '#/definitions/models.VmsMasDriverDocument'
+        type: array
       driver_identification_no:
         example: ID123456789
         type: string
@@ -461,6 +491,15 @@ definitions:
         type: string
       replaced_mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+    type: object
+  models.VmsMasVehicleIsActiveUpdate:
+    properties:
+      is_active:
+        example: "1"
+        type: string
+      mas_vehicle_uid:
+        example: f3b29096-140e-49dc-97ee-17fa9352aff6
         type: string
     type: object
   models.VmsTrnAddFuel:
@@ -553,6 +592,16 @@ definitions:
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
         type: string
+    type: object
+  models.VmsTrnInspectVehicleImages:
+    properties:
+      trn_request_uid:
+        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        type: string
+      vehicle_images:
+        items:
+          $ref: '#/definitions/models.VehicleImageInspect'
+        type: array
     type: object
   models.VmsTrnReceivedKeyDriver:
     properties:
@@ -2590,15 +2639,60 @@ paths:
       summary: Create a new carpool
       tags:
       - Carpool-management
-  /api/carpool-management/delete/{mas_carpool_uid}:
+  /api/carpool-management/delete:
     delete:
       consumes:
       - application/json
       description: This endpoint deletes a carpool using its unique identifier (MasCarpoolUID).
       parameters:
-      - description: MasCarpoolUID (mas_carpool_uid)
+      - description: VmsMasCarpoolDelete data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolDelete'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Delete a carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/driver-create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new carpool driver and save it to the database
+      parameters:
+      - description: VmsMasCarpoolDriver array
+        in: body
+        name: driver
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsMasCarpoolDriver'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Create a new carpool driver
+      tags:
+      - Carpool-management
+  /api/carpool-management/driver-delete/{mas_carpool_driver_uid}:
+    delete:
+      consumes:
+      - application/json
+      description: This endpoint deletes a carpool driver using its unique identifier
+        (MasCarpoolDriverUID).
+      parameters:
+      - description: MasCarpoolDriverUID (mas_carpool_driver_uid)
         in: path
-        name: mas_carpool_uid
+        name: mas_carpool_driver_uid
         required: true
         type: string
       produces:
@@ -2607,7 +2701,94 @@ paths:
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Delete a carpool
+      summary: Delete a carpool driver
+      tags:
+      - Carpool-management
+  /api/carpool-management/driver-mas-detail/{mas_driver_uid}:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint fetches details of a specific driver using its unique
+        identifier (MasDriverUID).
+      parameters:
+      - description: MasDriverUID (mas_driver_uid)
+        in: path
+        name: mas_driver_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve a specific driver
+      tags:
+      - Carpool-management
+  /api/carpool-management/driver-search/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Search carpool drivers with pagination and filters
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Search query for driver_name or driver_license_no
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Order by fields: driver_name'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search carpool drivers
+      tags:
+      - Carpool-management
+  /api/carpool-management/driver-set-active:
+    put:
+      consumes:
+      - application/json
+      description: Update the active status of a carpool driver using its unique identifier
+        (MasCarpoolDriverUID).
+      parameters:
+      - description: VmsMasCarpoolDriverActive data
+        in: body
+        name: active
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasCarpoolDriverActive'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Set active status for a carpool driver
       tags:
       - Carpool-management
   /api/carpool-management/search:
@@ -2741,16 +2922,16 @@ paths:
       summary: Delete a carpool vehicle
       tags:
       - Carpool-management
-  /api/carpool-management/vehicle-detail/{mas_carpool_vehicle_uid}:
+  /api/carpool-management/vehicle-mas-detail/{mas_vehicle_uid}:
     get:
       consumes:
       - application/json
       description: This endpoint fetches details of a specific carpool vehicle using
-        its unique identifier (MasCarpoolVehicleUID).
+        its unique identifier (MasVehicleUID).
       parameters:
-      - description: MasCarpoolVehicleUID (mas_carpool_vehicle_uid)
+      - description: MasVehicleUID (mas_carpool_vehicle_uid)
         in: path
-        name: mas_carpool_vehicle_uid
+        name: mas_vehicle_uid
         required: true
         type: string
       produces:
@@ -2806,30 +2987,26 @@ paths:
       summary: Search carpool vehicles
       tags:
       - Carpool-management
-  /api/carpool-management/vehicle-update/{mas_carpool_vehicle_uid}:
+  /api/carpool-management/vehicle-set-active:
     put:
       consumes:
       - application/json
-      description: Update a carpool vehicle's details in the database
+      description: Update the active status of a carpool vehicle using its unique
+        identifier (MasCarpoolVehicleUID).
       parameters:
-      - description: MasCarpoolVehicleUID (mas_carpool_vehicle_uid)
-        in: path
-        name: mas_carpool_vehicle_uid
-        required: true
-        type: string
-      - description: VmsMasCarpoolVehicle data
+      - description: VmsMasCarpoolVehicleActive data
         in: body
-        name: vehicle
+        name: active
         required: true
         schema:
-          $ref: '#/definitions/models.VmsMasCarpoolVehicle'
+          $ref: '#/definitions/models.VmsMasCarpoolVehicleActive'
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update a carpool vehicle
+      summary: Set active status for a carpool vehicle
       tags:
       - Carpool-management
   /api/driver-license-approver/license-annual/{trn_request_annual_driver_uid}:
@@ -3408,6 +3585,35 @@ paths:
       summary: Update driver details
       tags:
       - Drivers-management
+  /api/driver-management/update-driver-documents/{mas_driver_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the document details of a driver using its
+        unique identifier (MasDriverUID).
+      parameters:
+      - description: MasDriverUID (mas_driver_uid)
+        in: path
+        name: mas_driver_uid
+        required: true
+        type: string
+      - description: VmsMasDriverDocument array
+        in: body
+        name: data
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.VmsMasDriverDocument'
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update driver document details
+      tags:
+      - Drivers-management
   /api/driver-management/update-driver-is-active:
     put:
       consumes:
@@ -3450,28 +3656,6 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Update driver layoff status
-      tags:
-      - Drivers-management
-  /api/driver-management/update-driver-leave-status:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint updates the leave status of a driver using its unique
-        identifier (MasDriverUID).
-      parameters:
-      - description: VmsMasDriverLeaveStatusUpdate data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsMasDriverLeaveStatusUpdate'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update driver leave status
       tags:
       - Drivers-management
   /api/driver-management/update-driver-license:
@@ -4899,6 +5083,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve the all fuel type
+      tags:
+      - REF
+  /api/ref/leave-time-type:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all leave time types.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all leave time types
       tags:
       - REF
   /api/ref/oil-station-brand:
@@ -6457,6 +6655,27 @@ paths:
       summary: Update Vehicle Add Fuel entry
       tags:
       - Vehicle-inspection-admin
+  /api/vehicle-inspection-admin/update-inspect-vehicle-images:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update vehicle inspect.
+      parameters:
+      - description: VmsTrnInspectVehicleImages data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnInspectVehicleImages'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update vehicle inspect for a booking request
+      tags:
+      - Vehicle-inspection-admin
   /api/vehicle-inspection-admin/update-returned-vehicle:
     put:
       consumes:
@@ -6619,6 +6838,27 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Get vehicles by license plate, brand, or model with pagination
+      tags:
+      - Vehicle-management
+  /api/vehicle-management/update-vehicle-is-active:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint updates the active status of a vehicle.
+      parameters:
+      - description: VmsMasVehicleIsActiveUpdate data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsMasVehicleIsActiveUpdate'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update vehicle active status
       tags:
       - Vehicle-management
   /api/vehicle/{mas_vehicle_uid}:
