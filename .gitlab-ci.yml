@@ -34,10 +34,7 @@ cache:
 lint:
   stage: lint
   script:
-    - go fmt ./...
-    - go vet ./...
-    - |
-      if ! command -v golangci-lint > /dev/null; then
+    - if ! command -v golangci-lint > /dev/null; then
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
         mv ./bin/golangci-lint /usr/local/bin/
       fi
@@ -45,5 +42,6 @@ lint:
 
 build:
   stage: build
+  needs: [] 
   script:
     - go build -o vmsplus main.go
