@@ -1,0 +1,49 @@
+# GitLab CI configuration for development, linting, testing, building, and Docker image publishing
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
+
+variables:
+  GO_IMAGE: golang:1.24
+
+stages:
+  - lint
+  - build
+
+# Default settings applied to all jobs
+default:
+  image: $GO_IMAGE
+  before_script:
+    - export GO111MODULE=on
+    - go env -w GOPROXY=https://proxy.golang.org,direct
+    - go mod download
+    - export PATH="$(go env GOPATH)/bin:$PATH"
+
+# Cache modules and build cache for faster pipeline runs
+cache:
+  key: "${CI_PROJECT_ID}-${CI_COMMIT_REF_SLUG}"
+  paths:
+    - /go/pkg/mod
+    - /root/.cache/go-build
+    - /go/bin
+
+lint:
+  stage: lint
+  script:
+    - go fmt ./...
+    - go vet ./...
+    - |
+      if ! command -v golangci-lint > /dev/null; then
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
+        mv ./bin/golangci-lint /usr/local/bin/
+      fi
+    - golangci-lint run ./...
+
+build:
+  stage: build
+  script:
+    - go build -o vmsplus main.go
