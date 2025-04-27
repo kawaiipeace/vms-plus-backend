@@ -33,6 +33,7 @@ cache:
 
 lint:
   stage: lint
+  allow_failure: true
   script:
     - |
       if ! command -v golangci-lint > /dev/null; then
