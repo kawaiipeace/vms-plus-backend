@@ -36,7 +36,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 
 	var drivers []models.VmsMasDriver
 	query := config.DB.Model(&models.VmsMasDriver{})
-	query = query.Where("is_deleted = ?", "0")
+	query = query.Where("is_deleted = ? AND is_replacement = ?", "0", "0")
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"

@@ -19,6 +19,15 @@ type CarpoolManagementHandler struct {
 	Role string
 }
 
+func GetCarpoolName(MasCarpoolUID string) string {
+	var carpool models.VmsMasCarpoolList
+	if err := config.DB.Where("mas_carpool_uid = ?", MasCarpoolUID).First(&carpool).Error; err != nil {
+		log.Printf("Error fetching carpool name: %v", err)
+		return ""
+	}
+	return carpool.CarpoolName
+}
+
 // SearchCarpools godoc
 // @Summary Search carpool management
 // @Description Search carpool management by criteria
@@ -113,6 +122,29 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 			"carpools": carpools,
 		})
 	}
+}
+
+// GetMasDepartment godoc
+// @Summary Retrieve the Pea Department
+// @Description This endpoint allows a user to Pea Department.
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/carpool-management/mas-department [get]
+func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
+	var lists []models.VmsMasDepartment
+
+	query := config.DB
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, lists)
 }
 
 // CreateCarpool godoc
@@ -257,7 +289,7 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool updated successfully", "data": request, "carpool_name": GetCarpoolName(masCarpoolUID)})
 }
 
 // DeleteCarpool godoc
@@ -293,7 +325,7 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool deleted successfully", "carpool_name": GetCarpoolName(request.MasCarpoolUID)})
 }
 
 // SetActiveCarpool godoc
@@ -330,7 +362,7 @@ func (h *CarpoolManagementHandler) SetActiveCarpool(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool active status updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool active status updated successfully", "data": request, "carpool_name": GetCarpoolName(request.MasCarpoolUID)})
 }
 
 // SearchCarpoolAdmin godoc
@@ -494,13 +526,14 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Admin carpools created successfully",
-		"data":    requests,
+		"message":      "Admin carpools created successfully",
+		"data":         requests,
+		"carpool_name": GetCarpoolName(requests[0].MasCarpoolUID),
 	})
 }
 
 // UpdateCarpoolAdmin godoc
-// @Summary Update an admin carpool
+// @Summary Update an admin carpool to main
 // @Description Update an admin carpool's details in the database
 // @Tags Carpool-management
 // @Accept json
@@ -542,7 +575,46 @@ func (h *CarpoolManagementHandler) UpdateCarpoolAdmin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool updated successfully", "data": request, "carpool_name": GetCarpoolName(request.MasCarpoolUID)})
+}
+
+// UpdateCarpoolMainAdmin godoc
+// @Summary Update an admin carpool to main admin
+// @Description Update an admin carpool to main admin
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param mas_carpool_admin_uid path string true "MasCarpoolAdminUID (mas_carpool_admin_uid)"
+// @Router /api/carpool-management/admin-update-main-admin/{mas_carpool_admin_uid} [put]
+func (h *CarpoolManagementHandler) UpdateCarpoolMainAdmin(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	masCarpoolAdminUID := c.Param("mas_carpool_admin_uid")
+
+	var existingAdmin models.VmsMasCarpoolAdmin
+	if err := config.DB.Where("mas_carpool_admin_uid = ? AND is_deleted = ?", masCarpoolAdminUID, "0").First(&existingAdmin).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Admin carpool not found"})
+		return
+	}
+
+	if err := config.DB.Model(&models.VmsMasCarpoolAdmin{}).
+		Where("mas_carpool_uid = ?", existingAdmin.MasCarpoolUID).
+		Update("is_main_admin", "0").Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update is_main_admin for all: %v", err)})
+		return
+	}
+
+	if err := config.DB.Model(&existingAdmin).Updates(map[string]interface{}{
+		"is_main_admin": "1",
+		"updated_by":    user.EmpID,
+		"updated_at":    time.Now(),
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update is_main_admin: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool updated successfully", "carpool_name": GetCarpoolName(existingAdmin.MasCarpoolUID)})
 }
 
 // DeleteCarpoolAdmin godoc
@@ -565,6 +637,37 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 		return
 	}
 
+	var count int64
+	tables := []string{"vms_mas_carpool_admin", "vms_mas_carpool_approver", "vms_mas_carpool_vehicle", "vms_mas_carpool_driver"}
+	for _, table := range tables {
+		if err := config.DB.Table(table).
+			Where("mas_carpool_uid = ? AND is_deleted = ?", adminCarpool.MasCarpoolUID, "0").
+			Count(&count).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check dependencies in table %s: %v", table, err)})
+			return
+		}
+		if count > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("Cannot delete admin carpool as it has dependencies in table %s", table),
+				"message": "การลบหน่วยงานที่สามารถใช้บริการกลุ่มยานพาหนะนี้ จำเป็นต้องลบยานพาหนะ, พนักงานขับรถ, ผู้ดูแลยานพาหนะ และผู้อนุมัติที่สังกัดหน่วยงานนั้น ออกจากกลุ่มก่อน",
+			})
+			return
+		}
+	}
+	var requests int64
+	if err := config.DB.Table("vms_trn_request").
+		Where("mas_vehicle_uid IN (SELECT mas_vehicle_uid FROM vms_mas_carpool_vehicle WHERE mas_carpool_uid = ? AND is_deleted = ?)", adminCarpool.MasCarpoolUID, "0").
+		Count(&requests).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check dependencies in vms_trn_request: %v", err)})
+		return
+	}
+	if requests > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Cannot delete admin carpool as it has dependencies in vms_trn_request",
+			"message": "ไม่สามารถลบกลุ่มได้เนื่องจากมีคำขอใช้ยานพาหนะของกลุ่มที่ยังดำเนินการไม่เสร็จสิ้น",
+		})
+		return
+	}
 	if err := config.DB.Model(&adminCarpool).UpdateColumns(map[string]interface{}{
 		"is_deleted": "1",
 		"updated_by": user.EmpID,
@@ -574,7 +677,77 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool deleted successfully", "carpool_name": GetCarpoolName(adminCarpool.MasCarpoolUID)})
+}
+
+// SearchMasAdminUser godoc
+// @Summary Retrieve the Admin Users
+// @Description This endpoint allows a user to retrieve Admin Users.
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Router /api/carpool-management/admin-mas-search [get]
+func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
+	var lists []models.MasUserEmp
+	search := c.Query("search")
+
+	query := config.DB
+
+	if search != "" {
+		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+	}
+
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+
+	// For loop to set Image_url for each element in the slice
+	for i := range lists {
+		lists[i].Image_url = config.DefaultAvatarURL
+	}
+
+	c.JSON(http.StatusOK, lists)
+}
+
+// SearchMasApprovalUser godoc
+// @Summary Retrieve the Admin Users
+// @Description This endpoint allows a user to retrieve Admin Users.
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Router /api/carpool-management/approver-mas-search [get]
+func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
+	var lists []models.MasUserEmp
+	search := c.Query("search")
+
+	query := config.DB
+
+	if search != "" {
+		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+	}
+
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+
+	// For loop to set Image_url for each element in the slice
+	for i := range lists {
+		lists[i].Image_url = config.DefaultAvatarURL
+	}
+
+	c.JSON(http.StatusOK, lists)
 }
 
 // SearchCarpoolApprover godoc
@@ -739,8 +912,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Approver carpools created successfully",
-		"data":    requests,
+		"message":      "Approver carpools created successfully",
+		"data":         requests,
+		"carpool_name": GetCarpoolName(requests[0].MasCarpoolUID),
 	})
 }
 
@@ -787,7 +961,46 @@ func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool approver updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool approver updated successfully", "data": request, "carpool_name": GetCarpoolName(existingApprover.MasCarpoolUID)})
+}
+
+// UpdateCarpoolMainApprover godoc
+// @Summary Update an approver carpool to main approver
+// @Description Update an approver carpool's to main approver
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param mas_carpool_approver_uid path string true "UpdateCarpoolMainApprover (mas_carpool_approver_uid)"
+// @Router /api/carpool-management/approver-update-main-approver/{mas_carpool_approver_uid} [put]
+func (h *CarpoolManagementHandler) UpdateCarpoolMainApprover(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	masCarpoolApproverUID := c.Param("mas_carpool_approver_uid")
+
+	var existingApprover models.VmsMasCarpoolApprover
+	if err := config.DB.Where("mas_carpool_approver_uid = ? AND is_deleted = ?", masCarpoolApproverUID, "0").First(&existingApprover).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Approver carpool not found"})
+		return
+	}
+
+	if err := config.DB.Model(&models.VmsMasCarpoolApprover{}).
+		Where("mas_carpool_uid = ?", existingApprover.MasCarpoolUID).
+		Update("is_main_approver", "0").Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update is_main_approver for all: %v", err)})
+		return
+	}
+
+	if err := config.DB.Model(&existingApprover).Updates(map[string]interface{}{
+		"is_main_approver": "1",
+		"updated_by":       user.EmpID,
+		"updated_at":       time.Now(),
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update is_main_approver: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Approver carpool updated successfully", "carpool_name": GetCarpoolName(existingApprover.MasCarpoolUID)})
 }
 
 // DeleteCarpoolApprover godoc
@@ -819,5 +1032,5 @@ func (h *CarpoolManagementHandler) DeleteCarpoolApprover(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool approver deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool approver deleted successfully", "carpool_name": GetCarpoolName(approver.MasCarpoolUID)})
 }

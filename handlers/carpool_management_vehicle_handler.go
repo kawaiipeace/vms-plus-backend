@@ -165,8 +165,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Carpool vehicles created successfully",
-		"data":    requests,
+		"message":      "Carpool vehicles created successfully",
+		"data":         requests,
+		"carpool_name": GetCarpoolName(requests[0].MasCarpoolUID),
 	})
 }
 
@@ -199,7 +200,59 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle deleted successfully", "carpool_name": GetCarpoolName(vehicle.MasCarpoolUID)})
+}
+
+// SearchMasVehicles godoc
+// @Summary Search vehicles for add to Carpool vehicle
+// @Description Search vehicles for add to Carpool vehicle
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search text (Vehicle Brand Name or License Plate)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/carpool-management/vehicle-mas-search [get]
+func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
+	searchText := c.Query("search") // Text search for brand name & license plate
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default page = 1
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
+	offset := (page - 1) * limit                            // Calculate offset
+
+	var vehicles []models.VmsMasVehicleList
+	var total int64
+
+	query := config.DB.Model(&models.VmsMasVehicleList{})
+	query = query.Where("is_deleted = '0'")
+	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
+	if searchText != "" {
+		query = query.Where("vehicle_brand_name LIKE ? OR vehicle_license_plate LIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+	}
+
+	// Count total records
+	query.Count(&total)
+
+	// Execute query with pagination
+	query.Offset(offset).Limit(limit).Find(&vehicles)
+
+	vehicles = models.AssignVehicleImageFromIndex(vehicles)
+	for i := range vehicles {
+		funcs.TrimStringFields(&vehicles[i])
+	}
+	// Respond with JSON
+	c.JSON(http.StatusOK, gin.H{
+		"pagination": gin.H{
+			"total":      total,
+			"page":       page,
+			"limit":      limit,
+			"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		},
+		"vehicles": vehicles,
+	})
 }
 
 // GetMasVehicleDetail godoc
@@ -210,12 +263,21 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_carpool_vehicle_uid)"
-// @Router /api/carpool-management/vehicle-mas-detail/{mas_vehicle_uid} [get]
+// @Param active body []models.VmsMasVehicleArray true "array of VmsMasVehicleArray"
+// @Router /api/carpool-management/vehicle-mas-details [post]
 func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
-	masVehicleUID := c.Param("mas_vehicle_uid")
+	var request []models.VmsMasVehicleArray
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	var vehicle models.VmsMasCarpoolVehicleDetail
+	var vehicles []models.VmsMasCarpoolVehicleDetail
+	masVehicleUIDs := make([]string, len(request))
+	for i := range request {
+		masVehicleUIDs[i] = request[i].MasVehicleUID
+	}
+
 	query := config.DB.Table("vms_mas_vehicle v").
 		Select(
 			`v.mas_vehicle_uid,
@@ -235,17 +297,19 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.is_active
 		`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Where("v.mas_vehicle_uid = ? AND v.is_deleted = ?", masVehicleUID, "0")
+		Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = ?", masVehicleUIDs, "0")
 
-	if err := query.First(&vehicle).Error; err != nil {
+	if err := query.Find(&vehicles).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
 		return
 	}
 
-	vehicle.Age = funcs.CalculateAge(vehicle.VehicleGetDate)
-	funcs.TrimStringFields(&vehicle)
+	for i := range vehicles {
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
+		funcs.TrimStringFields(&vehicles[i])
+	}
 
-	c.JSON(http.StatusOK, vehicle)
+	c.JSON(http.StatusOK, vehicles)
 }
 
 // SetActiveCarpoolVehicle godoc
@@ -282,5 +346,5 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle active status updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle active status updated successfully", "data": request, "carpool_name": GetCarpoolName(vehicle.MasCarpoolUID)})
 }

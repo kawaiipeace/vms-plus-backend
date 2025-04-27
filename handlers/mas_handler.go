@@ -8,6 +8,7 @@ import (
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type MasHandler struct {
@@ -44,6 +45,69 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
 		lists[i].ImageURL = config.DefaultAvatarURL
+	}
+
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListVehicleUser godoc
+// @Summary Retrieve the ReceivedKey Users
+// @Description This endpoint allows a user to retrieve ReceivedKey Users.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Param trn_request_uid query string false "TrnReuestUID"
+// @Router /api/mas/user-received-key-users [get]
+func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
+	var lists []models.MasUserDriver
+	search := c.Query("search")
+	trnRequestUID := c.Query("trn_request_uid")
+	var request struct {
+		DriverEmpID         string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+		VehicleUserEmpID    string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
+		CreatedRequestEmpID string `gorm:"column:created_request_emp_id" json:"created_request_emp_id" example:"700001"`
+	}
+	if err := config.DB.Table("vms_trn_request").
+		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		return
+	}
+	query := config.DB
+
+	// Apply search filter if provided
+	if search != "" {
+		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+	}
+	query = query.Order(gorm.Expr(
+		"CASE emp_id WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 ELSE 4 END",
+		request.DriverEmpID, request.VehicleUserEmpID, request.CreatedRequestEmpID))
+
+	query = query.Order("CASE emp_id WHEN '" + request.VehicleUserEmpID + "' THEN 1 WHEN '" + request.DriverEmpID + "' THEN 2 WHEN '" + request.CreatedRequestEmpID + "' THEN 3 ELSE 4 END")
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	// Loop to modify or set AnnualDriver
+	for i := range lists {
+		lists[i].ImageURL = config.DefaultAvatarURL
+		var roles []string
+		if lists[i].EmpID == request.DriverEmpID {
+			roles = append(roles, "ผู้ขับขี่")
+		}
+		if lists[i].EmpID == request.VehicleUserEmpID {
+			roles = append(roles, "ผู้ใช้ยานพาหนะ")
+		}
+		if lists[i].EmpID == request.CreatedRequestEmpID {
+			roles = append(roles, "ผู้ใช้สร้างคำขอ")
+		}
+		if len(roles) > 0 {
+			lists[i].FullName = lists[i].FullName + " (" + strings.Join(roles, ", ") + ")"
+		}
 	}
 
 	c.JSON(http.StatusOK, lists)

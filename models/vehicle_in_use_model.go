@@ -4,6 +4,31 @@ import (
 	"time"
 )
 
+type VmsTrnRequestVehicleInUseList struct {
+	TrnRequestUID                    string               `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid"`
+	RequestNo                        string               `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpID                 string               `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
+	VehicleUserEmpName               string               `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserDeptSAPShort          string               `gorm:"column:vehicle_user_dept_sap_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
+	VehicleLicensePlate              string               `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string               `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string               `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleDepartmentDeptSapShort    string               `gorm:"column:vehicle_department_dept_sap_short" json:"vehicle_department_dept_sap_short"`
+	WorkPlace                        string               `gorm:"column:work_place" json:"work_place"`
+	StartDatetime                    string               `gorm:"column:start_datetime" json:"start_datetime"`
+	EndDatetime                      string               `gorm:"column:end_datetime" json:"end_datetime"`
+	RefRequestStatusCode             string               `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName             string               `json:"ref_request_status_name"`
+	IsHaveSubRequest                 string               `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
+	ReceivedKeyPlace                 string               `gorm:"column:received_key_place" json:"received_key_place"`
+	ReceivedKeyStartDatetime         time.Time            `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
+	ReceivedKeyEndDatetime           time.Time            `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
+	CanceledRequestDatetime          time.Time            `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	RefVehicleKeyTypeCode            int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
+	RefVehicleKeyType                VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"ref_vehicle_key_type"`
+	CommentOnReturnedVehicle         string               `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
+}
+
 // VmsTrnRequestVehicleInUseResponse
 type VmsTrnRequestVehicleInUseResponse struct {
 	TrnRequestUID                    string    `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`

@@ -161,8 +161,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Carpool drivers created successfully",
-		"data":    requests,
+		"message":      "Carpool drivers created successfully",
+		"data":         requests,
+		"carpool_name": GetCarpoolName(requests[0].MasCarpoolUID),
 	})
 }
 
@@ -195,10 +196,78 @@ func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool driver deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool driver deleted successfully", "carpool_name": GetCarpoolName(driver.MasCarpoolUID)})
 }
 
-// GetMasDriverDetail godoc
+// SearchMasDrivers godoc
+// @Summary Get drivers by name with pagination
+// @Description Get a list of drivers filtered by name with pagination
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param name query string false "Driver name to search"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/carpool-management/driver-mas-search [get]
+func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
+	name := strings.ToUpper(c.Query("name"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
+	offset := (page - 1) * limit
+
+	var drivers []models.VmsMasDriver
+	query := config.DB.Model(&models.VmsMasDriver{})
+	query = query.Where("is_deleted = ?", "0")
+	// Apply search filter
+	if name != "" {
+		searchTerm := "%" + name + "%"
+		query = query.Where(`
+            driver_name LIKE ? OR 
+            driver_id LIKE ?`,
+			searchTerm, searchTerm)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	query = query.Limit(limit).
+		Offset(offset)
+
+	if err := query.
+		Preload("DriverStatus").
+		Find(&drivers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(drivers) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "No drivers found",
+			"pagination": gin.H{
+				"page":       page,
+				"limit":      limit,
+				"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+				"drivers":    drivers,
+			},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"pagination": gin.H{
+				"total":      total,
+				"page":       page,
+				"limit":      limit,
+				"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+			},
+			"drivers": drivers,
+		})
+	}
+}
+
+// GetMasDriverDetails godoc
 // @Summary Retrieve a specific driver
 // @Description This endpoint fetches details of a specific driver using its unique identifier (MasDriverUID).
 // @Tags Carpool-management
@@ -206,12 +275,21 @@ func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
-// @Router /api/carpool-management/driver-mas-detail/{mas_driver_uid} [get]
-func (h *CarpoolManagementHandler) GetMasDriverDetail(c *gin.Context) {
-	masDriverUID := c.Param("mas_driver_uid")
+// @Param active body []models.VmsMasDriverArray true "array of VmsMasDriverArray"
+// @Router /api/carpool-management/driver-mas-details [post]
+func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
+	var request []models.VmsMasDriverArray
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	var driver models.VmsMasCarpoolDriverDetail
+	var drivers []models.VmsMasCarpoolDriverDetail
+	masDriverUIDs := make([]string, len(request))
+	for i := range request {
+		masDriverUIDs[i] = request[i].MasDriverUID
+	}
+
 	query := config.DB.Table("vms_mas_driver d").
 		Select(
 			`d.mas_driver_uid,
@@ -227,16 +305,14 @@ func (h *CarpoolManagementHandler) GetMasDriverDetail(c *gin.Context) {
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
 			d.is_active
 	`).
-		Where("d.mas_driver_uid = ? AND d.is_deleted = ?", masDriverUID, "0")
+		Where("d.mas_driver_uid in (?) AND d.is_deleted = ?", masDriverUIDs, "0")
 
-	if err := query.First(&driver).Error; err != nil {
+	if err := query.Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
 		return
 	}
 
-	funcs.TrimStringFields(&driver)
-
-	c.JSON(http.StatusOK, driver)
+	c.JSON(http.StatusOK, drivers)
 }
 
 // SetActiveCarpoolDriver godoc
@@ -273,5 +349,5 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolDriver(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Carpool driver active status updated successfully", "data": request})
+	c.JSON(http.StatusOK, gin.H{"message": "Carpool driver active status updated successfully", "data": request, "carpool_name": GetCarpoolName(driver.MasCarpoolUID)})
 }

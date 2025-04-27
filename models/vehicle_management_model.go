@@ -20,6 +20,9 @@ type VmsMasVehicleManagementList struct {
 	RefVehicleStatusCode string              `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
 	VmsRefVehicleStatus  VmsRefVehicleStatus `gorm:"foreignKey:RefVehicleStatusCode;references:RefVehicleStatusCode" json:"vms_ref_vehicle_status"`
 	VehicleCarpoolName   string              `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	IsAcictive           string              `gorm:"column:is_active" json:"is_active"`
+	RefFuelTypeID        int                 `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	VmsRefFuelType       VmsRefFuelType      `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"vms_ref_fuel_type"`
 	Age                  string              `json:"age"`
 }
 

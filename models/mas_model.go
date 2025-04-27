@@ -51,3 +51,21 @@ type VmsMasVehicleDepartmentList struct {
 	DeptSapFull         string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
 	DeptType            string `gorm:"column:dept_type" json:"dept_type"`
 }
+
+type VmsMasDepartment struct {
+	DeptSAP   string `gorm:"column:dept_sap;primaryKey" json:"dept_sap"`
+	DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+	DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+}
+
+func (VmsMasDepartment) TableName() string {
+	return "public.vms_mas_department"
+}
+
+type VmsMasVehicleArray struct {
+	MasVehicleUID string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"f3b29096-140e-49dc-97ee-17fa9352aff6"`
+}
+
+type VmsMasDriverArray struct {
+	MasDriverUID string `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"ec4a2cee-aded-47bd-9d93-4a1a74cb58a4"`
+}

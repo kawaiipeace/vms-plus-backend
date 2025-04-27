@@ -1231,6 +1231,30 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/booking-driver/menu-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Summary booking requests, counts grouped by request status code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Received-key-driver"
+                ],
+                "summary": "Summary booking requests by request status code",
+                "responses": {}
+            }
+        },
         "/api/booking-final/menu-requests": {
             "get": {
                 "security": [
@@ -2050,6 +2074,38 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/admin-mas-search": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Admin Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Retrieve the Admin Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/admin-search/{mas_carpool_uid}": {
             "get": {
                 "security": [
@@ -2119,6 +2175,39 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/admin-update-main-admin/{mas_carpool_admin_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Update an admin carpool to main admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Update an admin carpool to main admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolAdminUID (mas_carpool_admin_uid)",
+                        "name": "mas_carpool_admin_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/admin-update/{mas_carpool_admin_uid}": {
             "put": {
                 "security": [
@@ -2139,7 +2228,7 @@ const docTemplate = `{
                 "tags": [
                     "Carpool-management"
                 ],
-                "summary": "Update an admin carpool",
+                "summary": "Update an admin carpool to main",
                 "parameters": [
                     {
                         "type": "string",
@@ -2265,6 +2354,38 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/approver-mas-search": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Admin Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Retrieve the Admin Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/approver-search/{mas_carpool_uid}": {
             "get": {
                 "security": [
@@ -2329,6 +2450,39 @@ const docTemplate = `{
                         "description": "Number of records per page (default: 10)",
                         "name": "limit",
                         "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/approver-update-main-approver/{mas_carpool_approver_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Update an approver carpool's to main approver",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Update an approver carpool to main approver",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UpdateCarpoolMainApprover (mas_carpool_approver_uid)",
+                        "name": "mas_carpool_approver_uid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {}
@@ -2542,8 +2696,8 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/carpool-management/driver-mas-detail/{mas_driver_uid}": {
-            "get": {
+        "/api/carpool-management/driver-mas-details": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -2565,11 +2719,60 @@ const docTemplate = `{
                 "summary": "Retrieve a specific driver",
                 "parameters": [
                     {
+                        "description": "array of VmsMasDriverArray",
+                        "name": "active",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.VmsMasDriverArray"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/driver-mas-search": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get a list of drivers filtered by name with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Get drivers by name with pagination",
+                "parameters": [
+                    {
                         "type": "string",
-                        "description": "MasDriverUID (mas_driver_uid)",
-                        "name": "mas_driver_uid",
-                        "in": "path",
-                        "required": true
+                        "description": "Driver name to search",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -2676,6 +2879,30 @@ const docTemplate = `{
                         }
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/mas-department": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to Pea Department.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Retrieve the Pea Department",
                 "responses": {}
             }
         },
@@ -2889,8 +3116,8 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/carpool-management/vehicle-mas-detail/{mas_vehicle_uid}": {
-            "get": {
+        "/api/carpool-management/vehicle-mas-details": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -2912,11 +3139,60 @@ const docTemplate = `{
                 "summary": "Retrieve a specific carpool vehicle",
                 "parameters": [
                     {
+                        "description": "array of VmsMasVehicleArray",
+                        "name": "active",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.VmsMasVehicleArray"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/vehicle-mas-search": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Search vehicles for add to Carpool vehicle",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Search vehicles for add to Carpool vehicle",
+                "parameters": [
+                    {
                         "type": "string",
-                        "description": "MasVehicleUID (mas_carpool_vehicle_uid)",
-                        "name": "mas_vehicle_uid",
-                        "in": "path",
-                        "required": true
+                        "description": "Search text (Vehicle Brand Name or License Plate)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -3262,7 +3538,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/license-annual/{trn_request_annual_driver_uid}": {
+        "/api/driver-license-confirmer/license-annual/{trn_request_annual_driver_uid}": {
             "get": {
                 "security": [
                     {
@@ -3280,7 +3556,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Retrieve a specific driver license annual record",
                 "parameters": [
@@ -3295,7 +3571,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/search-requests": {
+        "/api/driver-license-confirmer/search-requests": {
             "get": {
                 "security": [
                     {
@@ -3313,7 +3589,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Search driver license annual requests and get summary counts by request status code",
                 "parameters": [
@@ -3393,7 +3669,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/update-license-annual-approver": {
+        "/api/driver-license-confirmer/update-license-annual-approver": {
             "put": {
                 "security": [
                     {
@@ -3411,7 +3687,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Update approver for a driver license annual record",
                 "parameters": [
@@ -3428,7 +3704,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/update-license-annual-canceled": {
+        "/api/driver-license-confirmer/update-license-annual-canceled": {
             "put": {
                 "security": [
                     {
@@ -3446,7 +3722,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Update cancel status for a driver license annual record",
                 "parameters": [
@@ -3463,7 +3739,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/update-license-annual-confirmed": {
+        "/api/driver-license-confirmer/update-license-annual-confirmed": {
             "put": {
                 "security": [
                     {
@@ -3481,7 +3757,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Update confirmed status for a driver license annual record",
                 "parameters": [
@@ -3498,7 +3774,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-license-confirm/update-license-annual-rejected": {
+        "/api/driver-license-confirmer/update-license-annual-rejected": {
             "put": {
                 "security": [
                     {
@@ -3516,7 +3792,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Driver-license-confirm"
+                    "Driver-license-confirmer"
                 ],
                 "summary": "Update reject status for a driver license annual record",
                 "parameters": [
@@ -3763,6 +4039,38 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-management/replacement-drivers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get a list of replacement drivers filtered by name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Get replacement drivers by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Driver name to search",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/driver-management/search": {
             "get": {
                 "security": [
@@ -3925,7 +4233,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/driver-management/update-driver-documents/{mas_driver_uid}": {
+        "/api/driver-management/update-driver-documents": {
             "put": {
                 "security": [
                     {
@@ -3948,22 +4256,12 @@ const docTemplate = `{
                 "summary": "Update driver document details",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "MasDriverUID (mas_driver_uid)",
-                        "name": "mas_driver_uid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "VmsMasDriverDocument array",
+                        "description": "VmsMasDriverDocumentUpdate",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.VmsMasDriverDocument"
-                            }
+                            "$ref": "#/definitions/models.VmsMasDriverDocumentUpdate"
                         }
                     }
                 ],
@@ -4034,6 +4332,41 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsMasDriverLayoffStatusUpdate"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/driver-management/update-driver-leave-status": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint updates the leave status of a driver using its unique identifier (MasDriverUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Update driver leave status",
+                "parameters": [
+                    {
+                        "description": "VmsMasDriverLeaveStatusUpdate data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsMasDriverLeaveStatusUpdate"
                         }
                     }
                 ],
@@ -4723,6 +5056,44 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-received-key-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve ReceivedKey Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the ReceivedKey Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "TrnReuestUID",
+                        "name": "trn_request_uid",
                         "in": "query"
                     }
                 ],
@@ -9747,6 +10118,15 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsMasDriverArray": {
+            "type": "object",
+            "properties": {
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "ec4a2cee-aded-47bd-9d93-4a1a74cb58a4"
+                }
+            }
+        },
         "models.VmsMasDriverContractUpdate": {
             "type": "object",
             "properties": {
@@ -9851,6 +10231,24 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsMasDriverDocumentUpdate": {
+            "type": "object",
+            "properties": {
+                "driver_documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasDriverDocument"
+                    }
+                },
+                "driver_license": {
+                    "$ref": "#/definitions/models.VmsMasDriverDocument"
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "d6c76da4-fbf9-44e1-a22b-ddc887b1939e"
+                }
+            }
+        },
         "models.VmsMasDriverIsActiveUpdate": {
             "type": "object",
             "properties": {
@@ -9878,6 +10276,35 @@ const docTemplate = `{
                 "replaced_mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                }
+            }
+        },
+        "models.VmsMasDriverLeaveStatusUpdate": {
+            "type": "object",
+            "properties": {
+                "leave_end_date": {
+                    "type": "string",
+                    "example": "2025-01-30T23:59:59Z"
+                },
+                "leave_reason": {
+                    "type": "string",
+                    "example": "Sick leave"
+                },
+                "leave_start_date": {
+                    "type": "string",
+                    "example": "2025-01-25T00:00:00Z"
+                },
+                "leave_time_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
                 }
             }
         },
@@ -9921,7 +10348,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2020-01-01T00:00:00Z"
                 },
-                "mas_driver_license_uid": {
+                "mas_driver_uid": {
                     "type": "string",
                     "example": "3e89ebe5-d597-4ee2-b0a1-c3a5628cf131"
                 },
@@ -9987,6 +10414,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Johnny"
                 },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
                 "mas_vendor_code": {
                     "type": "string",
                     "example": "VENDOR123"
@@ -10011,6 +10442,15 @@ const docTemplate = `{
                 "replaced_mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                }
+            }
+        },
+        "models.VmsMasVehicleArray": {
+            "type": "object",
+            "properties": {
+                "mas_vehicle_uid": {
+                    "type": "string",
+                    "example": "f3b29096-140e-49dc-97ee-17fa9352aff6"
                 }
             }
         },
@@ -10505,8 +10945,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "a6c8a34b-9245-49c8-a12b-45fae77a4e7d"
                 },
-                "mas_vehicle_uid": {
+                "mas_carpool_uid": {
                     "description": "Step 2",
+                    "type": "string",
+                    "example": "389b0f63-4195-4ece-bf35-0011c2f5f28c"
+                },
+                "mas_vehicle_uid": {
                     "type": "string",
                     "example": "389b0f63-4195-4ece-bf35-0011c2f5f28c"
                 },
