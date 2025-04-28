@@ -278,6 +278,9 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 // @Router /api/mas/user/{emp_id} [get]
 func (h *MasHandler) GetUserEmp(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	EmpID := c.Param("emp_id")
 
 	var userEmp models.MasUserEmp
@@ -300,6 +303,9 @@ func (h *MasHandler) GetUserEmp(c *gin.Context) {
 // @Router /api/mas/satisfaction_survey_questions [get]
 func (h *MasHandler) ListVmsMasSatisfactionSurveyQuestions(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var list []models.VmsMasSatisfactionSurveyQuestions
 	if err := config.DB.

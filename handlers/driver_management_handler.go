@@ -157,6 +157,9 @@ func GetDriverRunningNumber(sequenceName string) int {
 // @Router /api/driver-management/create-driver [post]
 func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriverRequest
 	if err := c.ShouldBindJSON(&driver); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
@@ -230,6 +233,10 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 // @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
 // @Router /api/driver-management/driver/{mas_driver_uid} [get]
 func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masDriverUID := c.Param("mas_driver_uid")
 	var driver models.VmsMasDriverResponse
 
@@ -263,6 +270,9 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 // @Router /api/driver-management/update-driver-detail [put]
 func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driver, result models.VmsMasDriverDetailUpdate
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -302,6 +312,9 @@ func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 // @Router /api/driver-management/update-driver-contract [put]
 func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driver models.VmsMasDriverContractUpdate
 	var result struct {
 		models.VmsMasDriverContractUpdate
@@ -347,6 +360,9 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 // @Router /api/driver-management/update-driver-license [put]
 func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request, driverLicense models.VmsMasDriverLicenseUpdate
 	var result struct {
@@ -401,6 +417,9 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 // @Router /api/driver-management/update-driver-documents [put]
 func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request models.VmsMasDriverDocumentUpdate
 	var result struct {
@@ -480,6 +499,9 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 // @Router /api/driver-management/update-driver-leave-status [put]
 func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request models.VmsMasDriverLeaveStatusUpdate
 	var result struct {
@@ -534,6 +556,9 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 // @Router /api/driver-management/update-driver-is-active [put]
 func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request models.VmsMasDriverIsActiveUpdate
 	var result struct {
@@ -581,6 +606,9 @@ func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 // @Router /api/driver-management/delete-driver [delete]
 func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driver models.VmsMasDriverDelete
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -616,6 +644,9 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 // @Router /api/driver-management/update-driver-layoff-status [put]
 func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request models.VmsMasDriverLayoffStatusUpdate
 	var result struct {
@@ -665,6 +696,9 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 // @Router /api/driver-management/update-driver-resign-status [put]
 func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var driver models.VmsMasDriver
 	var request models.VmsMasDriverResignStatusUpdate
 	var result struct {

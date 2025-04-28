@@ -31,6 +31,10 @@ import (
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/driver-search/{mas_carpool_uid} [get]
 func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolUID := c.Param("mas_carpool_uid")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
@@ -127,6 +131,9 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 // @Router /api/carpool-management/driver-create [post]
 func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var requests []models.VmsMasCarpoolDriver
 	if err := c.ShouldBindJSON(&requests); err != nil {
@@ -179,6 +186,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 // @Router /api/carpool-management/driver-delete/{mas_carpool_driver_uid} [delete]
 func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolDriverUID := c.Param("mas_carpool_driver_uid")
 
 	var driver models.VmsMasCarpoolDriver
@@ -212,6 +222,10 @@ func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/driver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	name := strings.ToUpper(c.Query("name"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
@@ -278,6 +292,10 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 // @Param active body []models.VmsMasDriverArray true "array of VmsMasDriverArray"
 // @Router /api/carpool-management/driver-mas-details [post]
 func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request []models.VmsMasDriverArray
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -327,6 +345,9 @@ func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
 // @Router /api/carpool-management/driver-set-active [put]
 func (h *CarpoolManagementHandler) SetActiveCarpoolDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request models.VmsMasCarpoolDriverActive
 	if err := c.ShouldBindJSON(&request); err != nil {

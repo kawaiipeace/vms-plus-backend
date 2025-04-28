@@ -13,6 +13,7 @@ import (
 )
 
 type VehicleHandler struct {
+	Role string
 }
 
 // SearchVehicles godoc
@@ -31,6 +32,10 @@ type VehicleHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle/search [get]
 func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	searchText := c.Query("search")            // Text search for brand name & license plate
 	ownerDept := c.Query("vehicle_owner_dept") // Filter by vehicle owner department
 	carType := c.Query("car_type")             // Filter by car type
@@ -114,6 +119,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 // @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
 // @Router /api/vehicle/{mas_vehicle_uid} [get]
 func (h *VehicleHandler) GetVehicle(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	vehicleID := c.Param("mas_vehicle_uid")
 
 	// Parse the string ID to uuid.UUID

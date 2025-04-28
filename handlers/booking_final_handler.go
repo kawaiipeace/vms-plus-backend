@@ -46,7 +46,10 @@ var StatusNameMapFinal = map[string]string{
 // @Router /api/booking-final/menu-requests [get]
 func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	statusNameMap := MenuNameMapApprover
 	var summary []models.VmsTrnRequestSummary
@@ -148,7 +151,10 @@ func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/booking-final/search-requests [get]
 func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapFinal
 	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
@@ -298,6 +304,9 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 // @Router /api/booking-final/request/{trn_request_uid} [get]
 func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequest(c, StatusNameMapFinal)
 	if err != nil {
 		return
@@ -367,6 +376,9 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 // @Router /api/booking-final/update-sended-back [put]
 func (h *BookingFinalHandler) UpdateSendedBack(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestSendedBack
 	var result struct {
 		models.VmsTrnRequestSendedBack
@@ -420,6 +432,9 @@ func (h *BookingFinalHandler) UpdateSendedBack(c *gin.Context) {
 // @Router /api/booking-final/update-approved [put]
 func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestApproved
 	var result struct {
 		models.VmsTrnRequestApproved
@@ -475,6 +490,9 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 // @Router /api/booking-final/update-canceled [put]
 func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled

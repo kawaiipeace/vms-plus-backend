@@ -47,6 +47,10 @@ var LicenseStatusNameMapApprover = map[string]string{
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver-license-approver/search-requests [get]
 func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := LicenseStatusNameMapApprover
 
 	var requests []models.VmsDriverLicenseAnnualList
@@ -183,7 +187,10 @@ func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
 // @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
 // @Router /api/driver-license-approver/license-annual/{trn_request_annual_driver_uid} [get]
 func (h *DriverLicenseApproverHandler) GetDriverLicenseAnnual(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
 	var request models.VmsDriverLicenseAnnualResponse
 
@@ -253,6 +260,9 @@ func (h *DriverLicenseApproverHandler) GetDriverLicenseAnnual(c *gin.Context) {
 // @Router /api/driver-license-approver/update-license-annual-canceled [put]
 func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualCanceled
 	var result struct {
 		models.VmsDriverLicenseAnnualCanceled
@@ -304,6 +314,9 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualCanceled(c *gin.
 // @Router /api/driver-license-approver/update-license-annual-rejected [put]
 func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualRejected(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualRejected
 	var result struct {
 		models.VmsDriverLicenseAnnualRejected
@@ -355,6 +368,9 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualRejected(c *gin.
 // @Router /api/driver-license-approver/update-license-annual-approved [put]
 func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualApproved
 	var result struct {
 		models.VmsDriverLicenseAnnualApproved

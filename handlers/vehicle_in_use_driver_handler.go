@@ -45,7 +45,10 @@ var StatusNameMapVehicelInUseDriver = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-in-use-driver/search-requests [get]
 func (h *VehicleInUseDriverHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapVehicelInUseAdmin
 	var requests []models.VmsTrnRequestList
 	var summary []models.VmsTrnRequestSummary
@@ -198,6 +201,9 @@ func (h *VehicleInUseDriverHandler) SearchRequests(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/request/{trn_request_uid} [get]
 func (h *VehicleInUseDriverHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapVehicelInUseAdmin)
 	if err != nil {
 		return
@@ -217,6 +223,9 @@ func (h *VehicleInUseDriverHandler) GetRequest(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/create-travel-detail [post]
 func (h *VehicleInUseDriverHandler) CreateVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request models.VmsTrnTripDetail
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -289,6 +298,9 @@ func (h *VehicleInUseDriverHandler) CreateVehicleTripDetail(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/update-travel-detail/{trn_trip_detail_uid} [put]
 func (h *VehicleInUseDriverHandler) UpdateVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -330,6 +342,9 @@ func (h *VehicleInUseDriverHandler) UpdateVehicleTripDetail(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/delete-travel-detail/{trn_trip_detail_uid} [delete]
 func (h *VehicleInUseDriverHandler) DeleteVehicleTripDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -366,6 +381,10 @@ func (h *VehicleInUseDriverHandler) DeleteVehicleTripDetail(c *gin.Context) {
 // @Param search query string false "Search keyword (matches place)"
 // @Router /api/vehicle-in-use-driver/travel-details/{trn_request_uid} [get]
 func (h *VehicleInUseDriverHandler) GetVehicleTripDetails(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_request_uid")
 	trnRequestUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -399,6 +418,10 @@ func (h *VehicleInUseDriverHandler) GetVehicleTripDetails(c *gin.Context) {
 // @Param trn_trip_detail_uid path string true "TrnTripDetailUID"
 // @Router /api/vehicle-in-use-driver/travel-detail/{trn_trip_detail_uid} [get]
 func (h *VehicleInUseDriverHandler) GetVehicleTripDetail(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -428,6 +451,9 @@ func (h *VehicleInUseDriverHandler) GetVehicleTripDetail(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/create-add-fuel [post]
 func (h *VehicleInUseDriverHandler) CreateVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request models.VmsTrnAddFuel
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -495,6 +521,9 @@ func (h *VehicleInUseDriverHandler) CreateVehicleAddFuel(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/update-add-fuel/{trn_add_fuel_uid} [put]
 func (h *VehicleInUseDriverHandler) UpdateVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -538,6 +567,9 @@ func (h *VehicleInUseDriverHandler) UpdateVehicleAddFuel(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/delete-add-fuel/{trn_add_fuel_uid} [delete]
 func (h *VehicleInUseDriverHandler) DeleteVehicleAddFuel(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -573,6 +605,10 @@ func (h *VehicleInUseDriverHandler) DeleteVehicleAddFuel(c *gin.Context) {
 // @Param search query string false "Search keyword (matches tax_invoice_no)"
 // @Router /api/vehicle-in-use-driver/add-fuel-details/{trn_request_uid} [get]
 func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetails(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_request_uid")
 	trnRequestUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -605,6 +641,10 @@ func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 // @Param trn_add_fuel_uid path string true "TrnAddFuelUID"
 // @Router /api/vehicle-in-use-driver/add-fuel-detail/{trn_add_fuel_uid} [get]
 func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetail(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
@@ -631,7 +671,10 @@ func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/vehicle-in-use-driver/travel-card/{trn_request_uid} [get]
 func (h *VehicleInUseDriverHandler) GetTravelCard(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	id := c.Param("trn_request_uid")
 	trnRequestUid, err := uuid.Parse(id)
 	if err != nil {
@@ -660,6 +703,9 @@ func (h *VehicleInUseDriverHandler) GetTravelCard(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/returned-vehicle [put]
 func (h *VehicleInUseDriverHandler) ReturnedVehicle(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReturnedVehicle
 	var result struct {
 		models.VmsTrnReturnedVehicle
@@ -727,6 +773,9 @@ func (h *VehicleInUseDriverHandler) ReturnedVehicle(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/update-received-vehicle [put]
 func (h *VehicleInUseDriverHandler) UpdateReceivedVehicle(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedVehicleNoImgage
 	var result struct {
 		models.VmsTrnReceivedVehicleNoImgage
@@ -771,6 +820,9 @@ func (h *VehicleInUseDriverHandler) UpdateReceivedVehicle(c *gin.Context) {
 // @Router /api/vehicle-in-use-driver/update-received-vehicle-images [put]
 func (h *VehicleInUseDriverHandler) UpdateReceivedVehicleImages(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedVehicleImages
 	var result struct {
 		models.VmsTrnReceivedVehicleImages

@@ -43,7 +43,10 @@ var StatusNameMapReceivedVehicleAdmin = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-vehicle-admin/search-requests [get]
 func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapReceivedVehicleAdmin
 	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
@@ -207,6 +210,9 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-vehicle-admin/request/{trn_request_uid} [get]
 func (h *ReceivedVehicleAdminHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedVehicleAdmin)
 	if err != nil {
 		return
@@ -226,6 +232,9 @@ func (h *ReceivedVehicleAdminHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-vehicle-admin/received-vehicle [put]
 func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedVehicle
 	var result struct {
 		models.VmsTrnReceivedVehicle
@@ -292,7 +301,10 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/received-vehicle/travel-card-admin/{trn_request_uid} [get]
 func (h *ReceivedVehicleAdminHandler) GetTravelCard(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	id := c.Param("trn_request_uid")
 	trnRequestUID, err := uuid.Parse(id)
 	if err != nil {

@@ -49,8 +49,10 @@ var StatusNameMapDriver = map[string]string{
 // @Security AuthorizationAuth
 // @Router /api/booking-driver/menu-requests [get]
 func (h *ReceivedKeyDriverHandler) MenuRequests(c *gin.Context) {
-	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	statusNameMap := MenuNameMapDriver
 	var summary []models.VmsTrnRequestSummary
@@ -156,7 +158,10 @@ func (h *ReceivedKeyDriverHandler) MenuRequests(c *gin.Context) {
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-driver/search-requests [get]
 func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var statusNameMap = StatusNameMapDriver
 	var requests []models.VmsTrnRequestVehicleInUseList
 	var summary []models.VmsTrnRequestSummary
@@ -319,6 +324,9 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-driver/request/{trn_request_uid} [get]
 func (h *ReceivedKeyDriverHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapDriver)
 	if err != nil {
 		return
@@ -338,6 +346,9 @@ func (h *ReceivedKeyDriverHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-key-driver/update-recieived-key-confirmed [put]
 func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKeyConfirmed

@@ -27,7 +27,10 @@ type DriverLicenseUserHandler struct {
 // @Security AuthorizationAuth
 // @Router /api/driver-license-user/card [get]
 func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masDriverUID := "ed9ccc24-2dd6-4294-8136-a78e1bdc6362"
 	var driver models.VmsDriverLicenseCard
 
@@ -56,6 +59,9 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 // @Router /api/driver-license-user/create-license-annual [post]
 func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request models.VmsDriverLicenseAnnualRequest
 	var result struct {
 		models.VmsDriverLicenseAnnualRequest
@@ -141,7 +147,10 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 // @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
 // @Router /api/driver-license-user/license-annual/{trn_request_annual_driver_uid} [get]
 func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
 	var request models.VmsDriverLicenseAnnualResponse
 
@@ -225,6 +234,9 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 // @Router /api/driver-license-user/update-license-annual-canceled [put]
 func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualCanceled
 	var result struct {
 		models.VmsDriverLicenseAnnualCanceled

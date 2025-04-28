@@ -44,6 +44,10 @@ func GetCarpoolName(MasCarpoolUID string) string {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/search [get]
 func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
@@ -134,6 +138,10 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/carpool-management/mas-department [get]
 func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var lists []models.VmsMasDepartment
 
 	query := config.DB
@@ -159,6 +167,9 @@ func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 // @Router /api/carpool-management/create [post]
 func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var carpool models.VmsMasCarpoolRequest
 
 	if err := c.ShouldBindJSON(&carpool); err != nil {
@@ -209,6 +220,10 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 // @Param mas_carpool_uid path string true "MasCarpoolUID (mas_carpool_uid)"
 // @Router /api/carpool-management/carpool/{mas_carpool_uid} [get]
 func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolUID := c.Param("mas_carpool_uid")
 	var carpool models.VmsMasCarpoolResponse
 
@@ -246,6 +261,9 @@ func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
 // @Router /api/carpool-management/update/{mas_carpool_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolUID := c.Param("mas_carpool_uid")
 	var request models.VmsMasCarpoolRequest
 
@@ -304,6 +322,9 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 // @Router /api/carpool-management/delete [delete]
 func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, carpool models.VmsMasCarpoolDelete
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -340,6 +361,9 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 // @Router /api/carpool-management/set-active [put]
 func (h *CarpoolManagementHandler) SetActiveCarpool(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request models.VmsMasCarpoolActive
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -382,6 +406,10 @@ func (h *CarpoolManagementHandler) SetActiveCarpool(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/admin-search/{mas_carpool_uid} [get]
 func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolUID := c.Param("mas_carpool_uid")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
@@ -492,6 +520,9 @@ func (h *CarpoolManagementHandler) GetCarpoolAdmin(c *gin.Context) {
 // @Router /api/carpool-management/admin-create [post]
 func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var requests []models.VmsMasCarpoolAdmin
 	if err := c.ShouldBindJSON(&requests); err != nil {
@@ -545,6 +576,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 // @Router /api/carpool-management/admin-update/{mas_carpool_admin_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpoolAdmin(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolAdminUID := c.Param("mas_carpool_admin_uid")
 
 	var request models.VmsMasCarpoolAdmin
@@ -590,6 +624,9 @@ func (h *CarpoolManagementHandler) UpdateCarpoolAdmin(c *gin.Context) {
 // @Router /api/carpool-management/admin-update-main-admin/{mas_carpool_admin_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpoolMainAdmin(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolAdminUID := c.Param("mas_carpool_admin_uid")
 
 	var existingAdmin models.VmsMasCarpoolAdmin
@@ -629,6 +666,9 @@ func (h *CarpoolManagementHandler) UpdateCarpoolMainAdmin(c *gin.Context) {
 // @Router /api/carpool-management/admin-delete/{mas_carpool_admin_uid} [delete]
 func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolAdminUID := c.Param("mas_carpool_admin_uid")
 
 	var adminCarpool models.VmsMasCarpoolAdmin
@@ -691,6 +731,10 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/carpool-management/admin-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
@@ -726,6 +770,10 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/carpool-management/approver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
@@ -848,6 +896,10 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 // @Param mas_carpool_approver_uid path string true "MasCarpoolApproverUID (mas_carpool_approver_uid)"
 // @Router /api/carpool-management/approver-detail/{mas_carpool_approver_uid} [get]
 func (h *CarpoolManagementHandler) GetCarpoolApprover(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolApproverUID := c.Param("mas_carpool_approver_uid")
 
 	var approver models.VmsMasCarpoolApproverList
@@ -877,6 +929,9 @@ func (h *CarpoolManagementHandler) GetCarpoolApprover(c *gin.Context) {
 // @Router /api/carpool-management/approver-create [post]
 func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var requests []models.VmsMasCarpoolApprover
 	if err := c.ShouldBindJSON(&requests); err != nil {
@@ -931,6 +986,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 // @Router /api/carpool-management/approver-update/{mas_carpool_approver_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolApproverUID := c.Param("mas_carpool_approver_uid")
 
 	var request models.VmsMasCarpoolApprover
@@ -976,6 +1034,9 @@ func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 // @Router /api/carpool-management/approver-update-main-approver/{mas_carpool_approver_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpoolMainApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolApproverUID := c.Param("mas_carpool_approver_uid")
 
 	var existingApprover models.VmsMasCarpoolApprover
@@ -1015,6 +1076,9 @@ func (h *CarpoolManagementHandler) UpdateCarpoolMainApprover(c *gin.Context) {
 // @Router /api/carpool-management/approver-delete/{mas_carpool_approver_uid} [delete]
 func (h *CarpoolManagementHandler) DeleteCarpoolApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masCarpoolApproverUID := c.Param("mas_carpool_approver_uid")
 
 	var approver models.VmsMasCarpoolApprover

@@ -40,7 +40,10 @@ var StatusNameMapReceivedKeyUser = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-user/search-requests [get]
 func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var statusNameMap = StatusNameMapReceivedKeyUser
 	var requests []models.VmsTrnRequestVehicleInUseList
 	var summary []models.VmsTrnRequestSummary
@@ -193,6 +196,9 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-user/request/{trn_request_uid} [get]
 func (h *ReceivedKeyUserHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedKeyUser)
 	if err != nil {
 		return
@@ -212,6 +218,9 @@ func (h *ReceivedKeyUserHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-driver [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyDriver
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
@@ -255,6 +264,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-pea [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyPEA
 	var result struct {
 		models.VmsTrnReceivedKeyPEA
@@ -302,6 +314,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-outsider [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyOutSider
 	var result struct {
 		models.VmsTrnReceivedKeyOutSider
@@ -346,6 +361,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 // @Router /api/received-key-user/update-canceled [put]
 func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled
@@ -401,6 +419,9 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 // @Router /api/received-key-user/update-recieived-key-confirmed [put]
 func (h *ReceivedKeyUserHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKeyConfirmed

@@ -36,6 +36,10 @@ type VehicleManagementHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-management/search [get]
 func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
@@ -150,6 +154,9 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 // @Router /api/vehicle-management/update-vehicle-is-active [put]
 func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, vehicle, result models.VmsMasVehicleIsActiveUpdate
 
 	if err := c.ShouldBindJSON(&request); err != nil {

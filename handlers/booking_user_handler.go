@@ -63,6 +63,9 @@ var StatusNameMapUser = map[string]string{
 // @Router /api/booking-user/create-request [post]
 func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request models.VmsTrnRequestRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -135,8 +138,10 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/booking-user/menu-requests [get]
 func (h *BookingUserHandler) MenuRequests(c *gin.Context) {
-	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	statusNameMap := MenuNameMapUser
 	var summary []models.VmsTrnRequestSummary
@@ -241,7 +246,10 @@ func (h *BookingUserHandler) MenuRequests(c *gin.Context) {
 // @Param limit2 query int false "Number2 of records per page (default: 20)"
 // @Router /api/booking-user/search-requests [get]
 func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapUser
 
 	var requests []models.VmsTrnRequestList
@@ -416,7 +424,11 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/booking-user/request/{trn_request_uid} [get]
 func (h *BookingUserHandler) GetRequest(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+
 	request, err := funcs.GetRequest(c, StatusNameMapUser)
 	if err != nil {
 		return
@@ -515,6 +527,9 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 // @Router /api/booking-user/update-vehicle-user [put]
 func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request, trnRequest models.VmsTrnRequestVehicleUser
 	var result struct {
@@ -566,6 +581,9 @@ func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 // @Router /api/booking-user/update-trip [put]
 func (h *BookingUserHandler) UpdateTrip(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request, trnRequest models.VmsTrnRequestTrip
 	var result struct {
@@ -609,6 +627,9 @@ func (h *BookingUserHandler) UpdateTrip(c *gin.Context) {
 // @Router /api/booking-user/update-pickup [put]
 func (h *BookingUserHandler) UpdatePickup(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestPickup
 	var result struct {
 		models.VmsTrnRequestPickup
@@ -650,6 +671,9 @@ func (h *BookingUserHandler) UpdatePickup(c *gin.Context) {
 // @Router /api/booking-user/update-document [put]
 func (h *BookingUserHandler) UpdateDocument(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestDocument
 	var result struct {
 		models.VmsTrnRequestDocument
@@ -691,6 +715,9 @@ func (h *BookingUserHandler) UpdateDocument(c *gin.Context) {
 // @Router /api/booking-user/update-cost [put]
 func (h *BookingUserHandler) UpdateCost(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCost
 	var result struct {
 		models.VmsTrnRequestCost
@@ -733,6 +760,9 @@ func (h *BookingUserHandler) UpdateCost(c *gin.Context) {
 // @Router /api/booking-user/update-vehicle-type [put]
 func (h *BookingUserHandler) UpdateVehicleType(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var request, trnRequest models.VmsTrnRequestVehicleType
 	var result struct {
@@ -775,6 +805,9 @@ func (h *BookingUserHandler) UpdateVehicleType(c *gin.Context) {
 // @Router /api/booking-user/update-approver [put]
 func (h *BookingUserHandler) UpdateApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestApprover
 	var result struct {
 		models.VmsTrnRequestApprover
@@ -823,6 +856,9 @@ func (h *BookingUserHandler) UpdateApprover(c *gin.Context) {
 // @Router /api/booking-user/update-sended-back [put]
 func (h *BookingUserHandler) UpdateSendedBack(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestSendedBack
 	var result struct {
 		models.VmsTrnRequestSendedBack
@@ -879,6 +915,9 @@ func (h *BookingUserHandler) UpdateSendedBack(c *gin.Context) {
 func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled

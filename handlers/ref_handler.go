@@ -64,6 +64,9 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 // @Router /api/ref/cost-type/{code} [get]
 func (h *RefHandler) GetCostType(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	code := c.Param("code")
 
 	var costType models.VmsRefCostType
