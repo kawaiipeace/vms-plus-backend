@@ -4910,6 +4910,38 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/mas/department-tree": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve the Department Tree.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Department Tree",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by Department Upper",
+                        "name": "dept_upper",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/mas/satisfaction_survey_questions": {
             "get": {
                 "security": [

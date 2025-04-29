@@ -18,18 +18,16 @@ type ReceivedKeyDriverHandler struct {
 }
 
 var MenuNameMapDriver = map[string]string{
-	"40": "กำลังจะมาถึง",
-	"50": "กำลังดำเนินการ",
-	"51": "กำลังดำเนินการ",
-	"60": "กำลังดำเนินการ",
-	"70": "กำลังดำเนินการ",
-	"71": "กำลังดำเนินการ",
-	"80": "เสร็จสิ้น",
-	"90": "ยกเลิกคำขอ",
+	"51*": "กำลังดำเนินการ",
+	"60":  "กำลังดำเนินการ",
+	"70":  "กำลังดำเนินการ",
+	"71":  "กำลังดำเนินการ",
+	"50":  "กำลังจะมาถึง",
+	"80":  "เสร็จสิ้น",
+	"90":  "ยกเลิกคำขอ",
 }
 
 var StatusNameMapDriver = map[string]string{
-	"40": "อนุมัติแล้ว",
 	"50": "รอรับกุญแจ",
 	"51": "รับยานพาหนะ",
 	"60": "เดินทาง",
@@ -129,8 +127,13 @@ func (h *ReceivedKeyDriverHandler) MenuRequests(c *gin.Context) {
 		})
 	}
 
-	// Sort the summary by RefRequestStatusCode
 	sort.Slice(summary, func(i, j int) bool {
+		if summary[i].RefRequestStatusName == "กำลังดำเนินการ" && summary[j].RefRequestStatusName != "กำลังดำเนินการ" {
+			return true
+		}
+		if summary[i].RefRequestStatusName != "กำลังดำเนินการ" && summary[j].RefRequestStatusName == "กำลังดำเนินการ" {
+			return false
+		}
 		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
 	})
 
@@ -208,11 +211,23 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 					}
 				}
 			}
+			if strings.HasSuffix(code, "*") {
+				additionalCodes[strings.TrimSuffix(code, "*")] = true
+				if name, exists := MenuNameMapDriver[code]; exists {
+					for key, value := range MenuNameMapDriver {
+						if value == name {
+							additionalCodes[key] = true
+						}
+					}
+				}
+			}
 		}
+
 		// Merge the original codes with the additional codes
 		for key := range additionalCodes {
 			codes = append(codes, key)
 		}
+
 		fmt.Println("codes", codes)
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}

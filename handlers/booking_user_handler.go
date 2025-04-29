@@ -295,7 +295,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		for key := range additionalCodes {
 			codes = append(codes, key)
 		}
-		fmt.Println("codes", codes)
+		//fmt.Println("codes", codes)
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
 	// Ordering

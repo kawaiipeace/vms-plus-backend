@@ -616,7 +616,10 @@ func (h *LoginHandler) Logout(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/login/profile [get]
 func (h *LoginHandler) Profile(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, "")
+	user := funcs.GetAuthenUser(c, "*")
+	if c.IsAborted() {
+		return
+	}
 	user.LicenseStatus = "อนุมัติแล้ว"
 	c.JSON(http.StatusOK, user)
 }

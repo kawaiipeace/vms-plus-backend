@@ -4249,6 +4249,25 @@ paths:
       summary: Log out the current user
       tags:
       - Login
+  /api/mas/department-tree:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve the Department Tree.
+      parameters:
+      - description: Filter by Department Upper
+        in: query
+        name: dept_upper
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Department Tree
+      tags:
+      - MAS
   /api/mas/satisfaction_survey_questions:
     get:
       consumes:

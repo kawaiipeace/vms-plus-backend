@@ -52,9 +52,9 @@ func main() {
 	router.POST("/api/login/authen-thaiid", funcs.ApiKeyMiddleware(), loginHandler.AuthenThaiID)
 	router.GET("/api/login/profile", funcs.ApiKeyAuthenMiddleware(), loginHandler.Profile)
 	router.GET("/api/logout", funcs.ApiKeyAuthenMiddleware(), loginHandler.Logout)
-	//Roles:     []string{"vehicel-user", "level1-approval", "admin-approval", "admin-dpt-approval", "final-approval"}
+
 	//BookingUserHandler
-	bookingUserHandler := handlers.BookingUserHandler{Role: "vehicel-user"}
+	bookingUserHandler := handlers.BookingUserHandler{Role: "vehicle-user"}
 	router.GET("/api/booking-user/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.MenuRequests)
 	router.POST("/api/booking-user/create-request", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.CreateRequest)
 	router.GET("/api/booking-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.GetRequest)
@@ -356,6 +356,7 @@ func main() {
 	router.GET("/api/mas/user/:emp_id", funcs.ApiKeyAuthenMiddleware(), masHandler.GetUserEmp)
 	router.GET("/api/mas/satisfaction_survey_questions", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVmsMasSatisfactionSurveyQuestions)
 	router.GET("/api/mas/vehicle-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleDepartment)
+	router.GET("/api/mas/department-tree", funcs.ApiKeyAuthenMiddleware(), masHandler.GetDepartmentTree)
 
 	//RefHandler
 	refHandler := handlers.RefHandler{}

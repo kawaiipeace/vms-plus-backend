@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"vms_plus_be/config"
+	"vms_plus_be/funcs"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -40,6 +41,7 @@ func (h *RefHandler) ListRequestStatus(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/ref/cost-type [get]
 func (h *RefHandler) ListCostType(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, "*")
 	var lists []models.VmsRefCostType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
@@ -47,7 +49,17 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 		return
 	}
 	for i := range lists {
-		lists[i].RefCostNo = lists[i].RefCostTypeCode + "-00000-1"
+		if lists[i].RefCostTypeCode == "1" {
+			var department models.VmsMasDepartment
+			if err := config.DB.
+				Where("dept_sap = ?", user.DeptSAP).
+				First(&department).Error; err == nil {
+				lists[i].RefCostNo = department.CostCenterCode
+			} else {
+				lists[i].RefCostNo = ""
+			}
+		}
+
 	}
 	c.JSON(http.StatusOK, lists)
 }
@@ -68,14 +80,23 @@ func (h *RefHandler) GetCostType(c *gin.Context) {
 		return
 	}
 	code := c.Param("code")
-
+	user := funcs.GetAuthenUser(c, "*")
 	var costType models.VmsRefCostType
 	if err := config.DB.
 		First(&costType, "ref_cost_type_code = ?", code).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Cost type not found"})
 		return
 	}
-	costType.RefCostNo = costType.RefCostTypeCode + "-00000-1"
+	if costType.RefCostTypeCode == "1" {
+		var department models.VmsMasDepartment
+		if err := config.DB.
+			Where("dept_sap = ?", user.DeptSAP).
+			First(&department).Error; err == nil {
+			costType.RefCostNo = department.CostCenterCode
+		} else {
+			costType.RefCostNo = ""
+		}
+	}
 	c.JSON(http.StatusOK, costType)
 }
 

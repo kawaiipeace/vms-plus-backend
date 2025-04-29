@@ -30,7 +30,7 @@ func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Du
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
 		TokenType: tokenType,
-		Roles:     []string{"vehicel-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "admin-super"},
+		Roles:     []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
 		},
@@ -95,12 +95,14 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			c.Abort()
 			return &empUser
 		}
-		empUser.Roles = []string{"vehicel-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "admin-super"}
-		for _, role := range strings.Split(roles, ",") {
-			if !contains(empUser.Roles, role) {
-				c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
-				c.Abort()
-				return &models.AuthenUserEmp{}
+		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"}
+		if roles != "*" {
+			for _, role := range strings.Split(roles, ",") {
+				if !Contains(empUser.Roles, role) {
+					c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+					c.Abort()
+					return &models.AuthenUserEmp{}
+				}
 			}
 		}
 		return &empUser
@@ -117,23 +119,16 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		return &empUser
 	}
 	empUser.Roles = jwt.Roles
-	for _, role := range strings.Split(roles, ",") {
-		if !contains(empUser.Roles, role) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
-			c.Abort()
-			return &empUser
+	if roles != "*" {
+		for _, role := range strings.Split(roles, ",") {
+			if !Contains(empUser.Roles, role) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+				c.Abort()
+				return &empUser
+			}
 		}
 	}
 	return &empUser
-}
-
-func contains(slice []string, item string) bool {
-	for _, v := range slice {
-		if v == item {
-			return true
-		}
-	}
-	return false
 }
 
 func GetUserEmpInfo(empID string) models.AuthenUserEmp {

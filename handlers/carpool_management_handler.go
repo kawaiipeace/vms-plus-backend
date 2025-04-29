@@ -743,7 +743,7 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 	if search != "" {
 		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
 	}
-
+	query = query.Limit(100)
 	// Execute query
 	if err := query.
 		Find(&lists).Error; err != nil {
@@ -753,7 +753,7 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 
 	// For loop to set Image_url for each element in the slice
 	for i := range lists {
-		lists[i].Image_url = config.DefaultAvatarURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -782,7 +782,7 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	if search != "" {
 		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
 	}
-
+	query = query.Limit(100)
 	// Execute query
 	if err := query.
 		Find(&lists).Error; err != nil {
@@ -792,7 +792,7 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 
 	// For loop to set Image_url for each element in the slice
 	for i := range lists {
-		lists[i].Image_url = config.DefaultAvatarURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
