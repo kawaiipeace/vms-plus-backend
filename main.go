@@ -121,7 +121,7 @@ func main() {
 	router.PUT("/api/booking-final/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateCanceled)
 
 	//ReceivedKeyUserHandler
-	receivedKeyUserHandler := handlers.ReceivedKeyUserHandler{Role: "vehicel-user"}
+	receivedKeyUserHandler := handlers.ReceivedKeyUserHandler{Role: "vehicle-user"}
 	router.GET("/api/received-key-user/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.SearchRequests)
 	router.GET("/api/received-key-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.GetRequest)
 	router.PUT("/api/received-key-user/update-key-pickup-pea", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupPEA)
@@ -149,7 +149,7 @@ func main() {
 	router.GET("/api/booking-driver/menu-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.MenuRequests)
 
 	//ReceivedVehicleUserHandler
-	receivedVehicleUserHandler := handlers.ReceivedVehicleUserHandler{Role: "vehicel-user"}
+	receivedVehicleUserHandler := handlers.ReceivedVehicleUserHandler{Role: "vehicle-user"}
 	router.GET("/api/received-vehicle-user/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.SearchRequests)
 	router.GET("/api/received-vehicle-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.GetRequest)
 	router.PUT("/api/received-vehicle-user/received-vehicle", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.ReceivedVehicle)
@@ -170,7 +170,7 @@ func main() {
 	router.GET("/api/received-vehicle-driver/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleDriverHandler.GetTravelCard)
 
 	//VehicleInUseUserHandler
-	vehicleInUseUserHandler := handlers.VehicleInUseUserHandler{Role: "vehicel-user"}
+	vehicleInUseUserHandler := handlers.VehicleInUseUserHandler{Role: "vehicle-user"}
 	router.GET("/api/vehicle-in-use-user/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.SearchRequests)
 	router.GET("/api/vehicle-in-use-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetRequest)
 	router.GET("/api/vehicle-in-use-user/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleTripDetails)
@@ -282,7 +282,7 @@ func main() {
 	router.GET("/api/driver-management/replacement-drivers", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetReplacementDrivers)
 
 	//DriverLicenseUserHandler
-	driverLicenseUserHandler := handlers.DriverLicenseUserHandler{Role: "vehicel-user"}
+	driverLicenseUserHandler := handlers.DriverLicenseUserHandler{Role: "vehicle-user"}
 	router.GET("/api/driver-license-user/card", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.GetLicenseCard)
 	router.POST("/api/driver-license-user/create-license-annual", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.CreateDriverLicenseAnnual)
 	router.GET("/api/driver-license-user/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.GetDriverLicenseAnnual)
