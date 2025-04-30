@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -17,25 +18,127 @@ type ReceivedKeyDriverHandler struct {
 }
 
 var MenuNameMapDriver = map[string]string{
-	"50": "กำลังดำเนินการ",
-	"51": "กำลังดำเนินการ",
-	"60": "กำลังดำเนินการ",
-	"70": "กำลังดำเนินการ",
-	"71": "กำลังดำเนินการ",
-	"30": "กำลังจะมาถึง",
+	"51*": "กำลังดำเนินการ",
+	"60":  "กำลังดำเนินการ",
+	"70":  "กำลังดำเนินการ",
+	"71":  "กำลังดำเนินการ",
+	"50":  "กำลังจะมาถึง",
+	"80":  "เสร็จสิ้น",
+	"90":  "ยกเลิกคำขอ",
+}
+
+var StatusNameMapDriver = map[string]string{
+	"50": "รอรับกุญแจ",
+	"51": "รับยานพาหนะ",
+	"60": "เดินทาง",
+	"70": "รอตรวจสอบ",
+	"71": "ตีกลับยานพาหนะ",
 	"80": "เสร็จสิ้น",
 	"90": "ยกเลิกคำขอ",
 }
 
-var StatusNameMapDriver = map[string]string{
-	"40": "อนุมัติแล้ว",
-	"50": "กำลังดำเนินการ",
-	"51": "กำลังดำเนินการ",
-	"60": "กำลังดำเนินการ",
-	"70": "กำลังดำเนินการ",
-	"71": "กำลังดำเนินการ",
-	"80": "เสร็จสิ้น",
-	"90": "ยกเลิกคำขอ",
+// MenuRequests godoc
+// @Summary Summary booking requests by request status code
+// @Description Summary booking requests, counts grouped by request status code
+// @Tags Received-key-driver
+// @Accept  json
+// @Produce  json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/booking-driver/menu-requests [get]
+func (h *ReceivedKeyDriverHandler) MenuRequests(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+
+	statusNameMap := MenuNameMapDriver
+	var summary []models.VmsTrnRequestSummary
+
+	// Create a mapping to group status codes by their names
+	groupedStatusCodes := make(map[string][]string)
+	for code, name := range statusNameMap {
+		groupedStatusCodes[name] = append(groupedStatusCodes[name], code)
+	}
+
+	// Initialize a map to store counts and minimum code grouped by status name
+	groupedCounts := make(map[string]struct {
+		Count   int
+		MinCode string
+	})
+
+	// Build the query for all status codes
+	allStatusCodes := make([]string, 0, len(statusNameMap))
+	for code := range statusNameMap {
+		allStatusCodes = append(allStatusCodes, code)
+	}
+
+	// Execute the query for all status codes
+	dbSummary := []struct {
+		RefRequestStatusCode string `gorm:"column:ref_request_status_code"`
+		Count                int    `gorm:"column:count"`
+	}{}
+	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+		Select("req.ref_request_status_code, COUNT(*) as count").
+		Where("req.ref_request_status_code IN (?)", allStatusCodes).
+		Group("req.ref_request_status_code")
+
+	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Aggregate counts and find the minimum `RefRequestStatusCode` for each `RefRequestStatusName`
+	for _, dbItem := range dbSummary {
+		for name, codes := range groupedStatusCodes {
+			for _, code := range codes {
+				if dbItem.RefRequestStatusCode == code {
+					current := groupedCounts[name]
+					if current.Count == 0 || code < current.MinCode {
+						current.MinCode = code
+					}
+					current.Count += dbItem.Count
+					groupedCounts[name] = current
+					break
+				}
+			}
+		}
+	}
+
+	// Ensure every status name is included, even with Count = 0
+	for name, codes := range groupedStatusCodes {
+		if _, exists := groupedCounts[name]; !exists {
+			groupedCounts[name] = struct {
+				Count   int
+				MinCode string
+			}{
+				Count:   0,
+				MinCode: codes[0], // Use the first code as default for MinCode
+			}
+		}
+	}
+
+	// Build the summary grouped by status name with minimum code
+	for name, data := range groupedCounts {
+		summary = append(summary, models.VmsTrnRequestSummary{
+			RefRequestStatusName: name,
+			RefRequestStatusCode: data.MinCode,
+			Count:                data.Count,
+		})
+	}
+
+	sort.Slice(summary, func(i, j int) bool {
+		if summary[i].RefRequestStatusName == "กำลังดำเนินการ" && summary[j].RefRequestStatusName != "กำลังดำเนินการ" {
+			return true
+		}
+		if summary[i].RefRequestStatusName != "กำลังดำเนินการ" && summary[j].RefRequestStatusName == "กำลังดำเนินการ" {
+			return false
+		}
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
+	})
+
+	// Respond with the grouped summary
+	c.JSON(http.StatusOK, summary)
 }
 
 // SearchRequests godoc
@@ -58,9 +161,12 @@ var StatusNameMapDriver = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-driver/search-requests [get]
 func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var statusNameMap = StatusNameMapDriver
-	var requests []models.VmsTrnRequestList
+	var requests []models.VmsTrnRequestVehicleInUseList
 	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -71,7 +177,8 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select("req.*, status.ref_request_status_desc,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -91,6 +198,39 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 	}
 	if receivedKeyEndDatetime := c.Query("received_key_end_datetime"); receivedKeyEndDatetime != "" {
 		query = query.Where("req.received_key_end_datetime <= ?", receivedKeyEndDatetime)
+	}
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+			if strings.HasSuffix(code, "*") {
+				additionalCodes[strings.TrimSuffix(code, "*")] = true
+				if name, exists := MenuNameMapDriver[code]; exists {
+					for key, value := range MenuNameMapDriver {
+						if value == name {
+							additionalCodes[key] = true
+						}
+					}
+				}
+			}
+		}
+
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+
+		fmt.Println("codes", codes)
+		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
 
 	// Ordering
@@ -130,7 +270,9 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 	query = query.Offset(offset).Limit(pageSizeInt)
 
 	// Execute the main query
-	if err := query.Scan(&requests).Error; err != nil {
+	if err := query.
+		Preload("RefVehicleKeyType").
+		Scan(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -198,6 +340,9 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-driver/request/{trn_request_uid} [get]
 func (h *ReceivedKeyDriverHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapDriver)
 	if err != nil {
 		return
@@ -205,21 +350,24 @@ func (h *ReceivedKeyDriverHandler) GetRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, request)
 }
 
-// UpdateRecieivedKeyDetail godoc
-// @Summary Update received key details for a booking request
-// @Description This endpoint allows to update received key details for a booking request.
+// UpdateRecieivedKeyConfirmed godoc
+// @Summary Confirm the update of key pickup driver for a booking request
+// @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
 // @Tags Received-key-driver
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequestUpdateRecieivedKeyDetail true "VmsTrnRequestUpdateRecieivedKeyDetail data"
-// @Router /api/received-key-driver/update-recieived-key-detail [put]
-func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
+// @Param data body models.VmsTrnRequestUpdateRecieivedKeyConfirmed true "VmsTrnRequestUpdateRecieivedKeyConfirmed data"
+// @Router /api/received-key-driver/update-recieived-key-confirmed [put]
+func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyDetail
+	if c.IsAborted() {
+		return
+	}
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 	var result struct {
-		models.VmsTrnRequestUpdateRecieivedKeyDetail
+		models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -234,6 +382,7 @@ func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
@@ -244,6 +393,10 @@ func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
+		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

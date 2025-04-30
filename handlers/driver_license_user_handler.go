@@ -27,7 +27,10 @@ type DriverLicenseUserHandler struct {
 // @Security AuthorizationAuth
 // @Router /api/driver-license-user/card [get]
 func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masDriverUID := "ed9ccc24-2dd6-4294-8136-a78e1bdc6362"
 	var driver models.VmsDriverLicenseCard
 
@@ -40,7 +43,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
 		return
 	}
-
+	driver.LicenseStatus = "อนุมัติแล้ว"
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 
@@ -56,6 +59,9 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 // @Router /api/driver-license-user/create-license-annual [post]
 func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request models.VmsDriverLicenseAnnualRequest
 	var result struct {
 		models.VmsDriverLicenseAnnualRequest
@@ -141,7 +147,10 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 // @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
 // @Router /api/driver-license-user/license-annual/{trn_request_annual_driver_uid} [get]
 func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
 	var request models.VmsDriverLicenseAnnualResponse
 
@@ -154,7 +163,7 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	if request.RefRequestAnnualDriverStatusCode == "10" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "1", ProgressName: "รออนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
 	}
@@ -168,31 +177,47 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	if request.RefRequestAnnualDriverStatusCode == "20" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "21" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "2", ProgressName: "ผู้อนุมัติตีกลับ"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ"},
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
+
 	}
 	if request.RefRequestAnnualDriverStatusCode == "90" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "ยกเลิกอนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิก"},
 		}
 	}
+	if request.RefRequestAnnualDriverStatusCode == "91" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอ"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "92" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "93" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
+		}
+	}
+
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": request})
 }
@@ -209,6 +234,9 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 // @Router /api/driver-license-user/update-license-annual-canceled [put]
 func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualCanceled
 	var result struct {
 		models.VmsDriverLicenseAnnualCanceled

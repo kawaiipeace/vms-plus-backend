@@ -9,7 +9,7 @@ type MasUserEmp struct {
 	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
 	TelMobile    string `gorm:"column:tel_mobile" json:"tel_mobile"`
 	TelInternal  string `gorm:"column:tel_internal" json:"tel_internal"`
-	Image_url    string `gorm:"column:image_url" json:"image_url"`
+	ImageUrl     string `gorm:"column:image_url" json:"image_url"`
 }
 
 func (MasUserEmp) TableName() string {
@@ -25,7 +25,7 @@ type MasUserDriver struct {
 	DeptSAPFull  string             `gorm:"column:dept_sap_full" json:"dept_sap_full"`
 	TelMobile    string             `gorm:"column:tel_mobile" json:"tel_mobile"`
 	TelInternal  string             `gorm:"column:tel_internal" json:"tel_internal"`
-	ImageURL     string             `gorm:"column:image_url" json:"image_url"`
+	ImageUrl     string             `gorm:"column:image_url" json:"image_url"`
 	AnnualDriver VmsTrnAnnualDriver `gorm:"foreignKey:EmpID;references:CreatedRequestEmpId" json:"annual_driver"`
 }
 
@@ -50,4 +50,36 @@ type VmsMasVehicleDepartmentList struct {
 	DeptSapShort        string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSapFull         string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
 	DeptType            string `gorm:"column:dept_type" json:"dept_type"`
+}
+
+type VmsMasDepartment struct {
+	DeptSAP        string `gorm:"column:dept_sap;primaryKey" json:"dept_sap"`
+	DeptShort      string `gorm:"column:dept_short" json:"dept_short"`
+	DeptFull       string `gorm:"column:dept_full" json:"dept_full"`
+	CostCenterCode string `gorm:"column:cost_center_code" json:"cost_center_code"`
+}
+
+func (VmsMasDepartment) TableName() string {
+	return "public.vms_mas_department"
+}
+
+type VmsMasVehicleArray struct {
+	MasVehicleUID string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"f3b29096-140e-49dc-97ee-17fa9352aff6"`
+}
+
+type VmsMasDriverArray struct {
+	MasDriverUID string `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"ec4a2cee-aded-47bd-9d93-4a1a74cb58a4"`
+}
+
+type VmsMasDepartmentTree struct {
+	DeptSAP      string                 `gorm:"column:dept_sap;primaryKey" json:"-"`
+	DeptUpper    string                 `gorm:"column:dept_upper" json:"-"`
+	DeptShort    string                 `gorm:"column:dept_short" json:"-"`
+	DeptFull     string                 `gorm:"column:dept_full" json:"text"`
+	ResourceName string                 `gorm:"column:resource_name" json:"resource_name"`
+	DeptUnder    []VmsMasDepartmentTree `gorm:"foreignKey:DeptSAP;references:DeptUpper" json:"children"`
+}
+
+func (VmsMasDepartmentTree) TableName() string {
+	return "vms_user.mas_department"
 }

@@ -42,7 +42,10 @@ var StatusNameMapApprover = map[string]string{
 // @Router /api/booking-approver/menu-requests [get]
 func (h *BookingApproverHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	statusNameMap := MenuNameMapApprover
 	var summary []models.VmsTrnRequestSummary
@@ -85,15 +88,12 @@ func (h *BookingApproverHandler) MenuRequests(c *gin.Context) {
 		for name, codes := range groupedStatusCodes {
 			for _, code := range codes {
 				if dbItem.RefRequestStatusCode == code {
-					if groupedCounts[name].Count == 0 || code < groupedCounts[name].MinCode {
-						groupedCounts[name] = struct {
-							Count   int
-							MinCode string
-						}{
-							Count:   groupedCounts[name].Count + dbItem.Count,
-							MinCode: code,
-						}
+					current := groupedCounts[name]
+					if current.Count == 0 || code < current.MinCode {
+						current.MinCode = code
 					}
+					current.Count += dbItem.Count
+					groupedCounts[name] = current
 					break
 				}
 			}
@@ -149,7 +149,10 @@ func (h *BookingApproverHandler) MenuRequests(c *gin.Context) {
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/booking-approver/search-requests [get]
 func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var requests []models.VmsTrnRequestList
 	var summary []models.VmsTrnRequestSummary
@@ -286,6 +289,9 @@ func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
 // @Router /api/booking-approver/request/{trn_request_uid} [get]
 func (h *BookingApproverHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequest(c, StatusNameMapApprover)
 	if err != nil {
 		return
@@ -307,24 +313,39 @@ func (h *BookingApproverHandler) GetRequest(c *gin.Context) {
 	}
 	if request.RefRequestStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
-			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "1", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
 	}
 	if request.RefRequestStatusCode == "31" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
-			{ProgressIcon: "1", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
 	}
-	if request.RefRequestStatusCode >= "40" && request.RefRequestStatusCode < "90" { //
+	if request.RefRequestStatusCode >= "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะแล้ว"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+	}
+	if request.RefRequestStatusCode >= "41" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากเจ้าของยานพาหนะ"},
+		}
+	}
+	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติให้ใช้ยานพาหนะ"},
+		}
+
 	}
 	if request.RefRequestStatusCode == "90" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
@@ -338,19 +359,19 @@ func (h *BookingApproverHandler) GetRequest(c *gin.Context) {
 	}
 	if request.RefRequestStatusCode == "92" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัดแล้ว"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
 		}
 	}
 	if request.RefRequestStatusCode == "93" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
 		}
 	}
 	if request.RefRequestStatusCode == "94" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัดแล้ว"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะแล้ว"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 		}
 	}
@@ -369,6 +390,9 @@ func (h *BookingApproverHandler) GetRequest(c *gin.Context) {
 // @Router /api/booking-approver/update-sended-back [put]
 func (h *BookingApproverHandler) UpdateSendedBack(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestSendedBack
 	var result struct {
 		models.VmsTrnRequestSendedBack
@@ -421,6 +445,9 @@ func (h *BookingApproverHandler) UpdateSendedBack(c *gin.Context) {
 // @Router /api/booking-approver/update-approved [put]
 func (h *BookingApproverHandler) UpdateApproved(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestApproved
 	var result struct {
 		models.VmsTrnRequestApproved
@@ -475,6 +502,9 @@ func (h *BookingApproverHandler) UpdateApproved(c *gin.Context) {
 // @Router /api/booking-approver/update-canceled [put]
 func (h *BookingApproverHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled
@@ -499,7 +529,7 @@ func (h *BookingApproverHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
-
+	request.CanceledRequestDatetime = time.Now()
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return

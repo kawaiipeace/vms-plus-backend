@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"vms_plus_be/config"
+	"vms_plus_be/funcs"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -40,6 +41,7 @@ func (h *RefHandler) ListRequestStatus(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/ref/cost-type [get]
 func (h *RefHandler) ListCostType(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, "*")
 	var lists []models.VmsRefCostType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
@@ -47,7 +49,17 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 		return
 	}
 	for i := range lists {
-		lists[i].RefCostNo = lists[i].RefCostTypeCode + "-00000-1"
+		if lists[i].RefCostTypeCode == "1" {
+			var department models.VmsMasDepartment
+			if err := config.DB.
+				Where("dept_sap = ?", user.DeptSAP).
+				First(&department).Error; err == nil {
+				lists[i].RefCostNo = department.CostCenterCode
+			} else {
+				lists[i].RefCostNo = ""
+			}
+		}
+
 	}
 	c.JSON(http.StatusOK, lists)
 }
@@ -64,15 +76,27 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 // @Router /api/ref/cost-type/{code} [get]
 func (h *RefHandler) GetCostType(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	code := c.Param("code")
-
+	user := funcs.GetAuthenUser(c, "*")
 	var costType models.VmsRefCostType
 	if err := config.DB.
 		First(&costType, "ref_cost_type_code = ?", code).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Cost type not found"})
 		return
 	}
-	costType.RefCostNo = costType.RefCostTypeCode + "-00000-1"
+	if costType.RefCostTypeCode == "1" {
+		var department models.VmsMasDepartment
+		if err := config.DB.
+			Where("dept_sap = ?", user.DeptSAP).
+			First(&department).Error; err == nil {
+			costType.RefCostNo = department.CostCenterCode
+		} else {
+			costType.RefCostNo = ""
+		}
+	}
 	c.JSON(http.StatusOK, costType)
 }
 
@@ -220,6 +244,44 @@ func (h *RefHandler) ListCarpoolChooseCar(c *gin.Context) {
 // @Router /api/ref/carpool-choose-driver [get]
 func (h *RefHandler) ListCarpoolChooseDriver(c *gin.Context) {
 	var lists []models.VmsRefCarpoolChooseDriver
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListVehicleKeyType godoc
+// @Summary Retrieve all vehicle key types
+// @Description This endpoint retrieves all vehicle key types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/vehicle-key-type [get]
+func (h *RefHandler) ListVehicleKeyType(c *gin.Context) {
+	var lists []models.VmsRefVehicleKeyType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListLeaveTimeType godoc
+// @Summary Retrieve all leave time types
+// @Description This endpoint retrieves all leave time types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/leave-time-type [get]
+func (h *RefHandler) ListLeaveTimeType(c *gin.Context) {
+	var lists []models.VmsRefLeaveTimeType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})

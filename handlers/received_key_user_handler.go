@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -39,9 +40,12 @@ var StatusNameMapReceivedKeyUser = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-user/search-requests [get]
 func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var statusNameMap = StatusNameMapReceivedKeyUser
-	var requests []models.VmsTrnRequestList
+	var requests []models.VmsTrnRequestVehicleInUseList
 	var summary []models.VmsTrnRequestSummary
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -52,7 +56,8 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select("req.*, status.ref_request_status_desc,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -66,7 +71,27 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("enddate"); endDate != "" {
 		query = query.Where("req.start_datetime <= ?", endDate)
 	}
-
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		fmt.Println("codes", codes)
+		query = query.Where("req.ref_request_status_code IN (?)", codes)
+	}
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -104,7 +129,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	query = query.Offset(offset).Limit(pageSizeInt)
 
 	// Execute the main query
-	if err := query.Scan(&requests).Error; err != nil {
+	if err := query.Preload("RefVehicleKeyType").Scan(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -172,6 +197,9 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-user/request/{trn_request_uid} [get]
 func (h *ReceivedKeyUserHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedKeyUser)
 	if err != nil {
 		return
@@ -191,6 +219,9 @@ func (h *ReceivedKeyUserHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-driver [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyDriver
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
@@ -205,8 +236,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 1         // Driver
+	request.ReceiverKeyType = 1 // Driver
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -219,10 +249,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -238,6 +265,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-pea [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyPEA
 	var result struct {
 		models.VmsTrnReceivedKeyPEA
@@ -251,8 +281,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 2         // PEA
+	request.ReceiverKeyType = 2 // PEA
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
@@ -271,10 +300,6 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -290,6 +315,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 // @Router /api/received-key-user/update-key-pickup-outsider [put]
 func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyOutSider
 	var result struct {
 		models.VmsTrnReceivedKeyOutSider
@@ -305,8 +333,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
-	request.ReceiverKeyType = 3         // Outsider
+	request.ReceiverKeyType = 3 // Outsider
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -319,11 +346,6 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -340,6 +362,9 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 // @Router /api/received-key-user/update-canceled [put]
 func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled
@@ -363,6 +388,7 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.CanceledRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -378,6 +404,57 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	funcs.CreateTrnLog(result.TrnRequestUID,
 		result.RefRequestStatusCode,
 		result.CanceledRequestReason,
+		user.EmpID)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// UpdateRecieivedKeyConfirmed godoc
+// @Summary Confirm the update of key pickup driver for a booking request
+// @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
+// @Tags Received-key-user
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsTrnRequestUpdateRecieivedKeyConfirmed true "VmsTrnRequestUpdateRecieivedKeyConfirmed data"
+// @Router /api/received-key-user/update-recieived-key-confirmed [put]
+func (h *ReceivedKeyUserHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+	var result struct {
+		models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+		models.VmsTrnRequestRequestNo
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	funcs.CreateTrnLog(result.TrnRequestUID,
+		result.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
 		user.EmpID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
