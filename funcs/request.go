@@ -164,6 +164,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	request.NumberOfAvailableDrivers = 2
 	request.DriverImageURL = config.DefaultAvatarURL
 	request.CanCancelRequest = true
+	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = statusNameMap[request.RefRequestStatusCode]
 	UpdateTrnRequestData(request.TrnRequestUID)
 	//c.JSON(http.StatusOK, request)
@@ -197,6 +198,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 	request.DriverImageURL = config.DefaultAvatarURL
 	request.ReceivedKeyImageURL = config.DefaultAvatarURL
 	request.CanCancelRequest = true
+	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = statusNameMap[request.RefRequestStatusCode]
 	UpdateTrnRequestData(request.TrnRequestUID)
 	//c.JSON(http.StatusOK, request)

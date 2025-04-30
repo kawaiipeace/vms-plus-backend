@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"vms_plus_be/config"
+	"vms_plus_be/funcs"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ import (
 )
 
 type DriverHandler struct {
+	Role string
 }
 
 // GetDrivers godoc
@@ -29,6 +31,10 @@ type DriverHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search [get]
 func (h *DriverHandler) GetDrivers(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	name := strings.ToUpper(c.Query("name"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
@@ -36,7 +42,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 
 	var drivers []models.VmsMasDriver
 	query := config.DB.Model(&models.VmsMasDriver{})
-	query = query.Where("is_deleted = ?", "0")
+	query = query.Where("is_deleted = ? AND is_replacement = ?", "0", "0")
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"
@@ -114,6 +120,10 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search-other-dept [get]
 func (h *DriverHandler) GetDriversOtherDept(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	name := c.Query("name")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
@@ -183,7 +193,10 @@ func (h *DriverHandler) GetDriversOtherDept(c *gin.Context) {
 // @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
 // @Router /api/driver/{mas_driver_uid} [get]
 func (h *DriverHandler) GetDriver(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	masDriverUID := c.Param("mas_driver_uid")
 	parsedID, err := uuid.Parse(masDriverUID)
 	if err != nil {

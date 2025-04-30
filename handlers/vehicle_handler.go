@@ -13,6 +13,7 @@ import (
 )
 
 type VehicleHandler struct {
+	Role string
 }
 
 // SearchVehicles godoc
@@ -31,15 +32,37 @@ type VehicleHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle/search [get]
 func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	searchText := c.Query("search")            // Text search for brand name & license plate
 	ownerDept := c.Query("vehicle_owner_dept") // Filter by vehicle owner department
 	carType := c.Query("car_type")             // Filter by car type
 	categoryCode := c.Query("category_code")   // Filter by car type
 
+	//carpool
+	var carpools []models.VmsMasCarpoolCarBooking
+	config.DB.
+		Preload("RefCarpoolChooseCar").
+		Table("vms_mas_carpool cp").
+		Where("is_deleted = '0' AND is_active = '1' AND ref_carpool_choose_car_id IN (2, 3) /*AND " +
+			"(select count(*) from vms_mas_carpool_vehicle cpv where is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) > 0 AND " +
+			"(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) > 0*/").
+		Find(&carpools)
+
+	totalGroups := len(carpools)
 	// Pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default page = 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
 	offset := (page - 1) * limit                            // Calculate offset
+
+	if page == 1 {
+		limit = limit - totalGroups
+	} else {
+		offset = offset - totalGroups
+		carpools = make([]models.VmsMasCarpoolCarBooking, 0)
+	}
 
 	var vehicles []models.VmsMasVehicleList
 	var total int64
@@ -68,16 +91,20 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 	vehicles = models.AssignVehicleImageFromIndex(vehicles)
+	for i := range vehicles {
+		funcs.TrimStringFields(&vehicles[i])
+	}
 	// Respond with JSON
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
 			"total":       total,
-			"totalGroups": 2,
+			"totalGroups": totalGroups,
 			"page":        page,
 			"limit":       limit,
 			"totalPages":  (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 		},
 		"vehicles": vehicles,
+		"carpools": carpools,
 	})
 }
 
@@ -92,6 +119,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 // @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
 // @Router /api/vehicle/{mas_vehicle_uid} [get]
 func (h *VehicleHandler) GetVehicle(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	vehicleID := c.Param("mas_vehicle_uid")
 
 	// Parse the string ID to uuid.UUID

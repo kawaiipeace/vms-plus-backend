@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -37,7 +38,10 @@ type ReceivedKeyAdminHandler struct {
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-admin/search-requests [get]
 func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var statusNameMap = StatusNameMapReceivedKeyUser
 	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
@@ -50,7 +54,8 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select("req.*, status.ref_request_status_desc,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -71,7 +76,27 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	if receivedKeyEndDatetime := c.Query("received_key_end_datetime"); receivedKeyEndDatetime != "" {
 		query = query.Where("req.received_key_end_datetime <= ?", receivedKeyEndDatetime)
 	}
-
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		fmt.Println("codes", codes)
+		query = query.Where("req.ref_request_status_code IN (?)", codes)
+	}
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -187,6 +212,9 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-key-admin/request/{trn_request_uid} [get]
 func (h *ReceivedKeyAdminHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedKeyUser)
 	if err != nil {
 		return
@@ -206,6 +234,9 @@ func (h *ReceivedKeyAdminHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-key-admin/update-recieived-key [put]
 func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKey
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKey
@@ -238,8 +269,8 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 }
 
 // UpdateRecieivedKeyDetail godoc
-// @Summary Update received key details for a booking request
-// @Description This endpoint allows to update received key details for a booking request.
+// @Summary Confirm the update of key pickup driver for a booking request
+// @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
 // @Tags Received-key-admin
 // @Accept json
 // @Produce json
@@ -249,7 +280,10 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 // @Router /api/received-key-admin/update-recieived-key-detail [put]
 func (h *ReceivedKeyAdminHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
-	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyDetail
+	if c.IsAborted() {
+		return
+	}
+	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKeyDetail
 		models.VmsTrnRequestRequestNo
@@ -292,6 +326,9 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKeyDetail(c *gin.Context) {
 // @Router /api/received-key-admin/update-key-pickup-driver [put]
 func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyDriver
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
@@ -339,6 +376,9 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 // @Router /api/received-key-admin/update-key-pickup-pea [put]
 func (h *ReceivedKeyAdminHandler) UpdateKeyPickupPEA(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyPEA
 	var result struct {
 		models.VmsTrnReceivedKeyPEA
@@ -391,6 +431,9 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupPEA(c *gin.Context) {
 // @Router /api/received-key-admin/update-key-pickup-outsider [put]
 func (h *ReceivedKeyAdminHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedKeyOutSider
 	var result struct {
 		models.VmsTrnReceivedKeyOutSider
@@ -438,6 +481,9 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 // @Router /api/received-key-admin/update-canceled [put]
 func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled
@@ -461,6 +507,7 @@ func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.CanceledRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 

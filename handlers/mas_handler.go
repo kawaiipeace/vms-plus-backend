@@ -5,9 +5,11 @@ import (
 	"strings"
 	"time"
 	"vms_plus_be/config"
+	"vms_plus_be/funcs"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type MasHandler struct {
@@ -31,9 +33,9 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 
 	// Apply search filter if provided
 	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
-
+	query = query.Limit(100)
 	// Execute query
 	if err := query.
 		Find(&lists).Error; err != nil {
@@ -43,7 +45,71 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].ImageURL = config.DefaultAvatarURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
+	}
+
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListVehicleUser godoc
+// @Summary Retrieve the ReceivedKey Users
+// @Description This endpoint allows a user to retrieve ReceivedKey Users.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Param trn_request_uid query string false "TrnReuestUID"
+// @Router /api/mas/user-received-key-users [get]
+func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
+	var lists []models.MasUserDriver
+	search := c.Query("search")
+	trnRequestUID := c.Query("trn_request_uid")
+	var request struct {
+		DriverEmpID         string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+		VehicleUserEmpID    string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
+		CreatedRequestEmpID string `gorm:"column:created_request_emp_id" json:"created_request_emp_id" example:"700001"`
+	}
+	if err := config.DB.Table("vms_trn_request").
+		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		return
+	}
+	query := config.DB
+
+	// Apply search filter if provided
+	if search != "" {
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	query = query.Limit(100)
+	query = query.Order(gorm.Expr(
+		"CASE emp_id WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 ELSE 4 END",
+		request.DriverEmpID, request.VehicleUserEmpID, request.CreatedRequestEmpID))
+
+	query = query.Order("CASE emp_id WHEN '" + request.VehicleUserEmpID + "' THEN 1 WHEN '" + request.DriverEmpID + "' THEN 2 WHEN '" + request.CreatedRequestEmpID + "' THEN 3 ELSE 4 END")
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		return
+	}
+	// Loop to modify or set AnnualDriver
+	for i := range lists {
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
+		var roles []string
+		if lists[i].EmpID == request.DriverEmpID {
+			roles = append(roles, "ผู้ขับขี่")
+		}
+		if lists[i].EmpID == request.VehicleUserEmpID {
+			roles = append(roles, "ผู้ใช้ยานพาหนะ")
+		}
+		if lists[i].EmpID == request.CreatedRequestEmpID {
+			roles = append(roles, "ผู้ใช้สร้างคำขอ")
+		}
+		if len(roles) > 0 {
+			lists[i].FullName = lists[i].FullName + " (" + strings.Join(roles, ", ") + ")"
+		}
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -67,8 +133,9 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 
 	// Apply search filter if provided
 	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
+	query = query.Limit(100)
 
 	// Execute query
 	if err := query.Preload("AnnualDriver").
@@ -79,7 +146,7 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].ImageURL = config.DefaultAvatarURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 		lists[i].AnnualDriver.AnnualYYYY = 2568
 		lists[i].AnnualDriver.DriverLicenseNo = "A123456"
 		lists[i].AnnualDriver.RequestAnnualDriverNo = "B00001"
@@ -109,8 +176,9 @@ func (h *MasHandler) ListApprovalUser(c *gin.Context) {
 
 	// Apply search filter if provided
 	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
+	query = query.Limit(100)
 
 	// Execute query
 	if err := query.
@@ -119,10 +187,9 @@ func (h *MasHandler) ListApprovalUser(c *gin.Context) {
 		return
 	}
 
-	defaultURL := "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
 	// For loop to set Image_url for each element in the slice
 	for i := range lists {
-		lists[i].Image_url = defaultURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -146,8 +213,9 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 
 	// Apply search filter if provided
 	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
+	query = query.Limit(100)
 
 	// Execute query
 	if err := query.
@@ -156,10 +224,9 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 		return
 	}
 
-	defaultURL := "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
 	// For loop to set Image_url for each element in the slice
 	for i := range lists {
-		lists[i].Image_url = defaultURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -183,8 +250,9 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 
 	// Apply search filter if provided
 	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
+	query = query.Limit(100)
 
 	// Execute query
 	if err := query.
@@ -193,10 +261,9 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		return
 	}
 
-	defaultURL := "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
 	// For loop to set Image_url for each element in the slice
 	for i := range lists {
-		lists[i].Image_url = defaultURL
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -214,6 +281,9 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 // @Router /api/mas/user/{emp_id} [get]
 func (h *MasHandler) GetUserEmp(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	EmpID := c.Param("emp_id")
 
 	var userEmp models.MasUserEmp
@@ -222,6 +292,7 @@ func (h *MasHandler) GetUserEmp(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
+	userEmp.ImageUrl = funcs.GetEmpImage(userEmp.EmpID)
 	c.JSON(http.StatusOK, userEmp)
 }
 
@@ -236,6 +307,9 @@ func (h *MasHandler) GetUserEmp(c *gin.Context) {
 // @Router /api/mas/satisfaction_survey_questions [get]
 func (h *MasHandler) ListVmsMasSatisfactionSurveyQuestions(c *gin.Context) {
 	//funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	var list []models.VmsMasSatisfactionSurveyQuestions
 	if err := config.DB.
@@ -296,4 +370,48 @@ func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
 	results := append(vehicleDepts, carpools...)
 
 	c.JSON(http.StatusOK, results)
+}
+
+// ListDepartment godoc
+// @Summary Retrieve the Department Tree
+// @Description This endpoint allows a user to retrieve the Department Tree.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param dept_upper query string false "Filter by Department Upper"
+// @Router /api/mas/department-tree [get]
+func (h *MasHandler) GetDepartmentTree(c *gin.Context) {
+	deptUpper := c.Query("dept_upper")
+
+	var departments []models.VmsMasDepartmentTree
+	if err := config.DB.
+		Where("dept_upper = ? AND is_active = ?", deptUpper, "1").
+		Find(&departments).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Departments not found"})
+		return
+	}
+
+	for i := range departments {
+		departments[i].DeptFull = departments[i].DeptFull + " (" + departments[i].DeptSAP + ")" + "-" + departments[i].ResourceName
+		populateSubDepartments(&departments[i], 8)
+	}
+	c.JSON(http.StatusOK, departments)
+}
+
+func populateSubDepartments(department *models.VmsMasDepartmentTree, levels int) {
+	if levels <= 0 {
+		return
+	}
+	var subDepartments []models.VmsMasDepartmentTree
+	if err := config.DB.
+		Where("dept_upper = ? AND is_active = ?", department.DeptSAP, "1").
+		Find(&subDepartments).Error; err == nil {
+		department.DeptUnder = subDepartments
+		for i := range subDepartments {
+			subDepartments[i].DeptFull = subDepartments[i].DeptFull + " (" + subDepartments[i].DeptSAP + ")" + "-" + subDepartments[i].ResourceName
+			populateSubDepartments(&subDepartments[i], levels-1)
+		}
+	}
 }

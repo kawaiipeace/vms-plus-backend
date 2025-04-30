@@ -18,16 +18,17 @@ type DriverLicenseConfirmerHandler struct {
 }
 
 var LicenseStatusNameMapConfirmer = map[string]string{
-	"10": "รออนุมัติ",
+	"10": "รอตรวจสอบ",
 	"11": "ตีกลับคำขอ",
-	"20": "อนุมัติ",
+	"20": "รออนุมัติ",
+	"30": "อนุมัติ",
 	"90": "ยกเลิกคำขอ",
 }
 
 // SearchRequests godoc
 // @Summary Search driver license annual requests and get summary counts by request status code
 // @Description Search for annual driver license requests using a keyword and get the summary of counts grouped by request status code
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept  json
 // @Produce  json
 // @Security ApiKeyAuth
@@ -44,8 +45,12 @@ var LicenseStatusNameMapConfirmer = map[string]string{
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
-// @Router /api/driver-license-confirm/search-requests [get]
+// @Router /api/driver-license-confirmer/search-requests [get]
 func (h *DriverLicenseConfirmerHandler) SearchRequests(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := LicenseStatusNameMapApprover
 
 	var requests []models.VmsDriverLicenseAnnualList
@@ -174,15 +179,18 @@ func (h *DriverLicenseConfirmerHandler) SearchRequests(c *gin.Context) {
 // GetDriverLicenseAnnual godoc
 // @Summary Retrieve a specific driver license annual record
 // @Description Get the details of a driver license annual record by its unique identifier
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
-// @Router /api/driver-license-confirm/license-annual/{trn_request_annual_driver_uid} [get]
+// @Router /api/driver-license-confirmer/license-annual/{trn_request_annual_driver_uid} [get]
 func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
-	//user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
 	var request models.VmsDriverLicenseAnnualResponse
 
@@ -192,28 +200,64 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found"})
 		return
 	}
-	if request.RefRequestAnnualDriverStatusCode == "20" {
+	if request.RefRequestAnnualDriverStatusCode == "10" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "1", ProgressName: "รออนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
 	}
-	if request.RefRequestAnnualDriverStatusCode == "21" {
+	if request.RefRequestAnnualDriverStatusCode == "11" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
 			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
 	}
-
-	if request.RefRequestAnnualDriverStatusCode == "90" {
+	if request.RefRequestAnnualDriverStatusCode == "20" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "ยกเลิกอนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
+			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
 		}
 	}
+	if request.RefRequestAnnualDriverStatusCode == "21" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "30" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+		}
+
+	}
+	if request.RefRequestAnnualDriverStatusCode == "90" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิก"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "91" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอ"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "92" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "93" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
+		}
+	}
+
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": request})
 }
@@ -221,15 +265,18 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 // UpdateDriverLicenseAnnualCanceled godoc
 // @Summary Update cancel status for a driver license annual record
 // @Description This endpoint allows users to update the cancel status of a driver license annual record.
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsDriverLicenseAnnualCanceled true "VmsDriverLicenseAnnualCanceled data"
-// @Router /api/driver-license-confirm/update-license-annual-canceled [put]
+// @Router /api/driver-license-confirmer/update-license-annual-canceled [put]
 func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualCanceled
 	var result struct {
 		models.VmsDriverLicenseAnnualCanceled
@@ -272,15 +319,18 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualCanceled(c *gin
 // UpdateDriverLicenseAnnualRejected godoc
 // @Summary Update reject status for a driver license annual record
 // @Description This endpoint allows users to update the reject status of a driver license annual record.
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsDriverLicenseAnnualRejected true "VmsDriverLicenseAnnualRejected data"
-// @Router /api/driver-license-confirm/update-license-annual-rejected [put]
+// @Router /api/driver-license-confirmer/update-license-annual-rejected [put]
 func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualRejected(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualRejected
 	var result struct {
 		models.VmsDriverLicenseAnnualRejected
@@ -323,15 +373,18 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualRejected(c *gin
 // UpdateDriverLicenseAnnualConfirmed godoc
 // @Summary Update confirmed status for a driver license annual record
 // @Description This endpoint allows users to update the confirmed status of a driver license annual record.
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsDriverLicenseAnnualConfirmed true "VmsDriverLicenseAnnualConfirmed data"
-// @Router /api/driver-license-confirm/update-license-annual-confirmed [put]
+// @Router /api/driver-license-confirmer/update-license-annual-confirmed [put]
 func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualConfirmed(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualConfirmed
 	var result struct {
 		models.VmsDriverLicenseAnnualConfirmed
@@ -374,15 +427,18 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualConfirmed(c *gi
 // UpdateDriverLicenseAnnualApprover godoc
 // @Summary Update approver for a driver license annual record
 // @Description This endpoint allows a confirmer to update the confirmer details of a driver license annual record.
-// @Tags Driver-license-confirm
+// @Tags Driver-license-confirmer
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsDriverLicenseAnnualApprover true "VmsDriverLicenseAnnualApprover data"
-// @Router /api/driver-license-confirm/update-license-annual-approver [put]
+// @Router /api/driver-license-confirmer/update-license-annual-approver [put]
 func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualApprover(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualResponse
 	var result struct {
 		models.VmsDriverLicenseAnnualApprover

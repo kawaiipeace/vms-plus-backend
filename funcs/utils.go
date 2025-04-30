@@ -36,6 +36,14 @@ func TrimStringFields(model interface{}) {
 		}
 	}
 }
+func Contains(slice []string, item string) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
 func DefaultUUID() string {
 	return "00000000-0000-0000-0000-000000000000"
 }
@@ -56,4 +64,8 @@ func CalculateAge(date time.Time) string {
 	}
 
 	return fmt.Sprintf("%d ปี %d เดือน", years, months)
+}
+
+func GetEmpImage(empID string) string {
+	return fmt.Sprintf("https://pictureapi.pea.co.th/MyphotoAPI/api/v1/Main/GetPicImg?EmpCode=%s&Type=2&SType=2", empID)
 }
