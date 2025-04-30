@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
 	"vms_plus_be/models"
@@ -34,6 +36,10 @@ type VehicleManagementHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-management/search [get]
 func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
@@ -41,11 +47,11 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleManagementList
 
 	query := config.DB.Table("public.vms_mas_vehicle AS v").
-		Select(`v.vehicle_license_plate,v.vehicle_brand_name,v.vehicle_model_name,v.ref_vehicle_type_code,
+		Select(`v.mas_vehicle_uid,v.vehicle_license_plate,v.vehicle_brand_name,v.vehicle_model_name,v.ref_vehicle_type_code,
 				(select max(ref_vehicle_type_name) from vms_ref_vehicle_type s where s.ref_vehicle_type_code=v.ref_vehicle_type_code) ref_vehicle_type_name,
 				(select max(s.dept_short) from vms_mas_department s where s.dept_sap=d.vehicle_owner_dept_sap) vehicle_owner_dept_short,
 				v.ref_vehicle_type_code,d.fleet_card_no,'1' is_tax_credit,d.vehicle_mileage,
-				d.vehicle_get_date,d.ref_vehicle_status_code,
+				d.vehicle_get_date,d.ref_vehicle_status_code,v.ref_fuel_type_id,d.is_active,
 				(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=v.mas_vehicle_uid) vehicle_carpool_name
             `).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
@@ -54,7 +60,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(vehicle_license_plate) LIKE ? OR UPPER(vehicle_brand_name) LIKE ? OR UPPER(vehicle_model_name) LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(v.vehicle_license_plate) LIKE ? OR UPPER(vehicle_brand_name) LIKE ? OR UPPER(vehicle_model_name) LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
@@ -79,7 +85,6 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	println(total)
 
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -102,7 +107,9 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	query = query.Limit(limit).
 		Offset(offset)
 
-	if err := query.Find(&vehicles).Error; err != nil {
+	if err := query.
+		Preload("VmsRefFuelType").
+		Find(&vehicles).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -133,4 +140,44 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 			"vehicles": vehicles,
 		})
 	}
+}
+
+// UpdateVehicleIsActive godoc
+// @Summary Update vehicle active status
+// @Description This endpoint updates the active status of a vehicle.
+// @Tags Vehicle-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param data body models.VmsMasVehicleIsActiveUpdate true "VmsMasVehicleIsActiveUpdate data"
+// @Router /api/vehicle-management/update-vehicle-is-active [put]
+func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	var request, vehicle, result models.VmsMasVehicleIsActiveUpdate
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? and is_deleted = ?", request.MasVehicleUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		return
+	}
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+
+	if err := config.DB.Model(&vehicle).Update("is_active", request.IsActive).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		return
+	}
+
+	if err := config.DB.First(&result, "mas_vehicle_uid = ?", request.MasVehicleUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

@@ -23,6 +23,7 @@ type VmsTrnRequestList struct {
 	ReceivedKeyPlace                 string    `gorm:"column:received_key_place" json:"received_key_place"`
 	ReceivedKeyStartDatetime         time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
 	ReceivedKeyEndDatetime           time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
+	CanceledRequestDatetime          time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 }
 type VmsTrnRequestSummary struct {
 	RefRequestStatusCode string `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
@@ -33,21 +34,22 @@ type VmsTrnRequestSummary struct {
 // VmsTrnRequestAdminList
 type VmsTrnRequestAdminList struct {
 	VmsTrnRequestList
-	RefVehicleTypeName   string `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
-	DriverEmpId          string `gorm:"column:driver_emp_id" json:"driver_emp_id"`
-	MasVehicleUID        string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	MasCarpoolDriverUID  string `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
-	DriverName           string `gorm:"column:driver_name" json:"driver_name"`
-	DriverDeptName       string `gorm:"column:driver_dept_name" json:"driver_dept_name"`
-	VehicleDeptName      string `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
-	VehicleCarpoolName   string `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
-	IsAdminChooseDriver  int    `gorm:"column:is_admin_choose_driver" json:"is_admin_choose_driver"`
-	IsAdminChooseVehicle int    `gorm:"column:is_admin_choose_vehicle" json:"is_admin_choose_vehicle"`
-	IsPEAEmployeeDriver  int    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
-	TripType             int    `gorm:"column:trip_type" json:"trip_type" example:"1"`
-	TripTypeName         string `gorm:"-" json:"trip_type_name" example:"1"`
-	Can_Choose_Vehicle   bool   `gorm:"-" json:"can_choose_vehicle"`
-	Can_Choose_Driver    bool   `gorm:"-" json:"can_choose_driver"`
+	RefVehicleTypeName      string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
+	DriverEmpId             string    `gorm:"column:driver_emp_id" json:"driver_emp_id"`
+	MasVehicleUID           string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	MasCarpoolDriverUID     string    `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
+	DriverName              string    `gorm:"column:driver_name" json:"driver_name"`
+	DriverDeptName          string    `gorm:"column:driver_dept_name" json:"driver_dept_name"`
+	VehicleDeptName         string    `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
+	VehicleCarpoolName      string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	IsAdminChooseDriver     int       `gorm:"column:is_admin_choose_driver" json:"is_admin_choose_driver"`
+	IsAdminChooseVehicle    int       `gorm:"column:is_admin_choose_vehicle" json:"is_admin_choose_vehicle"`
+	IsPEAEmployeeDriver     int       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
+	TripType                int       `gorm:"column:trip_type" json:"trip_type" example:"1"`
+	TripTypeName            string    `gorm:"-" json:"trip_type_name" example:"1"`
+	Can_Choose_Vehicle      bool      `gorm:"-" json:"can_choose_vehicle"`
+	Can_Choose_Driver       bool      `gorm:"-" json:"can_choose_driver"`
+	CanceledRequestDatetime time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -75,6 +77,7 @@ type VmsTrnRequestRequest struct {
 	CostNo                       string    `gorm:"column:cost_no" json:"cost_no" example:"COST2024001"`
 
 	//Step 2
+	MasCarpoolUID         string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
 	MasVehicleUID         string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
 	IsAdminChooseVehicle  string `gorm:"column:is_admin_choose_vehicle;type:bit(1)" json:"is_admin_choose_vehicle" example:"0"`
 	IsSystemChooseVehicle string `gorm:"-" json:"is_system_choose_vehicle" example:"0"`
@@ -181,17 +184,18 @@ type VmsTrnRequestResponse struct {
 	VehicleDepartmentDeptSapFull  string        `gorm:"column:vehicle_department_dept_sap_full" json:"mas_vehicle_department_dept_sap_full"`
 	VmsMasVehicle                 VmsMasVehicle `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
 
-	ReceivedKeyPlace         string    `gorm:"column:received_key_place" json:"received_key_place"`
-	ReceivedKeyStartDatetime time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
-	ReceivedKeyEndDatetime   time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
-
-	CanCancelRequest        bool                    `gorm:"-" json:"can_cancel_request"`
-	RefRequestStatusCode    string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatus        VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
-	RefRequestStatusName    string                  `json:"ref_request_status_name"`
-	SendedBackRequestReason string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
-	CanceledRequestReason   string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	ProgressRequestStatus   []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	ReceivedKeyPlace         string                  `gorm:"column:received_key_place" json:"received_key_place"`
+	ReceivedKeyStartDatetime time.Time               `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
+	ReceivedKeyEndDatetime   time.Time               `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
+	IsUseDriver              bool                    `gorm:"column:is_use_driver" json:"is_use_driver"`
+	CanCancelRequest         bool                    `gorm:"-" json:"can_cancel_request"`
+	CanceledRequestDatetime  time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
+	RefRequestStatusCode     string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatus         VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
+	RefRequestStatusName     string                  `json:"ref_request_status_name"`
+	SendedBackRequestReason  string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
+	CanceledRequestReason    string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	ProgressRequestStatus    []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
 }
 
 func (VmsTrnRequestResponse) TableName() string {
@@ -358,6 +362,7 @@ type VmsTrnRequestCanceled struct {
 	CanceledRequestDeptSAP      string    `gorm:"column:canceled_request_dept_sap" json:"-"`
 	CanceledRequestDeptSAPShort string    `gorm:"column:canceled_request_dept_sap_short" json:"-"`
 	CanceledRequestDeptSAPFull  string    `gorm:"column:canceled_request_dept_sap_full" json:"-"`
+	CanceledRequestDatetime     time.Time `gorm:"canceled_request_datetime" json:"-"`
 	RefRequestStatusCode        string    `gorm:"column:ref_request_status_code" json:"-"`
 	UpdatedAt                   time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                   string    `gorm:"column:updated_by" json:"-"`

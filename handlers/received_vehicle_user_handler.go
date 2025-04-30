@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
@@ -41,7 +42,10 @@ var StatusNameMapReceivedVehicleUser = map[string]string{
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/received-vehicle-user/search-requests [get]
 func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapReceivedVehicleUser
 	var requests []models.VmsTrnRequestList
 	var summary []models.VmsTrnRequestSummary
@@ -54,7 +58,8 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select("req.*, status.ref_request_status_desc,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -68,7 +73,27 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("enddate"); endDate != "" {
 		query = query.Where("req.start_datetime <= ?", endDate)
 	}
-
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		fmt.Println("codes", codes)
+		query = query.Where("req.ref_request_status_code IN (?)", codes)
+	}
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -174,6 +199,9 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 // @Router /api/received-vehicle-user/request/{trn_request_uid} [get]
 func (h *ReceivedVehicleUserHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedVehicleUser)
 	if err != nil {
 		return
@@ -193,6 +221,9 @@ func (h *ReceivedVehicleUserHandler) GetRequest(c *gin.Context) {
 // @Router /api/received-vehicle-user/received-vehicle [put]
 func (h *ReceivedVehicleUserHandler) ReceivedVehicle(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnReceivedVehicle
 	var result struct {
 		models.VmsTrnReceivedVehicle
@@ -259,7 +290,10 @@ func (h *ReceivedVehicleUserHandler) ReceivedVehicle(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/received-vehicle-user/travel-card/{trn_request_uid} [get]
 func (h *ReceivedVehicleUserHandler) GetTravelCard(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	id := c.Param("trn_request_uid")
 	trnRequestUID, err := uuid.Parse(id)
 	if err != nil {

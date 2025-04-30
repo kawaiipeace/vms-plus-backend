@@ -33,6 +33,15 @@ type ThaiID_Authen struct {
 	RedirectUri string `json:"redirect_uri" example:"http://localhost/callback_code_token" binding:"required"`
 }
 
+type ThaiID_Error_Response struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+type ThaiID_Success_Response struct {
+	AccessToken string `json:"access_token"`
+	PID         string `json:"pid"`
+}
+
 type OTP_Request struct {
 	Phone string `json:"phone" example:"0818088770" binding:"required"`
 }

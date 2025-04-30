@@ -8,6 +8,9 @@ type VmsDriverLicenseCard struct {
 	DriverName                 string                      `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
 	DriverDeptSapShortNameWork string                      `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
 	DriverLicense              VmsDriverLicenseCardLicense `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
+	LicenseStatus              string                      `gorm:"-" json:"license_status"`
+	AnnualYYYY                 int                         `gorm:"column:-" json:"annual_yyyy" example:"2568"`
+	IsNoExpiryDate             bool                        `gorm:"column:is_no_expiry_date" json:"is_no_expiry_date"`
 }
 
 func (VmsDriverLicenseCard) TableName() string {

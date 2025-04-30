@@ -39,6 +39,18 @@ func AssignVehicleImageFromIndex(vehicles []VmsMasVehicleList) []VmsMasVehicleLi
 	return vehicles
 }
 
+// VmsMasCarpoolList
+type VmsMasCarpoolCarBooking struct {
+	MasCarpoolUID         string                 `gorm:"primaryKey;column:mas_carpool_uid" json:"mas_carpool_uid"`
+	CarpoolName           string                 `gorm:"column:carpool_name" json:"carpool_name"`
+	RefCarpoolChooseCarID int                    `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
+	RefCarpoolChooseCar   VmsRefCarpoolChooseCar `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"ref_carpool_choose_car"`
+}
+
+func (VmsMasCarpoolCarBooking) TableName() string {
+	return "vms_mas_carpool"
+}
+
 type VmsRefVehicleType struct {
 	RefVehicleTypeCode int    `gorm:"column:ref_vehicle_type_code;primarykey" json:"ref_vehicle_type_code"`
 	RefVehicleTypeName string `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`

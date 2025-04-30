@@ -46,7 +46,10 @@ var StatusNameMapFinal = map[string]string{
 // @Router /api/booking-final/menu-requests [get]
 func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
-	// funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 
 	statusNameMap := MenuNameMapApprover
 	var summary []models.VmsTrnRequestSummary
@@ -89,15 +92,12 @@ func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 		for name, codes := range groupedStatusCodes {
 			for _, code := range codes {
 				if dbItem.RefRequestStatusCode == code {
-					if groupedCounts[name].Count == 0 || code < groupedCounts[name].MinCode {
-						groupedCounts[name] = struct {
-							Count   int
-							MinCode string
-						}{
-							Count:   groupedCounts[name].Count + dbItem.Count,
-							MinCode: code,
-						}
+					current := groupedCounts[name]
+					if current.Count == 0 || code < current.MinCode {
+						current.MinCode = code
 					}
+					current.Count += dbItem.Count
+					groupedCounts[name] = current
 					break
 				}
 			}
@@ -151,7 +151,10 @@ func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 // @Param page_size query int false "Number of records per page (default: 10)"
 // @Router /api/booking-final/search-requests [get]
 func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
-	//funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	statusNameMap := StatusNameMapFinal
 	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
@@ -301,25 +304,61 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 // @Router /api/booking-final/request/{trn_request_uid} [get]
 func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	request, err := funcs.GetRequest(c, StatusNameMapFinal)
 	if err != nil {
 		return
 	}
-	if request.RefRequestStatusCode == "40" {
+	if request.RefRequestStatusCode >= "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ผู้ดูแลยานพาหนะตรวจสอบ"},
-			{ProgressIcon: "1", ProgressName: "รออนุมัติ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
 	}
-	if request.RefRequestStatusCode == "41" {
+	if request.RefRequestStatusCode >= "41" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ถูกตีกลับ"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากเจ้าของยานพาหนะ"},
 		}
+	}
+	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติให้ใช้ยานพาหนะ"},
+		}
+
 	}
 	if request.RefRequestStatusCode == "90" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกคำขอ"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิก"},
+		}
+	}
+	if request.RefRequestStatusCode == "91" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},
+		}
+	}
+	if request.RefRequestStatusCode == "92" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
+		}
+	}
+	if request.RefRequestStatusCode == "93" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
+		}
+	}
+	if request.RefRequestStatusCode == "94" {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 		}
 	}
 	c.JSON(http.StatusOK, request)
@@ -337,6 +376,9 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 // @Router /api/booking-final/update-sended-back [put]
 func (h *BookingFinalHandler) UpdateSendedBack(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestSendedBack
 	var result struct {
 		models.VmsTrnRequestSendedBack
@@ -390,6 +432,9 @@ func (h *BookingFinalHandler) UpdateSendedBack(c *gin.Context) {
 // @Router /api/booking-final/update-approved [put]
 func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestApproved
 	var result struct {
 		models.VmsTrnRequestApproved
@@ -445,6 +490,9 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 // @Router /api/booking-final/update-canceled [put]
 func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	var request, trnRequest models.VmsTrnRequestCanceled
 	var result struct {
 		models.VmsTrnRequestCanceled
@@ -469,7 +517,7 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
-
+	request.CanceledRequestDatetime = time.Now()
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return

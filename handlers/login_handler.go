@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -159,7 +160,7 @@ func (h *LoginHandler) RequestThaiID(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.ThaiIDClientID + "&redirect_uri=" + req.RedirectUri + "&scope=pid%20name%20birthdate%20openid&state=001",
+		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.ThaiIDClientID + "&redirect_uri=" + req.RedirectUri + "&scope=pid%20name%20birthdate&state=001",
 	})
 }
 
@@ -184,8 +185,8 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", req.Code)
 	data.Set("redirect_uri", req.RedirectUri)
-	data.Set("client_id", config.AppConfig.ThaiIDClientID)
-	data.Set("client_secret", config.AppConfig.ThaiIDSecret)
+	client_id := config.AppConfig.ThaiIDClientID
+	client_secret := config.AppConfig.ThaiIDSecret
 
 	// Create request
 	creq, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))
@@ -196,8 +197,9 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 
 	// Set headers
 	creq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	authHeader := "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", client_id, client_secret)))
+	creq.Header.Set("Authorization", authHeader)
 
-	// Execute request
 	client := &http.Client{}
 	resp, err := client.Do(creq)
 	if err != nil {
@@ -213,7 +215,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 		return
 	}
 
-	var errorResponse models.KeyCloak_Error_Response
+	var errorResponse models.ThaiID_Error_Response
 	if err := json.Unmarshal(body, &errorResponse); err == nil {
 		if errorResponse.Error != "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": errorResponse.ErrorDescription})
@@ -221,43 +223,39 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 		}
 	}
 
-	var successResponse models.KeyCloak_Success_Response
+	var successResponse models.ThaiID_Success_Response
 	if err := json.Unmarshal(body, &successResponse); err == nil && successResponse.AccessToken != "" {
-		userInfo, err := GetUserInfo(successResponse.AccessToken)
+		var user models.AuthenUserEmp
+		err = config.DB.Where("identity_no = ?", successResponse.PID).
+			First(&user).Error
+
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		} else {
-			var user models.AuthenUserEmp
-			err = config.DB.Where("tel_mobile = ?", userInfo.UserID).
-				First(&user).Error
-
-			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-				} else {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				}
-				return
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			}
-
-			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
-				return
-			}
-
-			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
-				return
-			}
-
-			c.JSON(http.StatusOK, models.Login_Response{
-				AccessToken:  newAccessToken,
-				RefreshToken: newRefreshToken,
-			})
 			return
 		}
+
+		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
+			return
+		}
+
+		newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
+			return
+		}
+
+		c.JSON(http.StatusOK, models.Login_Response{
+			AccessToken:  newAccessToken,
+			RefreshToken: newRefreshToken,
+		})
+		return
+
 	}
 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 }
@@ -618,7 +616,10 @@ func (h *LoginHandler) Logout(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/login/profile [get]
 func (h *LoginHandler) Profile(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, "")
+	user := funcs.GetAuthenUser(c, "*")
+	if c.IsAborted() {
+		return
+	}
 	user.LicenseStatus = "อนุมัติแล้ว"
 	c.JSON(http.StatusOK, user)
 }
