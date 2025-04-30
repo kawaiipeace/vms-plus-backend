@@ -56,7 +56,8 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc").
+		Select("req.*, status.ref_request_status_desc,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -387,6 +388,7 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.CanceledRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -410,7 +412,7 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 // UpdateRecieivedKeyConfirmed godoc
 // @Summary Confirm the update of key pickup driver for a booking request
 // @Description This endpoint allows confirming the update of the key pickup driver for a specific booking request.
-// @Tags Received-key-admin
+// @Tags Received-key-user
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth

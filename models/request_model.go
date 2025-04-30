@@ -189,6 +189,7 @@ type VmsTrnRequestResponse struct {
 	ReceivedKeyEndDatetime   time.Time               `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
 	IsUseDriver              bool                    `gorm:"column:is_use_driver" json:"is_use_driver"`
 	CanCancelRequest         bool                    `gorm:"-" json:"can_cancel_request"`
+	CanceledRequestDatetime  time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
 	RefRequestStatusCode     string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatus         VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
 	RefRequestStatusName     string                  `json:"ref_request_status_name"`
@@ -361,6 +362,7 @@ type VmsTrnRequestCanceled struct {
 	CanceledRequestDeptSAP      string    `gorm:"column:canceled_request_dept_sap" json:"-"`
 	CanceledRequestDeptSAPShort string    `gorm:"column:canceled_request_dept_sap_short" json:"-"`
 	CanceledRequestDeptSAPFull  string    `gorm:"column:canceled_request_dept_sap_full" json:"-"`
+	CanceledRequestDatetime     time.Time `gorm:"canceled_request_datetime" json:"-"`
 	RefRequestStatusCode        string    `gorm:"column:ref_request_status_code" json:"-"`
 	UpdatedAt                   time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                   string    `gorm:"column:updated_by" json:"-"`

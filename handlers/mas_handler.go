@@ -394,7 +394,7 @@ func (h *MasHandler) GetDepartmentTree(c *gin.Context) {
 	}
 
 	for i := range departments {
-		departments[i].DeptFull = departments[i].DeptFull + " (" + departments[i].DeptSAP + ")"
+		departments[i].DeptFull = departments[i].DeptFull + " (" + departments[i].DeptSAP + ")" + "-" + departments[i].ResourceName
 		populateSubDepartments(&departments[i], 8)
 	}
 	c.JSON(http.StatusOK, departments)
@@ -410,7 +410,7 @@ func populateSubDepartments(department *models.VmsMasDepartmentTree, levels int)
 		Find(&subDepartments).Error; err == nil {
 		department.DeptUnder = subDepartments
 		for i := range subDepartments {
-			subDepartments[i].DeptFull = subDepartments[i].DeptFull + " (" + subDepartments[i].DeptSAP + ")"
+			subDepartments[i].DeptFull = subDepartments[i].DeptFull + " (" + subDepartments[i].DeptSAP + ")" + "-" + subDepartments[i].ResourceName
 			populateSubDepartments(&subDepartments[i], levels-1)
 		}
 	}

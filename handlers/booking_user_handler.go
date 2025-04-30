@@ -111,6 +111,7 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	}
 	// Set the new request_no with the year and incremented running number
 	vms_trn_req.RequestNo = fmt.Sprintf("RN%d%05d", currentYear, latestRunningNumber)
+	//'V' + เขต + 'YY' + 'RA' + Running 6 หลัก เช่น VZ68RA000001
 
 	if err := config.DB.Create(&vms_trn_req).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
@@ -942,6 +943,7 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.CanceledRequestDatetime = time.Now()
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})

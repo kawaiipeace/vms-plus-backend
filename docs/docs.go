@@ -5975,7 +5975,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Received-key-admin"
+                    "Received-key-user"
                 ],
                 "summary": "Confirm the update of key pickup driver for a booking request",
                 "parameters": [
@@ -10697,10 +10697,6 @@ const docTemplate = `{
         "models.VmsTrnReceivedVehicle": {
             "type": "object",
             "properties": {
-                "comment_on_received_vehicle": {
-                    "type": "string",
-                    "example": "Minor scratch on bumper"
-                },
                 "fuel_start": {
                     "type": "integer",
                     "example": 50
@@ -10712,6 +10708,10 @@ const docTemplate = `{
                 "pickup_datetime": {
                     "type": "string",
                     "example": "2025-03-26T14:30:00Z"
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
                 },
                 "trn_request_uid": {
                     "type": "string",
@@ -10743,10 +10743,6 @@ const docTemplate = `{
         "models.VmsTrnReceivedVehicleNoImgage": {
             "type": "object",
             "properties": {
-                "comment_on_received_vehicle": {
-                    "type": "string",
-                    "example": "Minor scratch on bumper"
-                },
                 "fuel_start": {
                     "type": "integer",
                     "example": 50
@@ -10758,6 +10754,14 @@ const docTemplate = `{
                 "pickup_datetime": {
                     "type": "string",
                     "example": "2025-03-26T14:30:00Z"
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
+                },
+                "returned_vehicle_remark": {
+                    "type": "string",
+                    "example": "OK"
                 },
                 "trn_request_uid": {
                     "type": "string",
@@ -11208,10 +11212,6 @@ const docTemplate = `{
         "models.VmsTrnReturnedVehicle": {
             "type": "object",
             "properties": {
-                "comment_on_returned_vehicle": {
-                    "type": "string",
-                    "example": "OK"
-                },
                 "fuel_end": {
                     "type": "integer",
                     "example": 70
@@ -11230,6 +11230,10 @@ const docTemplate = `{
                 },
                 "returned_vehicle_emp_id": {
                     "type": "string"
+                },
+                "returned_vehicle_remark": {
+                    "type": "string",
+                    "example": "OK"
                 },
                 "trn_request_uid": {
                     "type": "string",
@@ -11261,10 +11265,6 @@ const docTemplate = `{
         "models.VmsTrnReturnedVehicleNoImage": {
             "type": "object",
             "properties": {
-                "comment_on_returned_vehicle": {
-                    "type": "string",
-                    "example": "OK"
-                },
                 "fuel_end": {
                     "type": "integer",
                     "example": 70
@@ -11273,13 +11273,17 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 12000
                 },
-                "returned_cleanliness_level": {
-                    "type": "integer",
-                    "example": 1
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
                 },
                 "returned_vehicle_datetime": {
                     "type": "string",
                     "example": "2025-04-16T14:30:00Z"
+                },
+                "returned_vehicle_remark": {
+                    "type": "string",
+                    "example": "OK"
                 },
                 "trn_request_uid": {
                     "type": "string",

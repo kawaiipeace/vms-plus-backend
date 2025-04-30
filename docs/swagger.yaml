@@ -692,9 +692,6 @@ definitions:
     type: object
   models.VmsTrnReceivedVehicle:
     properties:
-      comment_on_received_vehicle:
-        example: Minor scratch on bumper
-        type: string
       fuel_start:
         example: 50
         type: integer
@@ -703,6 +700,9 @@ definitions:
         type: integer
       pickup_datetime:
         example: "2025-03-26T14:30:00Z"
+        type: string
+      received_vehicle_remark:
+        example: Minor scratch on bumper
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -724,9 +724,6 @@ definitions:
     type: object
   models.VmsTrnReceivedVehicleNoImgage:
     properties:
-      comment_on_received_vehicle:
-        example: Minor scratch on bumper
-        type: string
       fuel_start:
         example: 50
         type: integer
@@ -735,6 +732,12 @@ definitions:
         type: integer
       pickup_datetime:
         example: "2025-03-26T14:30:00Z"
+        type: string
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
+      returned_vehicle_remark:
+        example: OK
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -1059,9 +1062,6 @@ definitions:
     type: object
   models.VmsTrnReturnedVehicle:
     properties:
-      comment_on_returned_vehicle:
-        example: OK
-        type: string
       fuel_end:
         example: 70
         type: integer
@@ -1075,6 +1075,9 @@ definitions:
         example: "2025-04-16T14:30:00Z"
         type: string
       returned_vehicle_emp_id:
+        type: string
+      returned_vehicle_remark:
+        example: OK
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -1096,20 +1099,20 @@ definitions:
     type: object
   models.VmsTrnReturnedVehicleNoImage:
     properties:
-      comment_on_returned_vehicle:
-        example: OK
-        type: string
       fuel_end:
         example: 70
         type: integer
       mile_end:
         example: 12000
         type: integer
-      returned_cleanliness_level:
-        example: 1
-        type: integer
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
       returned_vehicle_datetime:
         example: "2025-04-16T14:30:00Z"
+        type: string
+      returned_vehicle_remark:
+        example: OK
         type: string
       trn_request_uid:
         example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
@@ -4921,7 +4924,7 @@ paths:
       - AuthorizationAuth: []
       summary: Confirm the update of key pickup driver for a booking request
       tags:
-      - Received-key-admin
+      - Received-key-user
   /api/received-vehicle-admin/received-vehicle:
     put:
       consumes:

@@ -26,7 +26,8 @@ type VmsTrnRequestVehicleInUseList struct {
 	CanceledRequestDatetime          time.Time            `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	RefVehicleKeyTypeCode            int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	RefVehicleKeyType                VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"ref_vehicle_key_type"`
-	CommentOnReturnedVehicle         string               `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
+	ReturnedVehicleRemark            string               `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
+	ParkingPlace                     string               `gorm:"column:parking_place" json:"parking_place"`
 }
 
 // VmsTrnRequestVehicleInUseResponse
@@ -112,7 +113,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	ReturnedCleanlinessLevel    int                    `gorm:"column:returned_cleanliness_level" json:"returned_cleanliness_level" example:"1"`
-	CommentOnReturnedVehicle    string                 `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
+	ReturnedVehicleRemark       string                 `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 	VehicleImagesReturned       []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images_returned"`
 	ReturnedVehicleEmpID        string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
 	ReturnedVehicleEmpName      string                 `gorm:"column:returned_vehicle_emp_name" json:"returned_vehicle_emp_name"`
@@ -133,7 +134,9 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RefRequestStatusName        string                  `json:"ref_request_status_name"`
 	SendedBackRequestReason     string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
 	CanceledRequestReason       string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	CanceledRequestDatetime     time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
 	ProgressRequestStatus       []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	ParkingPlace                string                  `gorm:"column:parking_place" json:"parking_place"`
 }
 
 func (VmsTrnRequestVehicleInUseResponse) TableName() string {
@@ -262,7 +265,7 @@ type VmsTrnReturnedVehicle struct {
 	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	ReturnedCleanlinessLevel    int                    `gorm:"column:returned_cleanliness_level" json:"returned_cleanliness_level" example:"1"`
-	CommentOnReturnedVehicle    string                 `gorm:"column:comment_on_returned_vehicle" json:"comment_on_returned_vehicle" example:"OK"`
+	ReturnedVehicleRemark       string                 `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 	VehicleImages               []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
 	ReturnedVehicleEmpID        string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
 	ReturnedVehicleEmpName      string                 `gorm:"column:returned_vehicle_emp_name" json:"-"`
@@ -291,13 +294,14 @@ func (VehicleImageReturned) TableName() string {
 }
 
 type VmsTrnReceivedVehicleNoImgage struct {
-	TrnRequestUID            string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
-	PickupDatetime           time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
-	MileStart                int       `gorm:"column:mile_start" json:"mile_start" example:"10000"`
-	FuelStart                int       `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
-	CommentOnReceivedVehicle string    `gorm:"column:comment_on_received_vehicle" json:"comment_on_received_vehicle" example:"Minor scratch on bumper"`
-	UpdatedAt                time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy                string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID         string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
+	PickupDatetime        time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
+	MileStart             int       `gorm:"column:mile_start" json:"mile_start" example:"10000"`
+	FuelStart             int       `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
+	ReceivedVehicleRemark string    `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
+	ReturnedVehicleRemark string    `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
+	UpdatedAt             time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnReceivedVehicleNoImgage) TableName() string {

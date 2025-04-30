@@ -72,11 +72,12 @@ type VmsMasDriverArray struct {
 }
 
 type VmsMasDepartmentTree struct {
-	DeptSAP   string                 `gorm:"column:dept_sap;primaryKey" json:"-"`
-	DeptUpper string                 `gorm:"column:dept_upper" json:"-"`
-	DeptShort string                 `gorm:"column:dept_short" json:"-"`
-	DeptFull  string                 `gorm:"column:dept_full" json:"text"`
-	DeptUnder []VmsMasDepartmentTree `gorm:"foreignKey:DeptSAP;references:DeptUpper" json:"children"`
+	DeptSAP      string                 `gorm:"column:dept_sap;primaryKey" json:"-"`
+	DeptUpper    string                 `gorm:"column:dept_upper" json:"-"`
+	DeptShort    string                 `gorm:"column:dept_short" json:"-"`
+	DeptFull     string                 `gorm:"column:dept_full" json:"text"`
+	ResourceName string                 `gorm:"column:resource_name" json:"resource_name"`
+	DeptUnder    []VmsMasDepartmentTree `gorm:"foreignKey:DeptSAP;references:DeptUpper" json:"children"`
 }
 
 func (VmsMasDepartmentTree) TableName() string {

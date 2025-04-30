@@ -99,8 +99,8 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		if roles != "*" {
 			for _, role := range strings.Split(roles, ",") {
 				if !Contains(empUser.Roles, role) {
-					c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
-					c.Abort()
+					//c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+					//c.Abort()
 					return &models.AuthenUserEmp{}
 				}
 			}
