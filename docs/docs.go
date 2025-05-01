@@ -1644,12 +1644,6 @@ const docTemplate = `{
                         "description": "Number of records per page (default: 10)",
                         "name": "limit",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number2 of records per page (default: 20)",
-                        "name": "limit2",
-                        "in": "query"
                     }
                 ],
                 "responses": {}

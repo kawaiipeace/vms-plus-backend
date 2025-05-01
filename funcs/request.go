@@ -3,6 +3,7 @@ package funcs
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -11,6 +12,37 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+func MenuRequests(statusMenuMap map[string]string) ([]models.VmsTrnRequestSummary, error) {
+	var summary []models.VmsTrnRequestSummary
+
+	// Group the request counts by statusMenuMap
+	groupedSummary := make(map[string]int)
+	for key := range statusMenuMap {
+		statusCodes := strings.Split(key, ",")
+		var count int64
+		if err := config.DB.Table("vms_trn_request").
+			Where("ref_request_status_code IN ?", statusCodes).
+			Count(&count).Error; err != nil {
+			return nil, err
+		}
+		groupedSummary[key] += int(count)
+	}
+
+	// Build the summary from the grouped data
+	for key, count := range groupedSummary {
+		summary = append(summary, models.VmsTrnRequestSummary{
+			RefRequestStatusCode: key,
+			RefRequestStatusName: statusMenuMap[key],
+			Count:                count,
+		})
+	}
+	// Sort the summary by RefRequestStatusCode
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
+	})
+	return summary, nil
+}
 
 func SearchRequests(c *gin.Context) {
 	var requests []struct {

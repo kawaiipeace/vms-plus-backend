@@ -63,7 +63,7 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	bucketName := "rec"
+	bucketName := config.AppConfig.MinIoAccessKey
 
 	// Parse the uploaded file
 	file, err := c.FormFile("file")
