@@ -2391,10 +2391,6 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: 'Number2 of records per page (default: 20)'
-        in: query
-        name: limit2
-        type: integer
       produces:
       - application/json
       responses: {}
