@@ -29,6 +29,8 @@ import (
 func main() {
 	config.InitConfig()
 	config.InitDB()
+	handlers.InitMinIO(config.AppConfig.MinIoEndPoint, config.AppConfig.MinIoAccessKey, config.AppConfig.MinIoSecretKey, true)
+
 	router := gin.Default()
 	router.SetTrustedProxies([]string{"192.168.1.1", "192.168.1.2"})
 	router.Use(cors.New(cors.Config{
@@ -381,6 +383,8 @@ func main() {
 	//UploadHandler
 	uploadHandler := handlers.UploadHandler{}
 	router.POST("/api/upload", funcs.ApiKeyMiddleware(), uploadHandler.UploadFile)
+	router.GET("/api/upload/files/:bucket", uploadHandler.ListFiles)
+	router.GET("/api/files/:bucket/:file", uploadHandler.ViewFile)
 
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
