@@ -20,7 +20,7 @@ type BookingUserHandler struct {
 }
 
 var MenuNameMapUser = map[string]string{
-	"20": "กำลังดำเนินการ",
+	/*"20": "กำลังดำเนินการ",
 	"21": "กำลังดำเนินการ",
 	"30": "กำลังดำเนินการ",
 	"31": "กำลังดำเนินการ",
@@ -31,8 +31,10 @@ var MenuNameMapUser = map[string]string{
 	"60": "กำลังดำเนินการ",
 	"70": "กำลังดำเนินการ",
 	"71": "กำลังดำเนินการ",
-	"80": "เสร็จสิ้น",
-	"90": "ยกเลิกคำขอ",
+	*/
+	"20,21,30,31,41,50,51,60,70,71": "กำลังดำเนินการ",
+	"80":                            "เสร็จสิ้น",
+	"90":                            "ยกเลิกคำขอ",
 }
 
 var StatusNameMapUser = map[string]string{
@@ -144,87 +146,13 @@ func (h *BookingUserHandler) MenuRequests(c *gin.Context) {
 		return
 	}
 
-	statusNameMap := MenuNameMapUser
-	var summary []models.VmsTrnRequestSummary
-
-	// Create a mapping to group status codes by their names
-	groupedStatusCodes := make(map[string][]string)
-	for code, name := range statusNameMap {
-		groupedStatusCodes[name] = append(groupedStatusCodes[name], code)
-	}
-
-	// Initialize a map to store counts and minimum code grouped by status name
-	groupedCounts := make(map[string]struct {
-		Count   int
-		MinCode string
-	})
-
-	// Build the query for all status codes
-	allStatusCodes := make([]string, 0, len(statusNameMap))
-	for code := range statusNameMap {
-		allStatusCodes = append(allStatusCodes, code)
-	}
-
-	// Execute the query for all status codes
-	dbSummary := []struct {
-		RefRequestStatusCode string `gorm:"column:ref_request_status_code"`
-		Count                int    `gorm:"column:count"`
-	}{}
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", allStatusCodes).
-		Group("req.ref_request_status_code")
-
-	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
+	statusMenuMap := MenuNameMapUser
+	summary, err := funcs.MenuRequests(statusMenuMap)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Aggregate counts and find the minimum `RefRequestStatusCode` for each `RefRequestStatusName`
-	for _, dbItem := range dbSummary {
-		for name, codes := range groupedStatusCodes {
-			for _, code := range codes {
-				if dbItem.RefRequestStatusCode == code {
-					current := groupedCounts[name]
-					if current.Count == 0 || code < current.MinCode {
-						current.MinCode = code
-					}
-					current.Count += dbItem.Count
-					groupedCounts[name] = current
-					break
-				}
-			}
-		}
-	}
-
-	// Ensure every status name is included, even with Count = 0
-	for name, codes := range groupedStatusCodes {
-		if _, exists := groupedCounts[name]; !exists {
-			groupedCounts[name] = struct {
-				Count   int
-				MinCode string
-			}{
-				Count:   0,
-				MinCode: codes[0], // Use the first code as default for MinCode
-			}
-		}
-	}
-
-	// Build the summary grouped by status name with minimum code
-	for name, data := range groupedCounts {
-		summary = append(summary, models.VmsTrnRequestSummary{
-			RefRequestStatusName: name,
-			RefRequestStatusCode: data.MinCode,
-			Count:                data.Count,
-		})
-	}
-
-	// Sort the summary by RefRequestStatusCode
-	sort.Slice(summary, func(i, j int) bool {
-		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
-	})
-
-	// Respond with the grouped summary
 	c.JSON(http.StatusOK, summary)
 }
 
@@ -244,7 +172,6 @@ func (h *BookingUserHandler) MenuRequests(c *gin.Context) {
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
-// @Param limit2 query int false "Number2 of records per page (default: 20)"
 // @Router /api/booking-user/search-requests [get]
 func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
