@@ -39,7 +39,7 @@ var StatusNameMapVehicelInUseUser = map[string]string{
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
-// @Param page_size query int false "Number of records per page (default: 10)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-in-use-user/search-requests [get]
 func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -65,7 +65,7 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)
@@ -391,7 +391,7 @@ func (h *VehicleInUseUserHandler) GetVehicleTripDetails(c *gin.Context) {
 	}
 	query := config.DB
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.trip_departure_place LIKE ? OR req.trip_destination_place LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("trip_departure_place ILIKE ? OR trip_destination_place ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	// Fetch the vehicle record from the database
@@ -616,10 +616,15 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 
 	query := config.DB.Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0")
 	if search := c.Query("search"); search != "" {
-		query = query.Where("tax_invoice_no LIKE ?", "%"+search+"%")
+		query = query.Where("tax_invoice_no ILIKE ?", "%"+search+"%")
 	}
 
 	var fuels []models.VmsTrnAddFuel
+	query = query.
+		Preload("RefContType").
+		Preload("RefOilStationBrand").
+		Preload("RefFuelType").
+		Preload("RefPaymentType")
 	if err := query.Find(&fuels).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entries not found"})
 		return
@@ -681,6 +686,10 @@ func (h *VehicleInUseUserHandler) GetTravelCard(c *gin.Context) {
 	}
 	var request models.VmsTrnTravelCard
 	if err := config.DB.
+		Preload("RefContType").
+		Preload("RefOilStationBrand").
+		Preload("RefFuelType").
+		Preload("RefPaymentType").
 		First(&request, "trn_request_uid = ?", trnRequestUid).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return

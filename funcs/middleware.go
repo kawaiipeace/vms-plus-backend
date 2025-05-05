@@ -72,7 +72,7 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(401, gin.H{"error": "Invalid JWT token"})
+			c.JSON(401, gin.H{"error": "Invalid JWT token", "message": config.AppConfig.JWTSecret})
 			c.Abort()
 			return
 		}

@@ -33,6 +33,16 @@ var StatusNameMapAdmin = map[string]string{
 	"90": "ยกเลิกคำขอ",
 }
 
+var StatusNameMapAdminDetail = map[string]string{
+	"30": "รออนุมัติ",
+	"31": "ตีกลับ",
+	"40": "อนุมัติแล้ว",
+	"70": "ตรวจสอบยานพาหนะ",
+	"71": "ตรวจสอบยานพาหนะไม่ผ่าน",
+	"80": "เสร็จสิ้น",
+	"90": "ยกเลิกคำขอ",
+}
+
 // MenuRequests godoc
 // @Summary Summary booking requests by request status code
 // @Description Summary booking requests, counts grouped by request status code
@@ -77,7 +87,7 @@ func (h *BookingAdminHandler) MenuRequests(c *gin.Context) {
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
-// @Param page_size query int false "Number of records per page (default: 10)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/booking-admin/search-requests [get]
 func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -109,7 +119,7 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)
@@ -242,7 +252,7 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	request, err := funcs.GetRequest(c, StatusNameMapAdmin)
+	request, err := funcs.GetRequest(c, StatusNameMapAdminDetail)
 	if err != nil {
 		return
 	}
@@ -407,7 +417,6 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 	request.ApprovedRequestDeptSAP = empUser.DeptSAP
 	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
 	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
-	request.ReceivedKeyEndDatetime = request.ReceivedKeyStartDatetime
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
