@@ -5,6 +5,7 @@ type AuthenJwtUsr struct {
 	FullName string   `gorm:"column:full_name" json:"full_name"`
 	DeptSAP  string   `gorm:"column:dept_sap" json:"dept_sap"`
 	Roles    []string `gorm:"column:roles" json:"roles"`
+	LoginBy  string   `gorm:"column:login_by" json:"login_by"`
 }
 
 // AuthenUserEmp
@@ -21,6 +22,7 @@ type AuthenUserEmp struct {
 	InternalNumber string   `gorm:"column:internal_number" json:"internal_number"`
 	LicenseStatus  string   `gorm:"-" json:"license_status"`
 	Roles          []string `gorm:"-" json:"roles"`
+	LoginBy        string   `gorm:"-" json:"login_by"`
 }
 
 func (AuthenUserEmp) TableName() string {

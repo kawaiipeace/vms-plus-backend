@@ -77,7 +77,7 @@ func (h *ReceivedKeyDriverHandler) MenuRequests(c *gin.Context) {
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
-// @Param page_size query int false "Number of records per page (default: 10)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-driver/search-requests [get]
 func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -103,7 +103,7 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)
@@ -128,16 +128,6 @@ func (h *ReceivedKeyDriverHandler) SearchRequests(c *gin.Context) {
 				for key, value := range statusNameMap {
 					if value == name {
 						additionalCodes[key] = true
-					}
-				}
-			}
-			if strings.HasSuffix(code, "*") {
-				additionalCodes[strings.TrimSuffix(code, "*")] = true
-				if name, exists := MenuNameMapDriver[code]; exists {
-					for key, value := range MenuNameMapDriver {
-						if value == name {
-							additionalCodes[key] = true
-						}
 					}
 				}
 			}

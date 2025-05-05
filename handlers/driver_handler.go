@@ -47,8 +47,8 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 	if name != "" {
 		searchTerm := "%" + name + "%"
 		query = query.Where(`
-            driver_name LIKE ? OR 
-            driver_id LIKE ?`,
+            driver_name ILIKE ? OR 
+            driver_id ILIKE ?`,
 			searchTerm, searchTerm)
 	}
 	if workType := c.Query("work_type"); workType != "" {
@@ -133,10 +133,10 @@ func (h *DriverHandler) GetDriversOtherDept(c *gin.Context) {
 
 	// Get the total count of drivers (for pagination)
 	var total int64
-	config.DB.Model(&models.VmsMasDriver{}).Where("driver_name LIKE ?", "%"+name+"%").Count(&total)
+	config.DB.Model(&models.VmsMasDriver{}).Where("driver_name ILIKE ?", "%"+name+"%").Count(&total)
 
 	// Fetch the drivers with pagination
-	result := config.DB.Where("driver_name LIKE ?", "%"+name+"%").Limit(limit).Offset(offset).
+	result := config.DB.Where("driver_name ILIKE ?", "%"+name+"%").Limit(limit).Offset(offset).
 		Preload("DriverStatus").
 		Find(&drivers)
 	if result.Error != nil {

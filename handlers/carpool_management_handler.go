@@ -61,7 +61,7 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 	`)
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(carpool_name) LIKE ? OR UPPER(emp_name) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(carpool_name) ILIKE ? OR UPPER(emp_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 	if isActive := c.Query("is_active"); isActive != "" {
 		isActiveList := strings.Split(isActive, ",")
@@ -424,7 +424,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(admin_emp_no) LIKE ? OR UPPER(admin_name) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(admin_emp_no) ILIKE ? OR UPPER(admin_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
@@ -829,7 +829,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(approver_emp_no) LIKE ? OR UPPER(approver_name) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(approver_emp_no) ILIKE ? OR UPPER(approver_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {

@@ -136,3 +136,13 @@ type VmsRefVehicleStatus struct {
 func (VmsRefVehicleStatus) TableName() string {
 	return "vms_ref_vehicle_status"
 }
+
+//VmsRefTripType
+type VmsRefTripType struct {
+	RefTripTypeCode int    `gorm:"column:ref_trip_type_code;primaryKey" json:"ref_trip_type_code"`
+	RefTripTypeName string `gorm:"column:ref_trip_type_name" json:"ref_trip_type_name"`
+}
+
+func (VmsRefTripType) TableName() string {
+	return "vms_ref_trip_type"
+}

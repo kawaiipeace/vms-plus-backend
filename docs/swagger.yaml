@@ -550,6 +550,44 @@ definitions:
         example: f3b29096-140e-49dc-97ee-17fa9352aff6
         type: string
     type: object
+  models.VmsRefCostType:
+    properties:
+      ref_cost_no:
+        type: string
+      ref_cost_type_code:
+        type: string
+      ref_cost_type_name:
+        type: string
+    type: object
+  models.VmsRefFuelType:
+    properties:
+      ref_fuel_type_id:
+        type: integer
+      ref_fuel_type_name_en:
+        type: string
+      ref_fuel_type_name_th:
+        type: string
+    type: object
+  models.VmsRefOilStationBrand:
+    properties:
+      ref_oil_station_brand_id:
+        type: integer
+      ref_oil_station_brand_img:
+        type: string
+      ref_oil_station_brand_name_en:
+        type: string
+      ref_oil_station_brand_name_full:
+        type: string
+      ref_oil_station_brand_name_th:
+        type: string
+    type: object
+  models.VmsRefPaymentType:
+    properties:
+      ref_payment_type_code:
+        type: integer
+      ref_payment_type_name:
+        type: string
+    type: object
   models.VmsTrnAddFuel:
     properties:
       add_fuel_date_time:
@@ -568,15 +606,23 @@ definitions:
       receipt_img:
         example: http://vms.pea.co.th/receipt.jpg
         type: string
+      ref_cost_type:
+        $ref: '#/definitions/models.VmsRefCostType'
       ref_cost_type_code:
         example: 1
         type: integer
+      ref_fuel_type:
+        $ref: '#/definitions/models.VmsRefFuelType'
       ref_fuel_type_id:
         example: 1
         type: integer
+      ref_oil_station_brand:
+        $ref: '#/definitions/models.VmsRefOilStationBrand'
       ref_oil_station_brand_id:
         example: 1
         type: integer
+      ref_payment_type:
+        $ref: '#/definitions/models.VmsRefPaymentType'
       ref_payment_type_code:
         example: 1
         type: integer
@@ -736,6 +782,9 @@ definitions:
       received_vehicle_remark:
         example: Minor scratch on bumper
         type: string
+      returned_cleanliness_level:
+        example: 1
+        type: integer
       returned_vehicle_remark:
         example: OK
         type: string
@@ -762,6 +811,9 @@ definitions:
     properties:
       approved_request_emp_id:
         example: "990001"
+        type: string
+      received_key_end_datetime:
+        example: "2025-02-16T09:30:00Z"
         type: string
       received_key_place:
         example: Main Office
@@ -1237,7 +1289,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -1550,7 +1602,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -1854,7 +1906,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -2018,7 +2070,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -4505,7 +4557,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -4711,7 +4763,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -4804,7 +4856,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -5006,7 +5058,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -5106,7 +5158,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -5219,7 +5271,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -5693,7 +5745,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -6076,7 +6128,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -6455,7 +6507,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json
@@ -6844,7 +6896,7 @@ paths:
         type: integer
       - description: 'Number of records per page (default: 10)'
         in: query
-        name: page_size
+        name: limit
         type: integer
       produces:
       - application/json

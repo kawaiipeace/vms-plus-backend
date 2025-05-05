@@ -112,7 +112,7 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	var maxRequestNo string
 	config.DB.Table("vms_trn_request_annual_driver").
 		Select("MAX(request_annual_driver_no)").
-		Where("request_annual_driver_no LIKE ?", "RAD%").
+		Where("request_annual_driver_no ILIKE ?", "RAD%").
 		Scan(&maxRequestNo)
 
 	var nextNumber int

@@ -181,15 +181,16 @@ func main() {
 	router.PUT("/api/vehicle-in-use-user/update-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateVehicleTripDetail)
 	router.DELETE("/api/vehicle-in-use-user/delete-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.DeleteVehicleTripDetail)
 	router.GET("/api/vehicle-in-use-user/add-fuel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleAddFuelDetails)
-	router.GET("/api/vehicle-in-use/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleAddFuelDetail)
+	router.GET("/api/vehicle-in-use-user/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleAddFuelDetail)
 	router.POST("/api/vehicle-in-use-user/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.CreateVehicleAddFuel)
 	router.PUT("/api/vehicle-in-use-user/update-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateVehicleAddFuel)
 	router.DELETE("/api/vehicle-in-use-user/delete-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.DeleteVehicleAddFuel)
 	router.GET("/api/vehicle-in-use-user/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetTravelCard)
 	router.PUT("/api/vehicle-in-use-user/returned-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.ReturnedVehicle)
+	router.PUT("/api/vehicle-in-use-user/update-satisfaction-survey/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateSatisfactionSurvey)
 
 	//VehicleInUseAdminHandler
-	vehicleInUseAdminHandler := handlers.VehicleInUseAdminHandler{}
+	vehicleInUseAdminHandler := handlers.VehicleInUseAdminHandler{Role: "admin-approval,admin-dept-approval"}
 	router.GET("/api/vehicle-in-use-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.SearchRequests)
 	router.GET("/api/vehicle-in-use-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetRequest)
 	router.GET("/api/vehicle-in-use-admin/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetVehicleTripDetails)
@@ -208,7 +209,7 @@ func main() {
 	router.PUT("/api/vehicle-in-use-admin/update-received-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.UpdateReceivedVehicleImages)
 
 	//VehicleInUseDriverHandler
-	vehicleInUseDriverHandler := handlers.VehicleInUseDriverHandler{}
+	vehicleInUseDriverHandler := handlers.VehicleInUseDriverHandler{Role: "driver"}
 	router.GET("/api/vehicle-in-use-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.SearchRequests)
 	router.GET("/api/vehicle-in-use-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetRequest)
 	router.GET("/api/vehicle-in-use-driver/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetVehicleTripDetails)
