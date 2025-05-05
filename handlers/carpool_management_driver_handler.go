@@ -63,7 +63,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(d.driver_name) LIKE ? OR UPPER(d.driver_license_no) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(d.driver_name) ILIKE ? OR UPPER(d.driver_license_no) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
@@ -238,8 +238,8 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 	if name != "" {
 		searchTerm := "%" + name + "%"
 		query = query.Where(`
-            driver_name LIKE ? OR 
-            driver_id LIKE ?`,
+            driver_name ILIKE ? OR 
+            driver_id ILIKE ?`,
 			searchTerm, searchTerm)
 	}
 

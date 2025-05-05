@@ -20,18 +20,6 @@ type BookingUserHandler struct {
 }
 
 var MenuNameMapUser = map[string]string{
-	/*"20": "กำลังดำเนินการ",
-	"21": "กำลังดำเนินการ",
-	"30": "กำลังดำเนินการ",
-	"31": "กำลังดำเนินการ",
-	"40": "กำลังดำเนินการ",
-	"41": "กำลังดำเนินการ",
-	"50": "กำลังดำเนินการ",
-	"51": "กำลังดำเนินการ",
-	"60": "กำลังดำเนินการ",
-	"70": "กำลังดำเนินการ",
-	"71": "กำลังดำเนินการ",
-	*/
 	"20,21,30,31,41,50,51,60,70,71": "กำลังดำเนินการ",
 	"80":                            "เสร็จสิ้น",
 	"90":                            "ยกเลิกคำขอ",
@@ -40,7 +28,7 @@ var MenuNameMapUser = map[string]string{
 var StatusNameMapUser = map[string]string{
 	"20": "รออนุมัติ",
 	"21": "ถูกตีกลับ",
-	"30": "รออนุมัติ",
+	"30": "รอตรวจสอบ",
 	"31": "ถูกตีกลับ",
 	"40": "รออนุมัติ",
 	"41": "ถูกตีกลับ",
@@ -178,6 +166,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
+
 	statusNameMap := StatusNameMapUser
 
 	var requests []models.VmsTrnRequestList
@@ -197,7 +186,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)

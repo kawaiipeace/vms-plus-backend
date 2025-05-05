@@ -60,7 +60,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(v.vehicle_license_plate) LIKE ? OR UPPER(vehicle_brand_name) LIKE ? OR UPPER(vehicle_model_name) LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("v.vehicle_license_plate ILIKE ? OR vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {

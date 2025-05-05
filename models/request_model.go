@@ -24,6 +24,7 @@ type VmsTrnRequestList struct {
 	ReceivedKeyStartDatetime         time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime"`
 	ReceivedKeyEndDatetime           time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime"`
 	CanceledRequestDatetime          time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	IsPEAEmployeeDriver              string    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 }
 type VmsTrnRequestSummary struct {
 	RefRequestStatusCode string `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
@@ -344,7 +345,7 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 	RefRequestStatusCode        string    `gorm:"column:ref_request_status_code" json:"-"`
 	ReceivedKeyPlace            string    `gorm:"column:received_key_place" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime    time.Time `gorm:"column:received_key_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
-	ReceivedKeyEndDatetime      time.Time `gorm:"column:received_key_end_datetime" json:"-"`
+	ReceivedKeyEndDatetime      time.Time `gorm:"column:received_key_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
 	UpdatedBy                   string    `gorm:"column:updated_by" json:"-"`
 	UpdatedAt                   time.Time `gorm:"column:updated_at" json:"-"`
 }

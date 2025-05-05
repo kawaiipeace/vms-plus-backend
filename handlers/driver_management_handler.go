@@ -51,7 +51,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
-		query = query.Where("UPPER(driver_name) LIKE ? OR UPPER(driver_nickname) LIKE ? OR UPPER(driver_dept_sap_short_name_work) LIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
@@ -754,8 +754,8 @@ func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 	if name != "" {
 		searchTerm := "%" + name + "%"
 		query = query.Where(`
-            driver_name LIKE ? OR 
-            driver_id LIKE ?`,
+            driver_name ILIKE ? OR 
+            driver_id ILIKE ?`,
 			searchTerm, searchTerm)
 	}
 

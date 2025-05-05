@@ -13,6 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+var StatusNameMap = map[string]string{
+	"20": "รออนุมัติ",
+	"21": "ถูกตีกลับ",
+	"30": "รอตรวจสอบ",
+	"31": "ถูกตีกลับ",
+	"40": "รออนุมัติ",
+	"41": "ถูกตีกลับ",
+	"50": "รอรับกุญแจ",
+	"51": "รอรับยานพาหนะ",
+	"60": "เดินทาง",
+	"70": "รอตรวจสอบ",
+	"71": "คืนยานพาหนะไม่สำเร็จ",
+	"80": "เสร็จสิ้น",
+	"90": "ยกเลิกคำขอ",
+}
+
 func MenuRequests(statusMenuMap map[string]string) ([]models.VmsTrnRequestSummary, error) {
 	var summary []models.VmsTrnRequestSummary
 
@@ -69,7 +85,7 @@ func SearchRequests(c *gin.Context) {
 
 	// Apply filters to both the main query and summary query
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	// Filter by ref_request_status_code
@@ -219,6 +235,10 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("RequestVehicleType").
 		Preload("VehicleImagesReceived").
 		Preload("VehicleImagesReturned").
+		Preload("VehicleImagesReturned").
+		Preload("VehicleImageInspect").
+		Preload("ReceiverKeyTypeDetail").
+		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
 		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
 		return request, err
@@ -231,8 +251,45 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 	request.ReceivedKeyImageURL = config.DefaultAvatarURL
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
-	request.RefRequestStatusName = statusNameMap[request.RefRequestStatusCode]
-	UpdateTrnRequestData(request.TrnRequestUID)
+	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
+	request.FleetCardNo = request.VmsMasVehicle.VehicleDepartment.FleetCardNo
+	for i := range request.SatisfactionSurveyAnswers {
+		desc := request.SatisfactionSurveyAnswers[i].SatisfactionSurveyQuestions.MasSatisfactionSurveyQuestionsDesc
+		parts := strings.SplitN(desc, ":", 2)
+		request.SatisfactionSurveyAnswers[i].SatisfactionSurveyQuestions.MasSatisfactionSurveyQuestionsTitle = parts[0] // Title before colon
+		if len(parts) > 1 {
+			request.SatisfactionSurveyAnswers[i].SatisfactionSurveyQuestions.MasSatisfactionSurveyQuestionsDesc = parts[1] // Remaining description after colon
+		} else {
+			request.SatisfactionSurveyAnswers[i].SatisfactionSurveyQuestions.MasSatisfactionSurveyQuestionsDesc = "" // Empty if no colon found
+		}
+	}
+	if err := config.DB.
+		Preload("RefTripType").
+		Where("trn_request_uid <> ?", request.TrnRequestUID).
+		Order("created_at DESC").
+		First(&request.NextRequest).Error; err == nil {
+		request.NextRequest.RefRequestStatusName = StatusNameMap[request.NextRequest.RefRequestStatusCode]
+	}
+	request.MileUsed = request.MileEnd - request.MileStart
+	if err := config.DB.
+		Table("vms_trn_add_fuel").
+		Where("trn_request_uid = ? AND is_deleted = '0'", request.TrnRequestUID).
+		Count(&request.AddFuelsCount).Error; err != nil {
+		request.AddFuelsCount = 0
+	}
+	if err := config.DB.
+		Table("vms_trn_trip_detail").
+		Where("trn_request_uid = ? AND is_deleted = '0'", request.TrnRequestUID).
+		Count(&request.TripDetailsCount).Error; err != nil {
+		request.TripDetailsCount = 0
+	}
+
+	request.IsReturnOverDue = false
+	if time.Now().Truncate(24 * time.Hour).After(request.EndDateTime.Truncate(24 * time.Hour)) {
+		request.IsReturnOverDue = true
+	}
+
+	//UpdateTrnRequestData(request.TrnRequestUID)
 	//c.JSON(http.StatusOK, request)
 	return request, nil
 }

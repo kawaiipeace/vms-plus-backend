@@ -67,7 +67,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(v.vehicle_no) LIKE ? OR UPPER(v.vehicle_name) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(v.vehicle_no) ILIKE ? OR UPPER(v.vehicle_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
@@ -244,7 +244,7 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	query = query.Where("is_deleted = '0'")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("vehicle_brand_name LIKE ? OR vehicle_license_plate LIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Count total records
