@@ -71,7 +71,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	query = query.Where("is_deleted = '0'")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("vehicle_brand_name LIKE ? OR vehicle_license_plate LIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Apply filters if provided
@@ -176,7 +176,7 @@ func (h *VehicleHandler) GetTypes(c *gin.Context) {
 	// Build the query
 	query := config.DB
 	if name != "" {
-		query = query.Where("ref_vehicle_type_name LIKE ?", "%"+name+"%")
+		query = query.Where("ref_vehicle_type_name ILIKE ?", "%"+name+"%")
 	}
 
 	// Execute the query

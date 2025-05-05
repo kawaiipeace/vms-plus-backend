@@ -17,6 +17,12 @@ type ReceivedKeyAdminHandler struct {
 	Role string
 }
 
+var StatusNameMapReceivedKeyAdmin = map[string]string{
+	"50":  "รอรับกุญแจ",
+	"50e": "เกินวันนัดหมาย",
+	"51":  "รับยานพาหนะ",
+}
+
 // SearchRequests godoc
 // @Summary Search booking requests and get summary counts by request status code
 // @Description Search for requests using a keyword and get the summary of counts grouped by request status code
@@ -35,7 +41,7 @@ type ReceivedKeyAdminHandler struct {
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
-// @Param page_size query int false "Number of records per page (default: 10)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-admin/search-requests [get]
 func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -61,7 +67,7 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)
@@ -215,7 +221,7 @@ func (h *ReceivedKeyAdminHandler) GetRequest(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedKeyUser)
+	request, err := funcs.GetRequestVehicelInUse(c, StatusNameMapReceivedKeyAdmin)
 	if err != nil {
 		return
 	}

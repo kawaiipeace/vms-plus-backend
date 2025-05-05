@@ -26,6 +26,7 @@ var (
 )
 
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration, accessToken string, refreshToken string) (string, error) {
+	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
@@ -91,7 +92,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 
 	if config.AppConfig.IsDev {
 		if err := config.DB.First(&empUser, "emp_id = ?", "700001").Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "message": "EmpID :" + "700001"})
 			c.Abort()
 			return &empUser
 		}
@@ -105,16 +106,17 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 				}
 			}
 		}
+		empUser.LoginBy = "keycloak"
 		return &empUser
 	}
 	jwt, err := ExtractUserFromJWT(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "message": "Please login again"})
 		c.Abort()
 	}
 
 	if err := config.DB.First(&empUser, "emp_id = ?", jwt.EmpID).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "message": "EmpID :" + jwt.EmpID})
 		c.Abort()
 		return &empUser
 	}
@@ -128,6 +130,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			}
 		}
 	}
+	empUser.LoginBy = jwt.LoginBy
 	return &empUser
 }
 

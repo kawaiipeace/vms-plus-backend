@@ -70,7 +70,7 @@ func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_annual_driver_no LIKE ? OR req.created_request_emp_name LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_annual_driver_no ILIKE ? OR req.created_request_emp_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("start_created_request_datetime"); startDate != "" {
 		query = query.Where("req.created_request_datetime >= ?", startDate)

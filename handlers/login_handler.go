@@ -110,6 +110,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		} else {
 			var user models.AuthenUserEmp
+
 			err = config.DB.Where("emp_id = ?", userInfo.Username).
 				First(&user).Error
 
@@ -121,6 +122,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				}
 				return
 			}
+			user.LoginBy = "keycloak"
 			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, successResponse.AccessToken, successResponse.RefreshToken)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
@@ -237,7 +239,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 			}
 			return
 		}
-
+		user.LoginBy = "thaiid"
 		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
@@ -444,7 +446,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 		}
 		return
 	}
-
+	user.LoginBy = "otp"
 	// Generate JWT tokens
 	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 	if err != nil {
@@ -577,33 +579,14 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/logout [get]
 func (h *LoginHandler) Logout(c *gin.Context) {
-	/*userInfoEndpoint := config.AppConfig.KeyCloakEndPoint + "/userinfo"
-	accessToken := ""
-	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	user := funcs.GetAuthenUser(c, "*")
+
+	if user.LoginBy == "keycloak" {
+		endpoint := config.AppConfig.KeyCloakEndPoint + "/logout"
+		c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully", "logout_url": endpoint})
 		return
 	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	fmt.Println(string(body))
-	*/
-	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully", "logout_url": ""})
 }
 
 // Profile godoc

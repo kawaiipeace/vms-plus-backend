@@ -145,7 +145,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -638,7 +638,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -1119,7 +1119,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -1371,7 +1371,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -5333,7 +5333,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -5662,7 +5662,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -5804,7 +5804,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6127,7 +6127,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6281,7 +6281,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6456,7 +6456,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -7229,7 +7229,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -7844,7 +7844,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -8453,7 +8453,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -9074,7 +9074,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -10493,6 +10493,65 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsRefCostType": {
+            "type": "object",
+            "properties": {
+                "ref_cost_no": {
+                    "type": "string"
+                },
+                "ref_cost_type_code": {
+                    "type": "string"
+                },
+                "ref_cost_type_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefFuelType": {
+            "type": "object",
+            "properties": {
+                "ref_fuel_type_id": {
+                    "type": "integer"
+                },
+                "ref_fuel_type_name_en": {
+                    "type": "string"
+                },
+                "ref_fuel_type_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefOilStationBrand": {
+            "type": "object",
+            "properties": {
+                "ref_oil_station_brand_id": {
+                    "type": "integer"
+                },
+                "ref_oil_station_brand_img": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_en": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_full": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefPaymentType": {
+            "type": "object",
+            "properties": {
+                "ref_payment_type_code": {
+                    "type": "integer"
+                },
+                "ref_payment_type_name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.VmsTrnAddFuel": {
             "type": "object",
             "properties": {
@@ -10518,17 +10577,29 @@ const docTemplate = `{
                     "type": "string",
                     "example": "http://vms.pea.co.th/receipt.jpg"
                 },
+                "ref_cost_type": {
+                    "$ref": "#/definitions/models.VmsRefCostType"
+                },
                 "ref_cost_type_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "ref_fuel_type": {
+                    "$ref": "#/definitions/models.VmsRefFuelType"
                 },
                 "ref_fuel_type_id": {
                     "type": "integer",
                     "example": 1
                 },
+                "ref_oil_station_brand": {
+                    "$ref": "#/definitions/models.VmsRefOilStationBrand"
+                },
                 "ref_oil_station_brand_id": {
                     "type": "integer",
                     "example": 1
+                },
+                "ref_payment_type": {
+                    "$ref": "#/definitions/models.VmsRefPaymentType"
                 },
                 "ref_payment_type_code": {
                     "type": "integer",
@@ -10753,6 +10824,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Minor scratch on bumper"
                 },
+                "returned_cleanliness_level": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "returned_vehicle_remark": {
                     "type": "string",
                     "example": "OK"
@@ -10791,6 +10866,10 @@ const docTemplate = `{
                 "approved_request_emp_id": {
                     "type": "string",
                     "example": "990001"
+                },
+                "received_key_end_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T09:30:00Z"
                 },
                 "received_key_place": {
                     "type": "string",
