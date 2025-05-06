@@ -18,6 +18,7 @@ type Claims struct {
 	FullName  string   `json:"full_name"`
 	TokenType string   `json:"token_type"`
 	Roles     []string `json:"roles"`
+	LoginBy   string   `json:"login_by"`
 	jwt.RegisteredClaims
 }
 
@@ -31,6 +32,7 @@ func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Du
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
 		TokenType: tokenType,
+		LoginBy:   user.LoginBy,
 		Roles:     []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
