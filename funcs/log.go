@@ -1,6 +1,9 @@
 package funcs
 
 import (
+	"encoding/csv"
+	"errors"
+	"io"
 	"log"
 	"time"
 	"vms_plus_be/config"
@@ -10,13 +13,29 @@ import (
 )
 
 func CreateTrnLog(trnRequestUID, refStatusCode, logRemark, createdBy string) error {
+	return nil
+}
+
+func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actionByPersonalID, actionByRole, remark string) error {
+	var user models.MasUser
+	if actionByRole == "driver" {
+
+	} else {
+		user = GetUserEmpInfo(actionByPersonalID)
+	}
 	logReq := models.VmsLogRequest{
-		LogRequestUID: uuid.New().String(),
-		TrnRequestUID: trnRequestUID,
-		RefStatusCode: refStatusCode,
-		LogRemark:     logRemark,
-		CreatedAt:     time.Now(),
-		CreatedBy:     createdBy,
+		LogRequestActionUID:      uuid.New().String(),
+		TrnRequestUID:            trnRequestUID,
+		RefRequestStatusCode:     refStatusCode,
+		LogRequestActionDatetime: time.Now(),
+		ActionByPersonalID:       actionByPersonalID,
+		ActionByRole:             actionByRole,
+		ActionByFullname:         user.FirstName,
+		ActionByPosition:         user.Position,
+		ActionByDepartment:       user.DeptSAP,
+		ActionDetail:             actionDetail,
+		Remark:                   remark,
+		IsDeleted:                "0",
 	}
 
 	// Insert into database
@@ -28,42 +47,30 @@ func CreateTrnLog(trnRequestUID, refStatusCode, logRemark, createdBy string) err
 	return nil
 }
 
-func UpdateTrnRequestData(trnRequestUID string) error {
-	// First update query
-	updateQuery := `
-		UPDATE public.vms_trn_request
-		SET vehicle_department_dept_sap = d.vehicle_owner_dept_sap
-		FROM vms_mas_vehicle_department d
-		WHERE d.mas_vehicle_uid::character varying = vms_trn_request.mas_vehicle_uid
-		AND trn_request_uid = ?`
-
-	if err := config.DB.Exec(updateQuery, trnRequestUID).Error; err != nil {
-		return err
+// ParseCSV parses a CSV file and returns a slice of maps where each map represents a row with column names as keys.
+func ParseCSV(reader io.Reader) ([]map[string]string, error) {
+	csvReader := csv.NewReader(reader)
+	headers, err := csvReader.Read()
+	if err != nil {
+		return nil, errors.New("failed to read CSV headers")
 	}
 
-	updateQuery = `
-		UPDATE public.vms_trn_request
-		SET vehicle_department_dept_sap_short = d.dept_short,
-		    vehicle_department_dept_sap_full = d.dept_full
-		FROM vms_mas_department d
-		WHERE d.dept_sap = vms_trn_request.vehicle_department_dept_sap
-		AND trn_request_uid = ?`
+	var records []map[string]string
+	for {
+		row, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.New("failed to read CSV row")
+		}
 
-	if err := config.DB.Exec(updateQuery, trnRequestUID).Error; err != nil {
-		return err
+		record := make(map[string]string)
+		for i, header := range headers {
+			record[header] = row[i]
+		}
+		records = append(records, record)
 	}
 
-	updateQuery = `
-		UPDATE public.vms_trn_request
-		SET vehicle_license_plate = v.vehicle_license_plate,
-			vehicle_license_plate_province_short = v.vehicle_license_plate_province_short,
-			vehicle_license_plate_province_full = v.vehicle_license_plate_province_full
-		FROM vms_mas_vehicle v
-		WHERE v.mas_vehicle_uid::text = vms_trn_request.mas_vehicle_uid
-		AND trn_request_uid = ?`
-
-	if err := config.DB.Exec(updateQuery, trnRequestUID).Error; err != nil {
-		return err
-	}
-	return nil
+	return records, nil
 }

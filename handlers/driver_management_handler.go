@@ -8,6 +8,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,20 @@ import (
 
 type DriverManagementHandler struct {
 	Role string
+}
+
+func (h *DriverManagementHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
+}
+
+func (h *DriverManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
 }
 
 // SearchDrivers godoc
@@ -40,18 +55,20 @@ type DriverManagementHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver-management/search [get]
 func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
 
 	var drivers []models.VmsMasDriverList
-	query := config.DB.Model(&models.VmsMasDriverList{})
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Model(&models.VmsMasDriverList{})
 	query = query.Select("vms_mas_driver.*,(select max(driver_license_end_date) from vms_mas_driver_license where mas_driver_uid = vms_mas_driver.mas_driver_uid) as driver_license_end_date")
 	query = query.Where("is_deleted = ?", "0")
 
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
-		query = query.Where("UPPER(driver_name) LIKE ? OR UPPER(driver_nickname) LIKE ? OR UPPER(driver_dept_sap_short_name_work) LIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
@@ -99,7 +116,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	query = query.Limit(limit).
@@ -108,7 +125,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	if err := query.
 		Preload("DriverStatus").
 		Find(&drivers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -162,7 +179,7 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	}
 	var driver models.VmsMasDriverRequest
 	if err := c.ShouldBindJSON(&driver); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -202,16 +219,16 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverDocuments = []models.VmsMasDriverDocument{}
 
 	if err := config.DB.Create(&driver).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if err := config.DB.Create(&driverLicense).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver License"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver License", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.Create(&driverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -233,14 +250,15 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 // @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
 // @Router /api/driver-management/driver/{mas_driver_uid} [get]
 func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
+
 	masDriverUID := c.Param("mas_driver_uid")
 	var driver models.VmsMasDriverResponse
-
-	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
@@ -248,7 +266,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 		Preload("DriverLicense.DriverLicenseType").
 		Preload("DriverCertificate").
 		First(&driver).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	//
@@ -279,21 +297,21 @@ func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 
 	}
@@ -324,24 +342,25 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 
 	}
@@ -373,16 +392,17 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	if err := config.DB.First(&driverLicense, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
@@ -391,12 +411,12 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	request.MasDriverLicenseUID = driverLicense.MasDriverLicenseUID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.Find(&result).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	result.DriverID = driver.DriverID
@@ -430,32 +450,33 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
 	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", request.MasDriverUID, "0").
 		Delete(&models.VmsMasDriverDocument{}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete existing documents: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete existing documents: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	var masDriverLicenseUID string
 	if err := config.DB.Model(&models.VmsMasDriverLicense{}).
 		Where("mas_driver_uid = ? AND is_deleted = ?", request.MasDriverUID, "0").
 		Pluck("mas_driver_license_uid", &masDriverLicenseUID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve mas_driver_license_uid: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve mas_driver_license_uid: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if request.DriverLicense.DriverDocumentFile != "" {
 		if err := config.DB.Model(&models.VmsMasDriverLicense{}).
 			Where("mas_driver_license_uid = ? AND is_deleted = ?", masDriverLicenseUID, "0").
 			Update("driver_license_image", request.DriverLicense.DriverDocumentFile).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update driver license image: %v", err)})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update driver license image: %v", err), "message": messages.ErrInternalServer.Error()})
 			return
 		}
 	}
@@ -472,7 +493,7 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&request.DriverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -480,7 +501,7 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 		Preload("DriverDocuments").
 		Preload("DriverLicense").
 		First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -511,14 +532,16 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 		DriverNickname string `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
+
 	request.TrnDriverLeaveUID = uuid.NewString()
 	request.CreatedAt = time.Now()
 	request.CreatedBy = user.EmpID
@@ -533,7 +556,7 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 	}
 
 	if err := config.DB.First(&result, "trn_driver_leave_uid = ?", request.TrnDriverLeaveUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 
 	}
@@ -568,24 +591,24 @@ func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 		DriverNickname string `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Model(&driver).Update("is_active", request.IsActive).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	result.DriverID = driver.DriverID
@@ -612,12 +635,13 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 	var request, driver models.VmsMasDriverDelete
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ? and driver_name = ?", request.MasDriverUID, "0", request.DriverName).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -626,7 +650,7 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete", "message": messages.ErrInternalServer.Error()})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
@@ -657,12 +681,12 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
@@ -670,12 +694,12 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 	request.RefDriverStatusCode = 4
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	result.DriverID = driver.DriverID
@@ -708,12 +732,13 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 		DriverNickname string `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
@@ -721,12 +746,12 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 	request.RefDriverStatusCode = 3
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	result.DriverID = driver.DriverID
@@ -748,22 +773,226 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 	name := strings.ToUpper(c.Query("name"))
 	var drivers []models.VmsMasDriver
-	query := config.DB.Model(&models.VmsMasDriver{})
+	query := h.SetQueryRole(funcs.GetAuthenUser(c, h.Role), config.DB)
+	query = query.Model(&models.VmsMasDriver{})
 	query = query.Where("is_deleted = ? AND is_replacement = ?", "0", "1")
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"
 		query = query.Where(`
-            driver_name LIKE ? OR 
-            driver_id LIKE ?`,
+            driver_name ILIKE ? OR 
+            driver_id ILIKE ?`,
 			searchTerm, searchTerm)
 	}
 
 	if err := query.
 		Preload("DriverStatus").
 		Find(&drivers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, drivers)
+}
+
+// GetDriverTimeLine godoc
+// @Summary Get driver timeline
+// @Description Get driver timeline by date range
+// @Tags Drivers-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "driver_name,driver_nickname,driver_dept_sap_short_name_work to search"
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param work_type query string false "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')"
+// @Param ref_driver_status_code query string false "Filter by driver status code (comma-separated, e.g., '1,2')"
+// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
+// @Router /api/driver-management/timeline [get]
+func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	var drivers []models.DriverTimeLine
+
+	query := h.SetQueryRole(user, config.DB).
+		Table("public.vms_mas_driver AS d").
+		Select(`d.*`).
+		Where("d.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+	query = query.Where(`EXISTS (
+			SELECT 1 
+			FROM vms_trn_request r 
+			WHERE r.mas_carpool_driver_uid = d.mas_driver_uid 
+			AND r.is_pea_employee_driver = ?
+			AND (
+				(r.reserve_start_datetime BETWEEN ? AND ?) 
+				OR (r.reserve_end_datetime BETWEEN ? AND ?) 
+				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime) 
+				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)
+			)
+		)`, "0", startDate, endDate, startDate, endDate, startDate, endDate)
+
+	name := strings.ToUpper(c.Query("name"))
+	if name != "" {
+		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	}
+	if workType := c.Query("work_type"); workType != "" {
+		workTypes := strings.Split(workType, ",")
+		query = query.Where("work_type IN (?)", workTypes)
+	}
+	if refDriverStatusCode := c.Query("ref_driver_status_code"); refDriverStatusCode != "" {
+		statusCodes := strings.Split(refDriverStatusCode, ",")
+		query = query.Where("ref_driver_status_code IN (?)", statusCodes)
+	}
+	if isActive := c.Query("is_active"); isActive != "" {
+		isActiveValues := strings.Split(isActive, ",")
+		query = query.Where("is_active IN (?)", isActiveValues)
+	}
+
+	if err := query.Find(&drivers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range drivers {
+		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", 22, 3)
+		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", 16, 2)
+		// Preload the driver requests for each driver
+		if err := config.DB.Table("vms_trn_request").
+			Preload("TripDetails").
+			Where("mas_carpool_driver_uid = ? AND is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
+			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		// Preload the driver status for each driver
+
+		for j := range drivers[i].DriverTrnRequests {
+			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]
+		}
+	}
+	c.JSON(http.StatusOK, drivers)
+}
+
+// ImportDriver godoc
+// @Summary Import driver data from CSV
+// @Description This endpoint allows importing driver data from a CSV file.
+// @Tags Drivers-management
+// @Accept multipart/form-data
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param file formData file true "CSV file containing driver data"
+// @Router /api/driver-management/import-driver [post]
+func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required", "message": messages.ErrInvalidFileType.Error()})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	defer src.Close()
+
+	// Parse CSV file
+	records, err := funcs.ParseCSV(src)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid CSV format", "message": messages.ErrInvalidFileType.Error()})
+		return
+	}
+
+	var drivers []models.VmsMasDriverImport
+	for _, record := range records {
+		masDriverUID := uuid.New().String()
+		driver := models.VmsMasDriverImport{
+			MasDriverUID:   masDriverUID,
+			DriverName:     record["driver_name"],
+			DriverNickname: record["driver_nickname"],
+			DriverID:       fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_b")),
+			WorkType: func() int {
+				workType, _ := strconv.Atoi(record["work_type"])
+				return workType
+			}(),
+
+			DriverIdentificationNo: record["driver_identification_no"],
+			DriverBirthdate: func() time.Time {
+				birthdate, _ := time.Parse("2006-01-02 15:04:05", record["driver_birthdate"])
+				return birthdate
+			}(),
+			ContractNo:                 record["contract_no"],
+			MasVendorCode:              record["mas_vendor_code"],
+			DriverDeptSapHire:          record["driver_dept_sap_hire"],
+			DriverDeptSapShortNameHire: record["driver_dept_sap_short_name_hire"],
+			DriverDeptSapWork:          record["driver_dept_sap_work"],
+			DriverDeptSapShortNameWork: record["driver_dept_sap_short_work"],
+			StartDate: func() time.Time {
+				startDate, _ := time.Parse("2006-01-02 15:04:05", record["start_date"])
+				return startDate
+			}(),
+			EndDate: func() time.Time {
+				endDate, _ := time.Parse("2006-01-02 15:04:05", record["end_date"])
+				return endDate
+			}(),
+			RefOtherUseCode: "0",
+			DriverLicense: models.VmsMasDriverLicenseRequest{
+				MasDriverLicenseUID:      uuid.New().String(),
+				MasDriverUID:             masDriverUID,
+				DriverLicenseNo:          record["driver_license_no"],
+				RefDriverLicenseTypeCode: record["ref_driver_license_type_code"],
+				DriverLicenseStartDate: func() time.Time {
+					startDate, _ := time.Parse("2006-01-02 15:04:05", record["driver_license_start_date"])
+					return startDate
+				}(),
+				DriverLicenseEndDate: func() time.Time {
+					endDate, _ := time.Parse("2006-01-02 15:04:05", record["driver_license_end_date"])
+					return endDate
+				}(),
+				CreatedBy: user.EmpID,
+				UpdatedBy: user.EmpID,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				IsDeleted: "0",
+				IsActive:  "1",
+			},
+			IsReplacement: "0",
+			CreatedBy:     user.EmpID,
+			UpdatedBy:     user.EmpID,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+			IsDeleted:     "0",
+			IsActive:      "1",
+		}
+		drivers = append(drivers, driver)
+	}
+
+	if err := config.DB.Create(&drivers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import drivers", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Drivers imported successfully", "count": len(drivers)})
 }

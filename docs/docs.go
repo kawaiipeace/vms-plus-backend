@@ -145,7 +145,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -362,7 +362,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-admin-dept/update-sended-back": {
+        "/api/booking-admin-dept/update-rejected": {
             "put": {
                 "security": [
                     {
@@ -372,7 +372,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows users to update the sended back status of an item.",
+                "description": "This endpoint allows users to update the rejected status of an item.",
                 "consumes": [
                     "application/json"
                 ],
@@ -382,15 +382,15 @@ const docTemplate = `{
                 "tags": [
                     "Booking-admin-dept"
                 ],
-                "summary": "Update sended back status for an item",
+                "summary": "Update rejected status for an item",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestSendedBack data",
+                        "description": "VmsTrnRequestRejected data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
                         }
                     }
                 ],
@@ -638,7 +638,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -855,41 +855,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-admin/update-sended-back": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows users to update the sended back status of an item.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin"
-                ],
-                "summary": "Update sended back status for an item",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestSendedBack data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/booking-admin/update-trip": {
             "put": {
                 "security": [
@@ -995,7 +960,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-approver/menu-requests": {
+        "/api/booking-confirmer/menu-requests": {
             "get": {
                 "security": [
                     {
@@ -1013,13 +978,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Summary booking requests by request status code",
                 "responses": {}
             }
         },
-        "/api/booking-approver/request/{trn_request_uid}": {
+        "/api/booking-confirmer/request/{trn_request_uid}": {
             "get": {
                 "security": [
                     {
@@ -1037,7 +1002,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Retrieve a specific booking request",
                 "parameters": [
@@ -1052,7 +1017,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-approver/search-requests": {
+        "/api/booking-confirmer/search-requests": {
             "get": {
                 "security": [
                     {
@@ -1070,7 +1035,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Search booking requests and get summary counts by request status code",
                 "parameters": [
@@ -1119,14 +1084,14 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {}
             }
         },
-        "/api/booking-approver/update-approved": {
+        "/api/booking-confirmer/update-approved": {
             "put": {
                 "security": [
                     {
@@ -1144,24 +1109,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Update sended back status for an item",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestApproved data",
+                        "description": "VmsTrnRequestConfirmed data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestApproved"
+                            "$ref": "#/definitions/models.VmsTrnRequestConfirmed"
                         }
                     }
                 ],
                 "responses": {}
             }
         },
-        "/api/booking-approver/update-canceled": {
+        "/api/booking-confirmer/update-canceled": {
             "put": {
                 "security": [
                     {
@@ -1179,7 +1144,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Update cancel status for an item",
                 "parameters": [
@@ -1196,7 +1161,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-approver/update-sended-back": {
+        "/api/booking-confirmer/update-rejected": {
             "put": {
                 "security": [
                     {
@@ -1214,17 +1179,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Booking-approver"
+                    "Booking-confirmer"
                 ],
                 "summary": "Update sended back status for an item",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestSendedBack data",
+                        "description": "VmsTrnRequestRejected data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
                         }
                     }
                 ],
@@ -1371,7 +1336,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -1448,7 +1413,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-final/update-sended-back": {
+        "/api/booking-final/update-rejected": {
             "put": {
                 "security": [
                     {
@@ -1458,7 +1423,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows users to update the sended back status of an item.",
+                "description": "This endpoint allows users to update the rejected status of an item.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1468,15 +1433,15 @@ const docTemplate = `{
                 "tags": [
                     "Booking-final"
                 ],
-                "summary": "Update sended back status for an item",
+                "summary": "Update rejected status for an item",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestSendedBack data",
+                        "description": "VmsTrnRequestRejected data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
                         }
                     }
                 ],
@@ -1649,41 +1614,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-user/update-approver": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the approver user of their booking request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-user"
-                ],
-                "summary": "Update approver for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestApprover data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestApprover"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/booking-user/update-canceled": {
             "put": {
                 "security": [
@@ -1713,6 +1643,41 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnRequestCanceled"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/booking-user/update-confirmer": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a booking user to update the confirmer user of their booking request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-user"
+                ],
+                "summary": "Update confirmer for a booking request",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestConfirmer data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestConfirmer"
                         }
                     }
                 ],
@@ -1824,7 +1789,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/booking-user/update-sended-back": {
+        "/api/booking-user/update-resend": {
             "put": {
                 "security": [
                     {
@@ -1834,7 +1799,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows users to update the sended back status of an item.",
+                "description": "This endpoint allows users re-send reqeust.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1844,15 +1809,15 @@ const docTemplate = `{
                 "tags": [
                     "Booking-user"
                 ],
-                "summary": "Update sended back status for an item",
+                "summary": "re-send reqeust",
                 "parameters": [
                     {
-                        "description": "VmsTrnRequestSendedBack data",
+                        "description": "VmsTrnRequestResend data",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
+                            "$ref": "#/definitions/models.VmsTrnRequestResend"
                         }
                     }
                 ],
@@ -2876,6 +2841,77 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/driver-timeline/{mas_carpool_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get driver timeline by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Get driver timeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolUID (mas_carpool_uid)",
+                        "name": "mas_carpool_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "driver_name,driver_nickname,driver_dept_sap_short_name_work to search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')",
+                        "name": "work_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by driver status code (comma-separated, e.g., '1,2')",
+                        "name": "ref_driver_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
+                        "name": "is_active",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/mas-department": {
             "get": {
                 "security": [
@@ -3291,6 +3327,71 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.VmsMasCarpoolVehicleActive"
                         }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/vehicle-timeline/{mas_carpool_uid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get Carpool vehicle timeline by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Get Carpool vehicle timeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolUID (mas_carpool_uid)",
+                        "name": "mas_carpool_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Car type",
+                        "name": "vehicel_car_type_detail",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by vehicle status code (comma-separated, e.g., '1,2')",
+                        "name": "ref_vehicle_status_code",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -4033,6 +4134,39 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-management/import-driver": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows importing driver data from a CSV file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Import driver data from CSV",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "CSV file containing driver data",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/driver-management/replacement-drivers": {
             "get": {
                 "security": [
@@ -4151,6 +4285,70 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
                         "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/driver-management/timeline": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get driver timeline by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Get driver timeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "driver_name,driver_nickname,driver_dept_sap_short_name_work to search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')",
+                        "name": "work_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by driver status code (comma-separated, e.g., '1,2')",
+                        "name": "ref_driver_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
+                        "name": "is_active",
                         "in": "query"
                     }
                 ],
@@ -4936,6 +5134,62 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/mas/driver-departments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Driver Departments.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Driver Departments",
+                "responses": {}
+            }
+        },
+        "/api/mas/driver-vendors": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Driver Vendors.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Driver Vendors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Vendor Code or Vendor Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/mas/satisfaction_survey_questions": {
             "get": {
                 "security": [
@@ -4984,6 +5238,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "TrnReuestUID",
+                        "name": "trn_request_uid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
                         "in": "query"
@@ -4992,7 +5253,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/mas/user-approval-users": {
+        "/api/mas/user-confirmer-users": {
             "get": {
                 "security": [
                     {
@@ -5002,7 +5263,7 @@ const docTemplate = `{
                         "AuthorizationAuth": []
                     }
                 ],
-                "description": "This endpoint allows a user to retrieve Approval Users.",
+                "description": "This endpoint allows a user to retrieve Confirmer Users.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5012,7 +5273,7 @@ const docTemplate = `{
                 "tags": [
                     "MAS"
                 ],
-                "summary": "Retrieve the Approval Users",
+                "summary": "Retrieve the Confirmer Users",
                 "parameters": [
                     {
                         "type": "string",
@@ -5080,6 +5341,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "TrnReuestUID",
+                        "name": "trn_request_uid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
                         "in": "query"
@@ -5112,14 +5380,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search by Employee ID or Full Name",
-                        "name": "search",
-                        "in": "query"
+                        "description": "TrnReuestUID",
+                        "name": "trn_request_uid",
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
-                        "description": "TrnReuestUID",
-                        "name": "trn_request_uid",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
                         "in": "query"
                     }
                 ],
@@ -5333,7 +5602,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -5662,7 +5931,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -5804,7 +6073,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6127,7 +6396,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6281,7 +6550,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6456,7 +6725,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -6631,6 +6900,30 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/ref/driver-certificate-type": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all driver certificate types.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all driver certificate types",
                 "responses": {}
             }
         },
@@ -7229,7 +7522,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -7844,7 +8137,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -8453,7 +8746,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -9074,7 +9367,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Number of records per page (default: 10)",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -9265,6 +9558,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle-inspection-admin/update-rejected": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows to update the booking request status to \"Sended Back\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-inspection-admin"
+                ],
+                "summary": "Update booking request to \"Sended Back\" status",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestRejected data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle-inspection-admin/update-returned-vehicle": {
             "put": {
                 "security": [
@@ -9329,41 +9657,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnReturnedVehicleImages"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/vehicle-inspection-admin/update-sended-back": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows to update the booking request status to \"Sended Back\"",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vehicle-inspection-admin"
-                ],
-                "summary": "Update booking request to \"Sended Back\" status",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestSendedBack data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestSendedBack"
                         }
                     }
                 ],
@@ -9525,6 +9818,58 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle-management/timeline": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get vehicle timeline by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-management"
+                ],
+                "summary": "Get vehicle timeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by vehicle owner department SAP",
+                        "name": "vehicle_owner_dept_sap",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Car type",
+                        "name": "vehicel_car_type_detail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle-management/update-vehicle-is-active": {
             "put": {
                 "security": [
@@ -9557,6 +9902,30 @@ const docTemplate = `{
                         }
                     }
                 ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle/car-types-by-detail": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Fetches details of car types including their names and descriptions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Get car type details",
                 "responses": {}
             }
         },
@@ -9628,6 +9997,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by Vehicle Category Code",
                         "name": "category_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by Trip Type Code (0: Round Trip, 1: Overnight)",
+                        "name": "ref_trip_type_code",
                         "in": "query"
                     },
                     {
@@ -9928,7 +10303,7 @@ const docTemplate = `{
                 },
                 "driver_certificate_img": {
                     "type": "string",
-                    "example": "certificate_image_url"
+                    "example": "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cert.png"
                 },
                 "driver_certificate_issue_date": {
                     "type": "string",
@@ -9952,7 +10327,7 @@ const docTemplate = `{
                 },
                 "driver_license_img": {
                     "type": "string",
-                    "example": "image_url"
+                    "example": "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/license.png"
                 },
                 "driver_license_no": {
                     "type": "string",
@@ -10493,6 +10868,65 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsRefCostType": {
+            "type": "object",
+            "properties": {
+                "ref_cost_no": {
+                    "type": "string"
+                },
+                "ref_cost_type_code": {
+                    "type": "string"
+                },
+                "ref_cost_type_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefFuelType": {
+            "type": "object",
+            "properties": {
+                "ref_fuel_type_id": {
+                    "type": "integer"
+                },
+                "ref_fuel_type_name_en": {
+                    "type": "string"
+                },
+                "ref_fuel_type_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefOilStationBrand": {
+            "type": "object",
+            "properties": {
+                "ref_oil_station_brand_id": {
+                    "type": "integer"
+                },
+                "ref_oil_station_brand_img": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_en": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_full": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefPaymentType": {
+            "type": "object",
+            "properties": {
+                "ref_payment_type_code": {
+                    "type": "integer"
+                },
+                "ref_payment_type_name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.VmsTrnAddFuel": {
             "type": "object",
             "properties": {
@@ -10518,17 +10952,29 @@ const docTemplate = `{
                     "type": "string",
                     "example": "http://vms.pea.co.th/receipt.jpg"
                 },
+                "ref_cost_type": {
+                    "$ref": "#/definitions/models.VmsRefCostType"
+                },
                 "ref_cost_type_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "ref_fuel_type": {
+                    "$ref": "#/definitions/models.VmsRefFuelType"
                 },
                 "ref_fuel_type_id": {
                     "type": "integer",
                     "example": 1
                 },
+                "ref_oil_station_brand": {
+                    "$ref": "#/definitions/models.VmsRefOilStationBrand"
+                },
                 "ref_oil_station_brand_id": {
                     "type": "integer",
                     "example": 1
+                },
+                "ref_payment_type": {
+                    "$ref": "#/definitions/models.VmsRefPaymentType"
                 },
                 "ref_payment_type_code": {
                     "type": "integer",
@@ -10556,7 +11002,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_license_plate": {
                     "type": "string"
@@ -10614,7 +11060,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10623,7 +11069,7 @@ const docTemplate = `{
             "properties": {
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_images": {
                     "type": "array",
@@ -10638,16 +11084,20 @@ const docTemplate = `{
             "properties": {
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "3045a994-ba0b-431d-acf2-98768a9c5fc9"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
         "models.VmsTrnReceivedKeyOutSider": {
             "type": "object",
             "properties": {
-                "outsider_name": {
+                "received_key_emp_id": {
                     "type": "string",
-                    "example": "John Doe"
+                    "example": "3101000000026"
+                },
+                "received_key_fullname": {
+                    "type": "string",
+                    "example": "Somchai Prasert"
                 },
                 "received_key_mobile_contact_number": {
                     "type": "string",
@@ -10655,11 +11105,11 @@ const docTemplate = `{
                 },
                 "received_key_remark": {
                     "type": "string",
-                    "example": "OutSider received the key"
+                    "example": "Outsider received the key"
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "3045a994-ba0b-431d-acf2-98768a9c5fc9"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10684,7 +11134,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "3045a994-ba0b-431d-acf2-98768a9c5fc9"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10709,7 +11159,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_images": {
                     "type": "array",
@@ -10724,7 +11174,7 @@ const docTemplate = `{
             "properties": {
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_images": {
                     "type": "array",
@@ -10753,13 +11203,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Minor scratch on bumper"
                 },
+                "returned_cleanliness_level": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "returned_vehicle_remark": {
                     "type": "string",
                     "example": "OK"
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10772,7 +11226,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10781,16 +11235,16 @@ const docTemplate = `{
             "properties": {
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
         "models.VmsTrnRequestApprovedWithRecieiveKey": {
             "type": "object",
             "properties": {
-                "approved_request_emp_id": {
+                "received_key_end_datetime": {
                     "type": "string",
-                    "example": "990001"
+                    "example": "2025-02-16T09:30:00Z"
                 },
                 "received_key_place": {
                     "type": "string",
@@ -10802,19 +11256,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
-                }
-            }
-        },
-        "models.VmsTrnRequestApprover": {
-            "type": "object",
-            "properties": {
-                "approved_request_emp_id": {
-                    "type": "string"
-                },
-                "trn_request_uid": {
-                    "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10827,24 +11269,58 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
+        },
+        "models.VmsTrnRequestConfirmed": {
+            "type": "object",
+            "properties": {
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
+        },
+        "models.VmsTrnRequestConfirmer": {
+            "type": "object",
+            "properties": {
+                "confirmed_request_emp_id": {
+                    "type": "string",
+                    "example": "700001"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
         "models.VmsTrnRequestCost": {
             "type": "object",
             "properties": {
-                "cost_no": {
+                "cost_center": {
                     "type": "string",
-                    "example": "COSTNO123"
+                    "example": "B0002211"
+                },
+                "network_no": {
+                    "type": "string",
+                    "example": "NET12345"
+                },
+                "project_no": {
+                    "type": "string",
+                    "example": "PROJ12345"
                 },
                 "ref_cost_type_code": {
-                    "type": "string",
-                    "example": "2"
+                    "type": "integer",
+                    "example": 1
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "wbs_no": {
+                    "type": "string",
+                    "example": "WBS12345"
                 }
             }
         },
@@ -10861,7 +11337,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10874,7 +11350,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -10883,7 +11359,7 @@ const docTemplate = `{
             "properties": {
                 "pickup_datetime": {
                     "type": "string",
-                    "example": "2025-02-16T08:00:00Z"
+                    "example": "2025-02-16T08:30:00Z"
                 },
                 "pickup_place": {
                     "type": "string",
@@ -10891,65 +11367,54 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
+        },
+        "models.VmsTrnRequestRejected": {
+            "type": "object",
+            "properties": {
+                "rejected_request_reason": {
+                    "type": "string",
+                    "example": "Test Reject"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
         "models.VmsTrnRequestRequest": {
             "type": "object",
             "properties": {
-                "approved_request_dept_sap": {
-                    "type": "string",
-                    "example": "Finance"
-                },
-                "approved_request_dept_sap_full": {
-                    "type": "string",
-                    "example": "Finance"
-                },
-                "approved_request_dept_sap_short": {
-                    "type": "string",
-                    "example": "Finance"
-                },
-                "approved_request_emp_id": {
-                    "description": "Step 4",
-                    "type": "string",
-                    "example": "EMP67890"
-                },
-                "approved_request_emp_name": {
-                    "type": "string",
-                    "example": "Jane Doe"
-                },
                 "attached_document": {
                     "type": "string",
                     "example": "document.pdf"
                 },
                 "car_user_internal_contact_number": {
                     "type": "string",
-                    "example": "1234567890"
+                    "example": "1122"
                 },
                 "car_user_mobile_contact_number": {
                     "type": "string",
                     "example": "0987654321"
                 },
-                "cost_no": {
+                "confirmed_request_emp_id": {
+                    "description": "Step 4",
                     "type": "string",
-                    "example": "COST2024001"
+                    "example": "501621"
                 },
-                "driver_emp_dept_sap": {
+                "cost_center": {
                     "type": "string",
-                    "example": "DPT001"
+                    "example": "B0002211"
                 },
                 "driver_emp_id": {
                     "type": "string",
                     "example": "700001"
                 },
-                "driver_emp_name": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
                 "driver_internal_contact_number": {
                     "type": "string",
-                    "example": "1234567890"
+                    "example": "1221"
                 },
                 "driver_mobile_contact_number": {
                     "type": "string",
@@ -10958,6 +11423,10 @@ const docTemplate = `{
                 "end_datetime": {
                     "type": "string",
                     "example": "2025-01-01T10:00:00Z"
+                },
+                "is_admin_choose_driver": {
+                    "type": "string",
+                    "example": "0"
                 },
                 "is_admin_choose_vehicle": {
                     "type": "string",
@@ -10972,6 +11441,7 @@ const docTemplate = `{
                     "example": "0"
                 },
                 "mas_carpool_driver_uid": {
+                    "description": "Step 3",
                     "type": "string",
                     "example": "a6c8a34b-9245-49c8-a12b-45fae77a4e7d"
                 },
@@ -10982,7 +11452,11 @@ const docTemplate = `{
                 },
                 "mas_vehicle_uid": {
                     "type": "string",
-                    "example": "389b0f63-4195-4ece-bf35-0011c2f5f28c"
+                    "example": "21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"
+                },
+                "network_no": {
+                    "type": "string",
+                    "example": "NET12345"
                 },
                 "number_of_passengers": {
                     "type": "integer",
@@ -11000,9 +11474,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Main Office"
                 },
+                "project_no": {
+                    "type": "string",
+                    "example": "PROJ12345"
+                },
                 "ref_cost_type_code": {
                     "type": "integer",
-                    "example": 101
+                    "example": 1
                 },
                 "reference_number": {
                     "type": "string",
@@ -11012,13 +11490,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Urgent request"
                 },
-                "requested_vehicle_type_id": {
-                    "type": "integer",
-                    "example": 1
+                "request_no": {
+                    "type": "string"
                 },
-                "reserved_time_type": {
+                "requested_vehicle_type": {
                     "type": "string",
-                    "example": "1"
+                    "example": "Sedan"
                 },
                 "start_datetime": {
                     "type": "string",
@@ -11028,18 +11505,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "vehicle_user_dept_sap": {
-                    "type": "string",
-                    "example": "DPT001"
-                },
                 "vehicle_user_emp_id": {
                     "description": "Step1",
                     "type": "string",
                     "example": "990001"
                 },
-                "vehicle_user_emp_name": {
+                "wbs_no": {
                     "type": "string",
-                    "example": "John Doe"
+                    "example": "WBS12345"
                 },
                 "work_place": {
                     "type": "string",
@@ -11047,16 +11520,12 @@ const docTemplate = `{
                 }
             }
         },
-        "models.VmsTrnRequestSendedBack": {
+        "models.VmsTrnRequestResend": {
             "type": "object",
             "properties": {
-                "sended_back_request_reason": {
-                    "type": "string",
-                    "example": "Test Send Back"
-                },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11077,11 +11546,7 @@ const docTemplate = `{
                 },
                 "remark": {
                     "type": "string",
-                    "example": "Special request for parking spot"
-                },
-                "reserved_time_type": {
-                    "type": "string",
-                    "example": "1"
+                    "example": "Urgent request"
                 },
                 "start_datetime": {
                     "type": "string",
@@ -11093,7 +11558,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "work_place": {
                     "type": "string",
@@ -11118,7 +11583,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11135,7 +11600,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11152,7 +11617,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11165,20 +11630,20 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
         "models.VmsTrnRequestVehicleType": {
             "type": "object",
             "properties": {
-                "requested_vehicle_type_id": {
-                    "type": "integer",
-                    "example": 1
+                "requested_vehicle_type": {
+                    "type": "string",
+                    "example": "Sedan"
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11187,7 +11652,7 @@ const docTemplate = `{
             "properties": {
                 "car_user_internal_contact_number": {
                     "type": "string",
-                    "example": "1234567890"
+                    "example": "1122"
                 },
                 "car_user_mobile_contact_number": {
                     "type": "string",
@@ -11195,7 +11660,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_user_emp_id": {
                     "type": "string",
@@ -11231,7 +11696,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_images": {
                     "type": "array",
@@ -11246,7 +11711,7 @@ const docTemplate = `{
             "properties": {
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
                 "vehicle_images": {
                     "type": "array",
@@ -11281,7 +11746,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         },
@@ -11331,7 +11796,7 @@ const docTemplate = `{
                 },
                 "trn_request_uid": {
                     "type": "string",
-                    "example": "8bd09808-61fa-42fd-8a03-bf961b5678cd"
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 }
             }
         }

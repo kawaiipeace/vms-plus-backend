@@ -14,6 +14,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,7 @@ type LoginHandler struct {
 func (h *LoginHandler) RequestKeyCloak(c *gin.Context) {
 	var req models.KeyCloak_Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
@@ -110,7 +111,8 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		} else {
 			var user models.AuthenUserEmp
-			err = config.DB.Where("emp_id = ?", userInfo.Username).
+
+			err = config.DBu.Where("emp_id = ?", userInfo.Username).
 				First(&user).Error
 
 			if err != nil {
@@ -121,6 +123,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				}
 				return
 			}
+			user.LoginBy = "keycloak"
 			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, successResponse.AccessToken, successResponse.RefreshToken)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
@@ -159,7 +162,7 @@ func (h *LoginHandler) RequestThaiID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"url": config.AppConfig.ThaiIDEndPoint + "/auth/?response_type=code&client_id=" + config.AppConfig.ThaiIDClientID + "&redirect_uri=" + req.RedirectUri + "&scope=pid%20name%20birthdate&state=001",
 	})
 }
@@ -226,7 +229,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 	var successResponse models.ThaiID_Success_Response
 	if err := json.Unmarshal(body, &successResponse); err == nil && successResponse.AccessToken != "" {
 		var user models.AuthenUserEmp
-		err = config.DB.Where("identity_no = ?", successResponse.PID).
+		err = config.DBu.Where("identity_no = ?", successResponse.PID).
 			First(&user).Error
 
 		if err != nil {
@@ -237,7 +240,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 			}
 			return
 		}
-
+		user.LoginBy = "thaiid"
 		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
@@ -304,14 +307,14 @@ func GetUserInfo(accessToken string) (models.KeyCloak_UserInfo, error) {
 func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	var req models.OTP_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.Phone == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 	refCode := funcs.RandomRefCode(4)
 	expiry := time.Minute * time.Duration(config.AppConfig.OtpExpired)
 	otpID, otpErr := SendOTP(req.Phone, refCode, expiry)
 	if otpErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
@@ -323,7 +326,7 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&otpRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
@@ -398,14 +401,14 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 
 	var req models.OTPVerify_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.OtpId == "" || req.OTP == "" {
-		c.JSON(400, gin.H{"error": "Invalid JSON input", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(400, gin.H{"error": "Invalid JSON input", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
 	var otpRequest models.OTP_Request_Create
 	if err := config.DB.Where("otp_id = ? and status='pending'", req.OtpId).First(&otpRequest).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "OTP request not found", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "OTP request not found", "message": messages.ErrTryAgain.Error()})
 			return
 		}
 		return
@@ -418,7 +421,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 	// Check OTP
 	result, err := CheckOTP(req.OtpId, req.OTP)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
 		return
 	}
 	if !result {
@@ -428,33 +431,33 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 
 	otpRequest.Status = "verified"
 	if err := config.DB.Save(&otpRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update OTP status: %v", err), "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update OTP status: %v", err), "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
 	var user models.AuthenUserEmp
-	err = config.DB.Where("tel_mobile = ?", otpRequest.PhoneNo).
+	err = config.DBu.Where("tel_mobile = ?", otpRequest.PhoneNo).
 		First(&user).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrTryAgain.Error()})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return
 	}
-
+	user.LoginBy = "otp"
 	// Generate JWT tokens
 	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
 	refreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": "เกิดความผิดพลาดโปรดลองใหม่"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
@@ -538,26 +541,26 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	var user models.AuthenUserEmp
-	err = config.DB.Where("emp_id = ?", claims.EmpID).
+	err = config.DBu.Where("emp_id = ?", claims.EmpID).
 		First(&user).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		}
 		return
 	}
 	newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -577,33 +580,14 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Router /api/logout [get]
 func (h *LoginHandler) Logout(c *gin.Context) {
-	/*userInfoEndpoint := config.AppConfig.KeyCloakEndPoint + "/userinfo"
-	accessToken := ""
-	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	user := funcs.GetAuthenUser(c, "*")
+
+	if user.LoginBy == "keycloak" {
+		endpoint := config.AppConfig.KeyCloakEndPoint + "/logout"
+		c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully", "logout_url": endpoint})
 		return
 	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	fmt.Println(string(body))
-	*/
-	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "Logout successfully", "logout_url": ""})
 }
 
 // Profile godoc
@@ -620,6 +604,24 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	user.LicenseStatus = "อนุมัติแล้ว"
+	//Check VmsDriverLicenseAnnualList
+	var license models.VmsDriverLicenseAnnualList
+	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ?", user.EmpID, "0").
+		Order("created_request_datetime DESC").
+		Find(&license).Error
+	if err == nil {
+		if license.RefRequestAnnualDriverStatusCode == "30" {
+			user.LicenseStatusCode = "30"
+		} else if license.RefRequestAnnualDriverStatusCode == "90" {
+			user.LicenseStatusCode = "90"
+		} else {
+			user.LicenseStatusCode = "20"
+		}
+		user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
+	} else {
+		user.LicenseStatusCode = "10"
+		user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
+	}
+
 	c.JSON(http.StatusOK, user)
 }

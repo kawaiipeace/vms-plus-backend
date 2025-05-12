@@ -8,6 +8,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ import (
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/vehicle-search/{mas_carpool_uid} [get]
 func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -39,6 +40,13 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
+
+	var existingCarpool models.VmsMasCarpoolRequest
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
 
 	var vehicles []models.VmsMasCarpoolVehicleList
 	query := config.DB.Table("vms_mas_carpool_vehicle cpv").
@@ -67,7 +75,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(v.vehicle_no) LIKE ? OR UPPER(v.vehicle_name) LIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(v.vehicle_no) ILIKE ? OR UPPER(v.vehicle_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
@@ -91,13 +99,13 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	query = query.Limit(limit).Offset(offset)
 	if err := query.Find(&vehicles).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range vehicles {
@@ -144,15 +152,28 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 
 	var requests []models.VmsMasCarpoolVehicle
 	if err := c.ShouldBindJSON(&requests); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
+	if len(requests) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No carpool vehicle data provided", "message": messages.ErrInvalidJSONInput.Error()})
+		return
 
+	}
+	for i := range requests {
+		var existingCarpool models.VmsMasCarpoolRequest
+		queryRole := h.SetQueryRole(user, config.DB)
+		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, "0").First(&existingCarpool).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+	}
 	for i := range requests {
 		var existingVehicle models.VmsMasCarpoolVehicle
 		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, "0").First(&existingVehicle).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{
-				"error": fmt.Sprintf("Vehicle with MasCarpoolUID %s and MasVehicleUID %s already exists", requests[i].MasCarpoolUID, requests[i].MasVehicleUID),
+				"error":   fmt.Sprintf("Vehicle with MasCarpoolUID %s and MasVehicleUID %s already exists", requests[i].MasCarpoolUID, requests[i].MasVehicleUID),
+				"message": "ข้อมูลรถที่ระบุมีอยู่ในระบบแล้ว",
 			})
 			return
 		}
@@ -167,7 +188,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -197,16 +218,21 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 
 	var vehicle models.VmsMasCarpoolVehicle
 	if err := config.DB.Where("mas_carpool_vehicle_uid = ? AND is_deleted = ?", masCarpoolVehicleUID, "0").First(&vehicle).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool vehicle not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	var existingCarpool models.VmsMasCarpoolRequest
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", vehicle.MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
 	if err := config.DB.Model(&vehicle).UpdateColumns(map[string]interface{}{
 		"is_deleted": "1",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool vehicle"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool vehicle", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -239,12 +265,16 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	var vehicles []models.VmsMasVehicleList
 	var total int64
-
-	query := config.DB.Model(&models.VmsMasVehicleList{})
-	query = query.Where("is_deleted = '0'")
+	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
+	query = query.Table("vms_mas_vehicle v")
+	query = query.Select("v.*,md.dept_short")
+	query = query.Model(&models.VmsMasVehicleList{})
+	query = query.Where("v.is_deleted = '0'")
+	query = query.Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN vms_mas_department AS md ON d.vehicle_owner_dept_sap = md.dept_sap")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("vehicle_brand_name LIKE ? OR vehicle_license_plate LIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Count total records
@@ -284,16 +314,15 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request []models.VmsMasVehicleArray
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var requests []models.VmsMasVehicleArray
+	if err := c.ShouldBindJSON(&requests); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
 	var vehicles []models.VmsMasCarpoolVehicleDetail
-	masVehicleUIDs := make([]string, len(request))
-	for i := range request {
-		masVehicleUIDs[i] = request[i].MasVehicleUID
+	masVehicleUIDs := make([]string, len(requests))
+	for i := range requests {
+		masVehicleUIDs[i] = requests[i].MasVehicleUID
 	}
 
 	query := config.DB.Table("vms_mas_vehicle v").
@@ -318,7 +347,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 		Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = ?", masVehicleUIDs, "0")
 
 	if err := query.Find(&vehicles).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -348,13 +377,20 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 
 	var request models.VmsMasCarpoolVehicleActive
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	var vehicle models.VmsMasCarpoolVehicle
 	if err := config.DB.Where("mas_carpool_vehicle_uid = ? AND is_deleted = ?", request.MasCarpoolVehicleUID, "0").First(&vehicle).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool vehicle not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool vehicle not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+
+	var existingCarpool models.VmsMasCarpoolRequest
+	queryRole := h.SetQueryRole(user, config.DB)
+	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", vehicle.MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -363,9 +399,111 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 	vehicle.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&vehicle).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update active status: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update active status: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle active status updated successfully", "data": request, "carpool_name": GetCarpoolName(vehicle.MasCarpoolUID)})
+}
+
+// GetCarpoolVehicleTimeLine godoc
+// @Summary Get Carpool vehicle timeline
+// @Description Get Carpool vehicle timeline by date range
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param mas_carpool_uid path string true "MasCarpoolUID (mas_carpool_uid)"
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param vehicel_car_type_detail query string false "Filter by Car type"
+// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
+// @Param ref_vehicle_status_code query string false "Filter by vehicle status code (comma-separated, e.g., '1,2')"
+// @Router /api/carpool-management/vehicle-timeline/{mas_carpool_uid} [get]
+func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	masCarpoolUID := c.Param("mas_carpool_uid")
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	var vehicles []models.VehicleTimeLine
+
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Where("EXISTS (SELECT 1 FROM vms_mas_carpool_vehicle cv WHERE cv.mas_vehicle_uid = v.mas_vehicle_uid AND cv.mas_carpool_uid = ? AND cv.is_deleted = ?)", masCarpoolUID, "0")
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`v.mas_vehicle_uid,v.vehicle_license_plate,v.vehicle_license_plate_province_short,
+				v.vehicle_license_plate_province_full,d.county,d.vehicle_get_date,d.vehicle_pea_id,
+				d.vehicle_license_plate_province_short,d.vehicle_license_plate_province_full,
+				(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=v.mas_vehicle_uid) vehicle_dept_name,       
+				(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=v.mas_vehicle_uid) vehicle_carpool_name,
+				v."CarTypeDetail" as vehicle_car_type_detail,
+				0 vehicle_mileage `).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Where("v.is_deleted= ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+	query = query.Where(`EXISTS (
+			SELECT 1 
+			FROM vms_trn_request r 
+			WHERE r.mas_vehicle_uid = v.mas_vehicle_uid 
+			AND (
+				(r.reserve_start_datetime BETWEEN ? AND ?) 
+				OR (r.reserve_end_datetime BETWEEN ? AND ?) 
+				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime) 
+				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)
+			)
+		)`, startDate, endDate, startDate, endDate, startDate, endDate)
+
+	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
+		query = query.Where("d.vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
+	}
+
+	if vehicleCarTypeDetail := c.Query("vehicel_car_type_detail"); vehicleCarTypeDetail != "" {
+		query = query.Where("v.\"CarTypeDetail\" = ?", vehicleCarTypeDetail)
+	}
+
+	if isActive := c.Query("is_active"); isActive != "" {
+		isActiveList := strings.Split(isActive, ",")
+		query = query.Where("d.is_active IN (?)", isActiveList)
+	}
+
+	if refVehicleStatusCode := c.Query("ref_vehicle_status_code"); refVehicleStatusCode != "" {
+		refVehicleStatusCodeList := strings.Split(refVehicleStatusCode, ",")
+		query = query.Where("d.ref_vehicle_status_code IN (?)", refVehicleStatusCodeList)
+	}
+
+	if err := query.Find(&vehicles).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range vehicles {
+		// Preload the vehicle requests for each vehicle
+		if err := config.DB.Table("vms_trn_request").
+			Preload("TripDetails").
+			Preload("MasDriver").
+			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
+			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+
+		for j := range vehicles[i].VehicleTrnRequests {
+			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
+		}
+	}
+	c.JSON(http.StatusOK, vehicles)
 }

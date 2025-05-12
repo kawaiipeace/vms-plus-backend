@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+type VmsMasDriverShort struct {
+	MasDriverUID   string `gorm:"primaryKey;column:mas_driver_uid;type:uuid" json:"mas_driver_uid"`
+	DriverID       string `gorm:"column:driver_id" json:"driver_id"`
+	DriverName     string `gorm:"column:driver_name" json:"driver_name"`
+	DriverImage    string `gorm:"column:driver_image" json:"driver_image"`
+	DriverNickname string `gorm:"column:driver_nickname" json:"driver_nickname"`
+}
+
+func (VmsMasDriverShort) TableName() string {
+	return "vms_mas_driver"
+}
+
 type VmsMasDriver struct {
 	MasDriverUID                   string                `gorm:"primaryKey;column:mas_driver_uid;type:uuid" json:"mas_driver_uid"`
 	DriverID                       string                `gorm:"column:driver_id" json:"driver_id"`

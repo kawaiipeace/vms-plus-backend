@@ -18,6 +18,7 @@ type Claims struct {
 	FullName  string   `json:"full_name"`
 	TokenType string   `json:"token_type"`
 	Roles     []string `json:"roles"`
+	LoginBy   string   `json:"login_by"`
 	jwt.RegisteredClaims
 }
 
@@ -26,10 +27,12 @@ var (
 )
 
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration, accessToken string, refreshToken string) (string, error) {
+	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:     user.EmpID,
 		FullName:  user.FirstName + " " + user.LastName,
 		TokenType: tokenType,
+		LoginBy:   user.LoginBy,
 		Roles:     []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
@@ -88,18 +91,20 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	// Extract user from JWT
 	var empUser models.AuthenUserEmp
-
+	//501621
 	if config.AppConfig.IsDev {
-		if err := config.DB.First(&empUser, "emp_id = ?", "700001").Error; err != nil {
+		if err := config.DBu.First(&empUser, "emp_id = ?", "700001").Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return &empUser
 		}
 		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"}
+		empUser.LoginBy = "keycloak"
+		empUser.ImageUrl = config.DefaultAvatarURL
 		if roles != "*" {
 			for _, role := range strings.Split(roles, ",") {
 				if !Contains(empUser.Roles, role) {
-					//c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+					//c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions", "message": messages.ErrForbidden.Error()})
 					//c.Abort()
 					return &models.AuthenUserEmp{}
 				}
@@ -113,28 +118,32 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		c.Abort()
 	}
 
-	if err := config.DB.First(&empUser, "emp_id = ?", jwt.EmpID).Error; err != nil {
+	if err := config.DBu.First(&empUser, "emp_id = ?", jwt.EmpID).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		c.Abort()
 		return &empUser
 	}
 	empUser.Roles = jwt.Roles
-	if roles != "*" {
-		for _, role := range strings.Split(roles, ",") {
-			if !Contains(empUser.Roles, role) {
-				c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
-				c.Abort()
-				return &empUser
-			}
+	empUser.LoginBy = jwt.LoginBy
+	empUser.ImageUrl = GetEmpImage(empUser.EmpID)
+	if roles == "*" {
+		return &empUser
+	}
+	for _, role := range strings.Split(roles, ",") {
+		if Contains(empUser.Roles, role) {
+			return &empUser
 		}
 	}
+
+	c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+	c.Abort()
 	return &empUser
 }
 
-func GetUserEmpInfo(empID string) models.AuthenUserEmp {
-	var empUser models.AuthenUserEmp
-	if err := config.DB.First(&empUser, "emp_id = ?", empID).Error; err != nil {
-		return models.AuthenUserEmp{}
+func GetUserEmpInfo(empID string) models.MasUser {
+	var empUser models.MasUser
+	if err := config.DBu.First(&empUser, "emp_id = ?", empID).Error; err != nil {
+		return models.MasUser{}
 	}
 	return empUser
 }

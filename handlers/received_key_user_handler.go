@@ -8,9 +8,11 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ReceivedKeyUserHandler struct {
@@ -20,6 +22,16 @@ type ReceivedKeyUserHandler struct {
 var StatusNameMapReceivedKeyUser = map[string]string{
 	"50":  "รอรับกุญแจ",
 	"50e": "เกินวันนัดหมาย",
+}
+
+func (h *ReceivedKeyUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
+}
+func (h *ReceivedKeyUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('50') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -37,10 +49,10 @@ var StatusNameMapReceivedKeyUser = map[string]string{
 // @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
-// @Param page_size query int false "Number of records per page (default: 10)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/received-key-user/search-requests [get]
 func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -55,21 +67,25 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-	query := config.DB.Table("public.vms_trn_request AS req").
+
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
 		Select("req.*, status.ref_request_status_desc,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
+	query = query.Where("? in (created_request_emp_id,vehicle_user_emp_id)", user.EmpID)
+
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no LIKE ? OR req.vehicle_license_plate LIKE ? OR req.vehicle_user_emp_name LIKE ? OR req.work_place LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.start_datetime >= ?", startDate)
+		query = query.Where("req.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.start_datetime <= ?", endDate)
+		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
@@ -92,6 +108,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 		fmt.Println("codes", codes)
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
+
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -122,7 +139,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	offset := (pageInt - 1) * pageSizeInt
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -130,7 +147,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 
 	// Execute the main query
 	if err := query.Preload("RefVehicleKeyType").Scan(&requests).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range requests {
@@ -138,7 +155,8 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the summary query
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+	summaryQuery := h.SetQueryRole(user, config.DB)
+	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
@@ -149,7 +167,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 		Count                int    `gorm:"column:count"`
 	}{}
 	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -222,21 +240,25 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnReceivedKeyDriver
+	var request models.VmsTrnReceivedKeyDriver
+	var trnRequest models.VmsTrnRequestList
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	request.ReceiverKeyType = 1 // Driver
+
+	request.ReceiverType = 1 // Driver
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -246,10 +268,10 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	result.RequestNo = trnRequest.RequestNo
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -268,7 +290,8 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnReceivedKeyPEA
+	var request models.VmsTrnReceivedKeyPEA
+	var trnRequest models.VmsTrnRequestList
 	var result struct {
 		models.VmsTrnReceivedKeyPEA
 		models.VmsTrnRequestRequestNo
@@ -277,19 +300,22 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	request.ReceiverKeyType = 2 // PEA
+	request.ReceiverType = 2 // PEA
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.ReceivedKeyEmpID = empUser.EmpID
-	request.ReceivedKeyEmpName = empUser.FullName
-	request.ReceivedKeyDeptSAP = empUser.DeptSAP
-	request.ReceivedKeyDeptSAPShort = empUser.DeptSAPShort
-	request.ReceivedKeyDeptSAPFull = empUser.DeptSAPFull
+	request.ReceiverPersonalId = empUser.EmpID
+	request.ReceiverFullname = empUser.FullName
+	request.ReceiverDeptSAP = empUser.DeptSAP
+	request.ReceiverDeptNameShort = empUser.DeptSAPShort
+	request.ReceiverDeptNameFull = empUser.DeptSAPFull
+	request.ReceiverPosition = empUser.Position
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
@@ -300,6 +326,8 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	result.RequestNo = trnRequest.RequestNo
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -318,7 +346,8 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnReceivedKeyOutSider
+	var request models.VmsTrnReceivedKeyOutSider
+	var trnRequest models.VmsTrnRequestList
 	var result struct {
 		models.VmsTrnReceivedKeyOutSider
 		models.VmsTrnRequestRequestNo
@@ -329,11 +358,13 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	request.ReceiverKeyType = 3 // Outsider
+	request.ReceiverType = 3 // Outsider
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -346,6 +377,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
+	result.RequestNo = trnRequest.RequestNo
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -376,36 +408,43 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
 	request.RefRequestStatusCode = "90" // ยกเลิกคำขอ
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.CanceledRequestEmpID = empUser.EmpID
-	request.CanceledRequestEmpName = empUser.FullName
-	request.CanceledRequestDeptSAP = empUser.DeptSAP
-	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
-	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	cancelUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.CanceledRequestEmpID = cancelUser.EmpID
+	request.CanceledRequestEmpName = cancelUser.FullName
+	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
+	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
+	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
+	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
+	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
-	request.UpdatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.CanceledRequestReason,
-		user.EmpID)
-
+	if result.RefRequestStatusCode == request.RefRequestStatusCode {
+		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+			request.RefRequestStatusCode,
+			"ยกเลิกคำขอ",
+			user.EmpID,
+			"vehicle-user",
+			request.CanceledRequestReason,
+		)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -424,38 +463,48 @@ func (h *ReceivedKeyUserHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+	var request models.VmsTrnRequestUpdateRecieivedKeyConfirmed
+	var trnRequest models.VmsTrnRequestList
 	var result struct {
 		models.VmsTrnRequestUpdateRecieivedKeyConfirmed
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
-	request.RefRequestStatusCode = "51" // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	requestStatus := models.VmsTrnRequestUpdateRecieivedKeyStatus{
+		RefRequestStatusCode: "51", // "รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน"
+		TrnRequestUID:        request.TrnRequestUID,
+		UpdatedAt:            time.Now(),
+		UpdatedBy:            user.EmpID,
+	}
+	if err := config.DB.Save(&requestStatus).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
-	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
-		return
-	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว รอบันทึกข้อมูลเมื่อนำยานพาหนะออกปฎิบัติงาน",
-		user.EmpID)
-
+	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
+		requestStatus.RefRequestStatusCode,
+		"รับกุญแจยานพาหนะแล้ว",
+		user.EmpID,
+		"vehicle-user",
+		"",
+	)
+	result.RequestNo = trnRequest.RequestNo
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

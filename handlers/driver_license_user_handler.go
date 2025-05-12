@@ -6,6 +6,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,58 @@ import (
 
 type DriverLicenseUserHandler struct {
 	Role string
+}
+
+func (h *DriverLicenseUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
+}
+
+func (h *DriverLicenseUserHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
+}
+func (h *DriverLicenseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('11') and is_deleted = '0'")
+}
+
+var StatusDriverAnnualLicense = map[string]string{
+	"10": "ไม่มีใบอนุญาต",
+	"20": "กำลังดำเนินการ",
+	"30": "อนุมัติแล้ว",
+	"31": "มีผลปีถัดไป",
+	"80": "หมดอายุ",
+	"90": "ยกเลิก",
+}
+
+func GetProgressRequestHistory(request models.VmsDriverLicenseAnnualResponse) []models.ProgressRequestHistory {
+	var progressRequestHistory []models.ProgressRequestHistory
+	if request.RefRequestAnnualDriverStatusCode == "10" {
+		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
+			ProgressIcon:     "3",
+			ProgressName:     "ขออนุมัติ",
+			ProgressDateTime: request.CreatedRequestDatetime,
+		})
+	}
+	if request.RefRequestAnnualDriverStatusCode == "20" {
+		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
+			ProgressIcon:     "3",
+			ProgressName:     "อนุมัติจากต้นสังกัด",
+			ProgressDateTime: request.ConfirmedRequestDatetime,
+		})
+	}
+	if request.RefRequestAnnualDriverStatusCode == "30" {
+		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
+			ProgressIcon:     "3",
+			ProgressName:     "อนุมัติให้ทำหน้าที่ขับรถยนต์",
+			ProgressDateTime: request.ApprovedRequestDatetime,
+		})
+	}
+	return progressRequestHistory
 }
 
 // GetLicenseCard godoc
@@ -27,23 +80,69 @@ type DriverLicenseUserHandler struct {
 // @Security AuthorizationAuth
 // @Router /api/driver-license-user/card [get]
 func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-	masDriverUID := "ed9ccc24-2dd6-4294-8136-a78e1bdc6362"
-	var driver models.VmsDriverLicenseCard
-
-	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
-		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
-			return db.Order("driver_license_end_date DESC").Limit(1)
-		}).
-		Preload("DriverLicense.DriverLicenseType").
-		First(&driver).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found"})
-		return
+	driver := models.VmsDriverLicenseCard{
+		EmpID:          user.EmpID,
+		DriverName:     user.FullName,
+		DeptSAPShort:   user.DeptSAPShort,
+		IsNoExpiryDate: false,
 	}
-	driver.LicenseStatus = "อนุมัติแล้ว"
+
+	//Check VmsDriverLicenseAnnualList
+	var license models.VmsDriverLicenseAnnualResponse
+	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ?", user.EmpID, "0").
+		Preload("DriverLicenseType").
+		Preload("DriverCertificateType").
+		Order("created_request_datetime DESC").
+		Find(&license).Error
+
+	if err == nil {
+		if license.RefRequestAnnualDriverStatusCode == "30" {
+			driver.LicenseStatusCode = "30"
+		} else if license.RefRequestAnnualDriverStatusCode == "90" {
+			driver.LicenseStatusCode = "90"
+		} else {
+			driver.LicenseStatusCode = "20"
+		}
+		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
+	} else {
+		driver.LicenseStatusCode = "10"
+		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
+	}
+
+	driver.AnnualYYYY = license.AnnualYYYY
+	driver.DriverLicense = models.VmsDriverLicenseCardLicense{
+		EmpID:                    license.CreatedRequestEmpID,
+		DriverLicenseNo:          license.DriverLicenseNo,
+		RefDriverLicenseTypeCode: license.RefDriverLicenseTypeCode,
+		DriverLicenseStartDate:   license.ApprovedRequestDatetime,
+		DriverLicenseImage:       license.DriverLicenseImg,
+		DriverLicenseType:        license.DriverLicenseType,
+	}
+
+	// Calculate the end of the year for driver.AnnualYYYY - 543
+	annualYearEnd := time.Date(driver.AnnualYYYY-543, 12, 31, 23, 59, 59, 0, time.UTC)
+
+	// Set DriverLicenseEndDate to the minimum of license.DriverLicenseExpireDate and annualYearEnd
+	if license.DriverLicenseExpireDate.Before(annualYearEnd) {
+		driver.DriverLicense.DriverLicenseEndDate = license.DriverLicenseExpireDate
+	} else {
+		driver.DriverLicense.DriverLicenseEndDate = annualYearEnd
+	}
+	driver.DriverCertificate = models.VmsDriverLicenseCardCertificate{
+		EmpID:                       license.CreatedRequestEmpID,
+		DriverCertificateNo:         license.DriverCertificateNo,
+		DriverCertificateName:       license.DriverCertificateName,
+		DriverCertificateIssueDate:  license.DriverCertificateIssueDate,
+		DriverCertificateExpireDate: license.DriverCertificateExpireDate,
+		DriverCertificateImg:        license.DriverCertificateImg,
+		DriverCertificateTypeCode:   license.DriverCertificateTypeCode,
+		DriverCertificateType:       license.DriverCertificateType,
+	}
+	driver.ProgressRequestHistory = GetProgressRequestHistory(license)
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 
@@ -69,7 +168,7 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 		TrnRequestAnnualDriverUID string `gorm:"column:trn_request_annual_driver_uid" json:"trn_request_annual_driver_uid"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 	request.TrnRequestAnnualDriverUID = uuid.New().String()
@@ -80,8 +179,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.CreatedRequestDeptSap = empUser.DeptSAP
 	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
 	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
-	request.CreatedRequestMobileNumber = empUser.MobileNumber
-	request.CreatedRequestPhoneNumber = empUser.InternalNumber
+	request.CreatedRequestMobileNumber = empUser.MobilePhone
+	request.CreatedRequestPhoneNumber = empUser.DeskPhone
 	request.CreatedRequestDatetime = time.Now()
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -90,8 +189,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = empUser.MobileNumber
-	request.ConfirmedRequestPhoneNumber = empUser.InternalNumber
+	request.ConfirmedRequestMobileNumber = empUser.MobilePhone
+	request.ConfirmedRequestPhoneNumber = empUser.DeskPhone
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -99,8 +198,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = empUser.MobileNumber
-	request.ApprovedRequestPhoneNumber = empUser.InternalNumber
+	request.ApprovedRequestMobileNumber = empUser.MobilePhone
+	request.ApprovedRequestPhoneNumber = empUser.DeskPhone
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = ""
@@ -112,7 +211,7 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	var maxRequestNo string
 	config.DB.Table("vms_trn_request_annual_driver").
 		Select("MAX(request_annual_driver_no)").
-		Where("request_annual_driver_no LIKE ?", "RAD%").
+		Where("request_annual_driver_no ILIKE ?", "RAD%").
 		Scan(&maxRequestNo)
 
 	var nextNumber int
@@ -124,11 +223,11 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.RequestAnnualDriverNo = fmt.Sprintf("RAD%09d", nextNumber)
 
 	if err := config.DB.Create(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver license annual record"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver license annual record", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if err := config.DB.First(&result, "trn_request_annual_driver_uid = ?", request.TrnRequestAnnualDriverUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -147,17 +246,19 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 // @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
 // @Router /api/driver-license-user/license-annual/{trn_request_annual_driver_uid} [get]
 func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
 	var request models.VmsDriverLicenseAnnualResponse
 
-	if err := config.DB.
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.
 		Preload("DriverLicenseType").
+		Preload("DriverCertificateType").
 		First(&request, "trn_request_annual_driver_uid = ? and is_deleted = ?", trnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	if request.RefRequestAnnualDriverStatusCode == "10" {
@@ -217,9 +318,8 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
 		}
 	}
-
-	// Return success response
-	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": request})
+	request.ProgressRequestHistory = GetProgressRequestHistory(request)
+	c.JSON(http.StatusOK, request)
 }
 
 // UpdateDriverLicenseAnnualCanceled godoc
@@ -243,12 +343,12 @@ func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Cont
 		models.VmsTrnRequestAnnualDriverNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found"})
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "90"
@@ -264,12 +364,12 @@ func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Cont
 	request.CanceledRequestDatetime = time.Now()
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
