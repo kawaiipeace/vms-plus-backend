@@ -95,6 +95,10 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
+	request.VehicleLicensePlate = request.MasVehicle.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceShort = request.MasVehicle.VehicleLicensePlateProvinceShort
+	request.VehicleLicensePlateProvinceFull = request.MasVehicle.VehicleLicensePlateProvinceFull
+
 	if request.RefRequestStatusCode == "90" {
 		// Check VmsLogRequest
 		var logRequest models.VmsLogRequest
@@ -150,6 +154,9 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
 	request.FleetCardNo = request.MasVehicle.VehicleDepartment.FleetCardNo
+	request.VehicleLicensePlate = request.MasVehicle.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceShort = request.MasVehicle.VehicleLicensePlateProvinceShort
+	request.VehicleLicensePlateProvinceFull = request.MasVehicle.VehicleLicensePlateProvinceFull
 
 	if err := config.DB.
 		Preload("RefTripType").

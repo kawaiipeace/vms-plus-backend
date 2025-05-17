@@ -153,19 +153,34 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Router /api/carpool-management/mas-department [get]
+// @Param carpool_type path string true "CarpoolType (trn_request_uid)"
+// @Param search query string false "Search by DeptSap Code or DetpSap Name"
+// @Router /api/carpool-management/mas-department/{carpool_type} [get]
 func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
+	carpoolType := c.Param("carpool_type")
+	if carpoolType == "01" {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
 	var lists []models.VmsMasDepartment
 
 	query := h.SetQueryRoleDept(user, config.DB)
-	// Execute query
+	if carpoolType == "02" {
+		query = query.Where("resource_name = 'การไฟฟ้าเขต'")
+	}
+	search := c.Query("search")
+	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1").Limit(100)
+	if search != "" {
+		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
 	if err := query.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusOK, []interface{}{})
 		return
 	}
 
@@ -195,12 +210,8 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 	}
 
 	carpool.MasCarpoolUID = uuid.New().String()
-	carpool.CarpoolDeptSap = ""
-	carpool.CarpoolType = ""
 	carpool.IsHaveDriverForCarpool = "0"
-	carpool.IsMustPassStatus30 = "0"
-	carpool.IsMustPassStatus40 = "0"
-	carpool.IsMustPassStatus50 = "0"
+
 	carpool.IsActive = "1"
 	carpool.CreatedAt = time.Now()
 	carpool.CreatedBy = user.EmpID
@@ -247,6 +258,7 @@ func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
 	if err := query.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").
 		Preload("CarpoolChooseDriver").
 		Preload("CarpoolChooseCar").
+		Preload("CarpoolAuthorizedDepts.MasDepartment").
 		Preload("CarpoolAdmins").
 		Preload("CarpoolApprovers").
 		Preload("CarpoolVehicles").

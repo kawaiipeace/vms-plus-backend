@@ -2907,12 +2907,24 @@ const docTemplate = `{
                         "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
                         "name": "is_active",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
             }
         },
-        "/api/carpool-management/mas-department": {
+        "/api/carpool-management/mas-department/{carpool_type}": {
             "get": {
                 "security": [
                     {
@@ -2933,6 +2945,21 @@ const docTemplate = `{
                     "Carpool-management"
                 ],
                 "summary": "Retrieve the Pea Department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CarpoolType (trn_request_uid)",
+                        "name": "carpool_type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by DeptSap Code or DetpSap Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -4350,6 +4377,18 @@ const docTemplate = `{
                         "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
                         "name": "is_active",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -5155,6 +5194,14 @@ const docTemplate = `{
                     "MAS"
                 ],
                 "summary": "Retrieve the Driver Departments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by DeptSap Code or DetpSap Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -5243,6 +5290,70 @@ const docTemplate = `{
                         "in": "query",
                         "required": true
                     },
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-approval-license-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Approval License Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Approval License Users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by Employee ID or Full Name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/user-confirmer-license-users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Confirmer License Users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Confirmer License Users",
+                "parameters": [
                     {
                         "type": "string",
                         "description": "Search by Employee ID or Full Name",
@@ -9738,6 +9849,122 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle-management/report-add-fuel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get vehicle report add fuel by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-management"
+                ],
+                "summary": "Get vehicle report add fuel detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Show all vehicles (1 for true, 0 for false)",
+                        "name": "show_all",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Array of vehicle mas_vehicle_uid",
+                        "name": "mas_vehicle_uid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/vehicle-management/report-trip-detail": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get vehicle report trip by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle-management"
+                ],
+                "summary": "Get vehicle report trip detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Show all vehicles (1 for true, 0 for false)",
+                        "name": "show_all",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Array of vehicle mas_vehicle_uid",
+                        "name": "mas_vehicle_uid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle-management/search": {
             "get": {
                 "security": [
@@ -9864,6 +10091,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by Car type",
                         "name": "vehicel_car_type_detail",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -10471,13 +10710,28 @@ const docTemplate = `{
                     "type": "string",
                     "example": "10001"
                 },
-                "carpool_main_business_area": {
-                    "type": "string",
-                    "example": "0000"
-                },
                 "carpool_name": {
                     "type": "string",
                     "example": "carpool_name"
+                },
+                "carpool_type": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "is_must_pass_status_30": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_must_pass_status_40": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_must_pass_status_50": {
+                    "type": "string",
+                    "example": "0"
                 },
                 "ref_carpool_choose_car_id": {
                     "type": "integer",
@@ -10543,13 +10797,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "CON123456"
                 },
-                "driver_dept_sap_short_name_hire": {
+                "driver_dept_sap_hire": {
                     "type": "string",
-                    "example": "HR"
+                    "example": "1000"
                 },
-                "driver_dept_sap_short_name_work": {
+                "driver_dept_sap_work": {
                     "type": "string",
-                    "example": "กยจ."
+                    "example": "10001"
                 },
                 "mas_driver_uid": {
                     "type": "string",
@@ -10670,10 +10924,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
                 },
-                "replace_mas_driver_uid": {
-                    "type": "string",
-                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
-                },
                 "replaced_mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
@@ -10782,13 +11032,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "+1234567890"
                 },
-                "driver_dept_sap_short_name_hire": {
+                "driver_dept_sap_hire": {
                     "type": "string",
-                    "example": "HR"
+                    "example": "1000"
                 },
-                "driver_dept_sap_short_name_work": {
+                "driver_dept_sap_work": {
                     "type": "string",
-                    "example": "กยจ."
+                    "example": "10001"
                 },
                 "driver_documents": {
                     "type": "array",
@@ -11298,6 +11548,10 @@ const docTemplate = `{
         "models.VmsTrnRequestCost": {
             "type": "object",
             "properties": {
+                "activity_no": {
+                    "type": "string",
+                    "example": "A12345"
+                },
                 "cost_center": {
                     "type": "string",
                     "example": "B0002211"
@@ -11305,10 +11559,6 @@ const docTemplate = `{
                 "network_no": {
                     "type": "string",
                     "example": "NET12345"
-                },
-                "project_no": {
-                    "type": "string",
-                    "example": "PROJ12345"
                 },
                 "ref_cost_type_code": {
                     "type": "integer",
@@ -11387,6 +11637,10 @@ const docTemplate = `{
         "models.VmsTrnRequestRequest": {
             "type": "object",
             "properties": {
+                "activity_no": {
+                    "type": "string",
+                    "example": "A12345"
+                },
                 "attached_document": {
                     "type": "string",
                     "example": "document.pdf"
@@ -11473,10 +11727,6 @@ const docTemplate = `{
                 "pickup_place": {
                     "type": "string",
                     "example": "Main Office"
-                },
-                "project_no": {
-                    "type": "string",
-                    "example": "PROJ12345"
                 },
                 "ref_cost_type_code": {
                     "type": "integer",

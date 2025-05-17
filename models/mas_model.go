@@ -26,6 +26,7 @@ type MasUserEmp struct {
 	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
 	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
+	Position     string `gorm:"column:posi_text" json:"posi_text"`
 	TelMobile    string `gorm:"column:tel_mobile" json:"tel_mobile"`
 	TelInternal  string `gorm:"column:tel_internal" json:"tel_internal"`
 	BusinessArea string `gorm:"column:business_area" json:"business_area"`

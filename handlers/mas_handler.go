@@ -36,7 +36,6 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	if search != "" {
 		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
-
 	query = query.Where("bureau_dept_sap = ?", user.BureauDeptSap)
 	query = query.Limit(100)
 	if err := query.
@@ -507,7 +506,7 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 	query := config.DB
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
 	if search != "" {
-		query = query.Where("mas_vendor_code ILIKE ? OR mas_vendor_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 	if err := query.
 		Order("dept_sap").
@@ -518,4 +517,80 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, driverDepts)
+}
+
+// ListConfirmerLicenseUser godoc
+// @Summary Retrieve the Confirmer License Users
+// @Description	This endpoint allows a user to retrieve Confirmer License Users.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Router /api/mas/user-confirmer-license-users [get]
+func (h *MasHandler) ListConfirmerLicenseUser(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, "*")
+	var lists []models.MasUserEmp
+	search := c.Query("search")
+
+	query := config.DBu
+	if search != "" {
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	query = query.Where("bureau_dept_sap = ? AND level_code in ('M1','M2','M3')", user.BureauDeptSap)
+	query = query.Limit(100)
+	query = query.Order("level_code")
+
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+
+	// For loop to set Image_url for each element in the slice
+	for i := range lists {
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
+	}
+
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListApprovalLicenseUser godoc
+// @Summary Retrieve the Approval License Users
+// @Description	This endpoint allows a user to retrieve Approval License Users.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search by Employee ID or Full Name"
+// @Router /api/mas/user-approval-license-users [get]
+func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, "*")
+	var lists []models.MasUserEmp
+	search := c.Query("search")
+
+	query := config.DBu
+	if search != "" {
+		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	query = query.Where("bureau_dept_sap = ? AND level_code in ('M4','S1')", user.BureauDeptSap)
+	query = query.Limit(100)
+	query = query.Order("level_code")
+
+	// Execute query
+	if err := query.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+
+	// For loop to set Image_url for each element in the slice
+	for i := range lists {
+		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
+	}
+
+	c.JSON(http.StatusOK, lists)
 }

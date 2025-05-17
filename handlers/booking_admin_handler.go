@@ -121,16 +121,24 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
-		Select(
-			`req.*, status.ref_request_status_desc, case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_name,
-			case req.is_pea_employee_driver when '1' then req.driver_emp_dept_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_dept_name,
-			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_dept_name,       
-			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_carpool_name
-		`).
-		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
+		Select(`
+		req.*, 
+		v.vehicle_license_plate, v.vehicle_license_plate_province_short, v.vehicle_license_plate_province_full,
+		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_name) AS driver_name,
+		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_dept_sap_hire) AS driver_dept_name,
+		md.dept_short AS vehicle_dept_name,
+		mc.carpool_name AS vehicle_carpool_name
+	`).
+		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_driver AS d ON d.mas_driver_uid = req.mas_carpool_driver_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department AS mvd ON mvd.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = mvd.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
-	// Apply additional filters (search, date range, etc.)
+	query = query.Where("req.is_deleted = ?", "0")
+
 	if search := c.Query("search"); search != "" {
 		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
@@ -180,7 +188,7 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		return
 	}
 
-	query = query.Offset(offset).Limit(pageSizeInt).Debug()
+	query = query.Offset(offset).Limit(pageSizeInt)
 
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {

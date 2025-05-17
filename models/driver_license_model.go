@@ -4,16 +4,18 @@ import "time"
 
 //DriverLicense
 type VmsDriverLicenseCard struct {
-	EmpID                  string                          `gorm:"column:emp_id;primaryKey" json:"emp_id" example:"990001"`
-	DriverName             string                          `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
-	DeptSAPShort           string                          `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	LicenseStatusCode      string                          `gorm:"column:license_status_code" json:"license_status_code"`
-	LicenseStatus          string                          `gorm:"-" json:"license_status"`
-	AnnualYYYY             int                             `gorm:"column:-" json:"annual_yyyy" example:"2568"`
-	IsNoExpiryDate         bool                            `gorm:"column:is_no_expiry_date" json:"is_no_expiry_date"`
-	DriverLicense          VmsDriverLicenseCardLicense     `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_license"`
-	DriverCertificate      VmsDriverLicenseCardCertificate `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_certificate"`
-	ProgressRequestHistory []ProgressRequestHistory        `gorm:"-" json:"progress_request_history"`
+	EmpID                     string                          `gorm:"column:emp_id;primaryKey" json:"emp_id" example:"990001"`
+	DriverName                string                          `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
+	DeptSAPShort              string                          `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
+	TrnRequestAnnualDriverUID string                          `gorm:"column:trn_request_annual_driver_uid" json:"trn_request_annual_driver_uid"`
+	RequestAnnualDriverNo     string                          `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
+	LicenseStatusCode         string                          `gorm:"column:license_status_code" json:"license_status_code"`
+	LicenseStatus             string                          `gorm:"-" json:"license_status"`
+	AnnualYYYY                int                             `gorm:"column:-" json:"annual_yyyy" example:"2568"`
+	IsNoExpiryDate            bool                            `gorm:"column:is_no_expiry_date" json:"is_no_expiry_date"`
+	DriverLicense             VmsDriverLicenseCardLicense     `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_license"`
+	DriverCertificate         VmsDriverLicenseCardCertificate `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_certificate"`
+	ProgressRequestHistory    []ProgressRequestHistory        `gorm:"-" json:"progress_request_history"`
 }
 
 func (VmsDriverLicenseCard) TableName() string {
@@ -150,7 +152,9 @@ type VmsDriverLicenseAnnualResponse struct {
 	CreatedRequestDeptSapNameFull    string    `gorm:"column:created_request_dept_sap_name_full" json:"created_request_dept_sap_name_full"`
 	CreatedRequestPhoneNumber        string    `gorm:"column:created_request_phone_number" json:"created_request_phone_number"`
 	CreatedRequestMobileNumber       string    `gorm:"column:created_request_mobile_number" json:"created_request_mobile_number"`
+	CreatedRequestImageUrl           string    `gorm:"column:created_request_image_url" json:"created_request_image_url"`
 	RefRequestAnnualDriverStatusCode string    `gorm:"column:ref_request_annual_driver_status_code" json:"ref_request_annual_driver_status_code"`
+	RefRequestAnnualDriverStatusName string    `gorm:"column:-" json:"ref_request_annual_driver_status_name"`
 	DriverLicenseNo                  string    `gorm:"column:driver_license_no" json:"driver_license_no" example:"DL12345678"`
 	RefDriverLicenseTypeCode         string    `gorm:"column:ref_driver_license_type_code" json:"ref_driver_license_type_code" example:"1"`
 	DriverLicenseExpireDate          time.Time `gorm:"column:driver_license_expire_date" json:"driver_license_expire_date" example:"2025-12-31T00:00:00Z"`
@@ -174,6 +178,7 @@ type VmsDriverLicenseAnnualResponse struct {
 	ConfirmedRequestDeptSapFull  string    `gorm:"column:confirmed_request_dept_sap_full" json:"confirmed_request_dept_sap_full"`
 	ConfirmedRequestPhoneNumber  string    `gorm:"column:confirmed_request_phone_number" json:"confirmed_request_phone_number"`
 	ConfirmedRequestMobileNumber string    `gorm:"column:confirmed_request_mobile_number" json:"confirmed_request_mobile_number"`
+	ConfirmedRequestImageUrl     string    `gorm:"column:confirmed_request_image_url" json:"confirmed_request_image_url"`
 	ConfirmedRequestDatetime     time.Time `gorm:"column:confirmed_request_datetime" json:"confirmed_request_datetime"`
 
 	ApprovedRequestEmpID        string    `gorm:"column:approved_request_emp_id" json:"approved_request_emp_id" example:"990001"`
@@ -184,6 +189,7 @@ type VmsDriverLicenseAnnualResponse struct {
 	ApprovedRequestDeptSapFull  string    `gorm:"column:approved_request_dept_sap_full" json:"approved_request_dept_sap_full"`
 	ApprovedRequestPhoneNumber  string    `gorm:"column:approved_request_phone_number" json:"approved_request_phone_number"`
 	ApprovedRequestMobileNumber string    `gorm:"column:approved_request_mobile_number" json:"approved_request_mobile_number"`
+	ApprovedRequestImageUrl     string    `gorm:"column:approved_request_image_url" json:"approved_request_image_url"`
 	ApprovedRequestDatetime     time.Time `gorm:"column:approved_request_datetime" json:"approved_request_datetime"`
 
 	RejectedRequestEmpID        string    `gorm:"column:rejected_request_emp_id" json:"rejected_request_emp_id"`

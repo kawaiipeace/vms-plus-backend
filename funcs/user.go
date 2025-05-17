@@ -98,19 +98,22 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			c.Abort()
 			return &empUser
 		}
+		empUser.BusinessArea = "Z000"
 		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"}
 		empUser.LoginBy = "keycloak"
 		empUser.ImageUrl = config.DefaultAvatarURL
-		if roles != "*" {
-			for _, role := range strings.Split(roles, ",") {
-				if !Contains(empUser.Roles, role) {
-					//c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions", "message": messages.ErrForbidden.Error()})
-					//c.Abort()
-					return &models.AuthenUserEmp{}
-				}
+		if roles == "*" {
+			return &empUser
+		}
+		for _, role := range strings.Split(roles, ",") {
+			if Contains(empUser.Roles, role) {
+				return &empUser
 			}
 		}
-		return &empUser
+
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		c.Abort()
+		return &models.AuthenUserEmp{}
 	}
 	jwt, err := ExtractUserFromJWT(c)
 	if err != nil {

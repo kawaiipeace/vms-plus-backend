@@ -41,7 +41,7 @@ func (h *DriverLicenseApproverHandler) SetQueryRoleDept(user *models.AuthenUserE
 	return query
 }
 func (h *DriverLicenseApproverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('20') and is_deleted = '0'")
+	return query.Where("ref_request_annual_driver_status_code in ('20') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -98,6 +98,12 @@ func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("end_created_request_datetime"); endDate != "" {
 		query = query.Where("req.created_request_datetime <= ?", endDate)
 	}
+	//ref_driver_license_type_code
+	if refDriverLicenseTypeCode := c.Query("ref_driver_license_type_code"); refDriverLicenseTypeCode != "" {
+		codes := strings.Split(refDriverLicenseTypeCode, ",")
+		query = query.Where("req.ref_driver_license_type_code IN (?)", codes)
+	}
+
 	if refRequestStatusCodes := c.Query("ref_request_annual_driver_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
@@ -144,7 +150,7 @@ func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
 		return
 	}
 	for i := range requests {
-		requests[i].RefRequestAnnualDriverStatusName = statusNameMap[requests[i].RefDriverLicenseTypeCode]
+		requests[i].RefRequestAnnualDriverStatusName = statusNameMap[requests[i].RefRequestAnnualDriverStatusCode]
 	}
 
 	// Build the summary query
@@ -265,6 +271,10 @@ func (h *DriverLicenseApproverHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
 		}
 	}
+	request.RefRequestAnnualDriverStatusName = LicenseStatusNameMapApprover[request.RefRequestAnnualDriverStatusCode]
+	request.CreatedRequestImageUrl = funcs.GetEmpImage(request.CreatedRequestEmpID)
+	request.ConfirmedRequestImageUrl = funcs.GetEmpImage(request.ConfirmedRequestEmpID)
+	request.ApprovedRequestImageUrl = funcs.GetEmpImage(request.ApprovedRequestEmpID)
 	request.ProgressRequestHistory = GetProgressRequestHistory(request)
 	c.JSON(http.StatusOK, request)
 }
@@ -296,7 +306,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualCanceled(c *gin.
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "90"
@@ -351,7 +361,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualRejected(c *gin.
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "21"
@@ -407,7 +417,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "30"

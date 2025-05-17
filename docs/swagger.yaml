@@ -267,11 +267,22 @@ definitions:
       carpool_dept_sap:
         example: "10001"
         type: string
-      carpool_main_business_area:
-        example: "0000"
-        type: string
       carpool_name:
         example: carpool_name
+        type: string
+      carpool_type:
+        example: "1"
+        type: string
+      is_active:
+        type: string
+      is_must_pass_status_30:
+        example: "0"
+        type: string
+      is_must_pass_status_40:
+        example: "0"
+        type: string
+      is_must_pass_status_50:
+        example: "0"
         type: string
       ref_carpool_choose_car_id:
         example: 1
@@ -318,11 +329,11 @@ definitions:
       contract_no:
         example: CON123456
         type: string
-      driver_dept_sap_short_name_hire:
-        example: HR
+      driver_dept_sap_hire:
+        example: "1000"
         type: string
-      driver_dept_sap_short_name_work:
-        example: กยจ.
+      driver_dept_sap_work:
+        example: "10001"
         type: string
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
@@ -408,9 +419,6 @@ definitions:
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
-      replace_mas_driver_uid:
-        example: 8d14e6df-5d65-486e-b079-393d9c817a09
-        type: string
       replaced_mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
@@ -489,11 +497,11 @@ definitions:
       driver_contact_number:
         example: "+1234567890"
         type: string
-      driver_dept_sap_short_name_hire:
-        example: HR
+      driver_dept_sap_hire:
+        example: "1000"
         type: string
-      driver_dept_sap_short_name_work:
-        example: กยจ.
+      driver_dept_sap_work:
+        example: "10001"
         type: string
       driver_documents:
         items:
@@ -851,14 +859,14 @@ definitions:
     type: object
   models.VmsTrnRequestCost:
     properties:
+      activity_no:
+        example: A12345
+        type: string
       cost_center:
         example: B0002211
         type: string
       network_no:
         example: NET12345
-        type: string
-      project_no:
-        example: PROJ12345
         type: string
       ref_cost_type_code:
         example: 1
@@ -914,6 +922,9 @@ definitions:
     type: object
   models.VmsTrnRequestRequest:
     properties:
+      activity_no:
+        example: A12345
+        type: string
       attached_document:
         example: document.pdf
         type: string
@@ -979,9 +990,6 @@ definitions:
         type: string
       pickup_place:
         example: Main Office
-        type: string
-      project_no:
-        example: PROJ12345
         type: string
       ref_cost_type_code:
         example: 1
@@ -3038,6 +3046,14 @@ paths:
         in: query
         name: is_active
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses: {}
@@ -3047,11 +3063,21 @@ paths:
       summary: Get driver timeline
       tags:
       - Carpool-management
-  /api/carpool-management/mas-department:
+  /api/carpool-management/mas-department/{carpool_type}:
     get:
       consumes:
       - application/json
       description: This endpoint allows a user to Pea Department.
+      parameters:
+      - description: CarpoolType (trn_request_uid)
+        in: path
+        name: carpool_type
+        required: true
+        type: string
+      - description: Search by DeptSap Code or DetpSap Name
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses: {}
@@ -3956,6 +3982,14 @@ paths:
         in: query
         name: is_active
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses: {}
@@ -4461,6 +4495,11 @@ paths:
       consumes:
       - application/json
       description: This endpoint allows a user to retrieve Driver Departments.
+      parameters:
+      - description: Search by DeptSap Code or DetpSap Name
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses: {}
@@ -4525,6 +4564,44 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve the Admin Approval Users
+      tags:
+      - MAS
+  /api/mas/user-approval-license-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Approval License Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Approval License Users
+      tags:
+      - MAS
+  /api/mas/user-confirmer-license-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Confirmer License Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Confirmer License Users
       tags:
       - MAS
   /api/mas/user-confirmer-users:
@@ -7326,6 +7403,80 @@ paths:
       summary: Retrieve details of a specific trip detail
       tags:
       - Vehicle-inspection-admin
+  /api/vehicle-management/report-add-fuel:
+    post:
+      consumes:
+      - application/json
+      description: Get vehicle report add fuel by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of vehicle mas_vehicle_uid
+        in: body
+        name: mas_vehicle_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle report add fuel detail
+      tags:
+      - Vehicle-management
+  /api/vehicle-management/report-trip-detail:
+    post:
+      consumes:
+      - application/json
+      description: Get vehicle report trip by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of vehicle mas_vehicle_uid
+        in: body
+        name: mas_vehicle_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle report trip detail
+      tags:
+      - Vehicle-management
   /api/vehicle-management/search:
     get:
       consumes:
@@ -7403,6 +7554,14 @@ paths:
         in: query
         name: vehicel_car_type_detail
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses: {}

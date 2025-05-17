@@ -200,7 +200,29 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverLicense.IsDeleted = "0"
 	driver.DriverLicense.IsActive = "1"
 
-	driver.DriverID = fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_b"))
+	BCode := user.BusinessArea[0:1]
+	driver.DriverID = fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
+
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapHire).
+		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	var department struct {
+		DeptShort string
+		DeptFull  string
+	}
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&department).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	driver.DriverDeptSapShortWork = department.DeptShort
+	driver.DriverDeptSapFullWork = department.DeptFull
 
 	for i := range driver.DriverDocuments {
 		driver.DriverDocuments[i].MasDriverUID = driver.MasDriverUID
@@ -264,7 +286,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
 		Preload("DriverLicense.DriverLicenseType").
-		Preload("DriverCertificate").
+		Preload("DriverDocuments").
 		First(&driver).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -345,6 +367,26 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapHire).
+		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	var department struct {
+		DeptShort string
+		DeptFull  string
+	}
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&department).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	driver.DriverDeptSapShortWork = department.DeptShort
+	driver.DriverDeptSapFullWork = department.DeptFull
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
@@ -547,7 +589,7 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 	request.CreatedBy = user.EmpID
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
-	//request.RefDriverStatusCode = 2
+	request.RefDriverStatusCode = 2
 	request.IsDeleted = "0"
 
 	if err := config.DB.Save(&request).Error; err != nil {
@@ -808,6 +850,8 @@ func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 // @Param work_type query string false "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')"
 // @Param ref_driver_status_code query string false "Filter by driver status code (comma-separated, e.g., '1,2')"
 // @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver-management/timeline [get]
 func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
@@ -833,20 +877,16 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select(`d.*`).
-		Where("d.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
-	query = query.Where(`EXISTS (
-			SELECT 1 
-			FROM vms_trn_request r 
-			WHERE r.mas_carpool_driver_uid = d.mas_driver_uid 
-			AND r.is_pea_employee_driver = ?
-			AND (
-				(r.reserve_start_datetime BETWEEN ? AND ?) 
-				OR (r.reserve_end_datetime BETWEEN ? AND ?) 
-				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime) 
-				OR (? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)
-			)
-		)`, "0", startDate, endDate, startDate, endDate, startDate, endDate)
+		Select("d.*").
+		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
+		Joins(`INNER JOIN vms_trn_request r 
+		   ON r.mas_carpool_driver_uid = d.mas_driver_uid 
+		   AND r.is_pea_employee_driver = ? 
+		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
+		   OR r.reserve_end_datetime BETWEEN ? AND ? 
+		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
+		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
+			"0", startDate, endDate, startDate, endDate, startDate, endDate)
 
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
@@ -864,7 +904,26 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		isActiveValues := strings.Split(isActive, ",")
 		query = query.Where("is_active IN (?)", isActiveValues)
 	}
+	// Pagination
+	page := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "10")
+	var pageInt, pageSizeInt int
+	fmt.Sscanf(page, "%d", &pageInt)
+	fmt.Sscanf(limit, "%d", &pageSizeInt)
+	if pageInt < 1 {
+		pageInt = 1
+	}
+	if pageSizeInt < 1 {
+		pageSizeInt = 10
+	}
+	offset := (pageInt - 1) * pageSizeInt
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
 
+	query = query.Offset(offset).Limit(pageSizeInt)
 	if err := query.Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
@@ -886,7 +945,15 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]
 		}
 	}
-	c.JSON(http.StatusOK, drivers)
+	c.JSON(http.StatusOK, gin.H{
+		"drivers": drivers,
+		"pagination": gin.H{
+			"total":      total,
+			"page":       pageInt,
+			"limit":      pageSizeInt,
+			"totalPages": (total + int64(pageSizeInt) - 1) / int64(pageSizeInt), // Calculate total pages
+		},
+	})
 }
 
 // ImportDriver godoc

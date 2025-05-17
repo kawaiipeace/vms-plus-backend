@@ -105,15 +105,15 @@ type VmsTrnRequestRequest struct {
 	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
 	WbsNo           string `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string `gorm:"column:network_no" json:"network_no" example:"NET12345"`
-	ProjectNo       string `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
+	ActivityNo      string `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
 
 	//Step 2
-	MasCarpoolUID                    string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
-	RequestedVehicleType             string `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
-	MasVehicleUID                    string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
-	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"-"`
-	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"-"`
-	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"-"`
+	MasCarpoolUID        string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
+	RequestedVehicleType string `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
+	MasVehicleUID        string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
+	//VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"-"`
+	//VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"-"`
+	//VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"-"`
 
 	//MasVehicleDepartmentUID string `gorm:"column:mas_vehicle_department_uid" json:"-"`
 	MasVehicleEvUID       string `gorm:"column:mas_vehicle_ev_uid" json:"-"`
@@ -163,7 +163,7 @@ func (VmsTrnRequestRequest) TableName() string {
 type VmsTrnRequestResponse struct {
 	TrnRequestUID            string `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
 	RequestNo                string `gorm:"column:request_no" json:"request_no"`
-	VVehicleUserEmpID        string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
+	VehicleUserEmpID         string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 	VehicleUserEmpName       string `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptSAP       string `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
 	VehicleUserDeskPhone     string `gorm:"column:vehicle_user_desk_phone" json:"car_user_internal_contact_number" example:"1122"`
@@ -182,11 +182,11 @@ type VmsTrnRequestResponse struct {
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription    string `gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	WorkDescription    string `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
-	DocNo              string `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"attached_document" example:"document.pdf"`
+	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -195,7 +195,7 @@ type VmsTrnRequestResponse struct {
 	CostCenter      string         `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
-	ProjectNo       string         `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
+	ActivityNo      string         `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
 
 	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
 	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
@@ -340,7 +340,7 @@ type VmsTrnRequestCost struct {
 	CostCenter      string    `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
 	WbsNo           string    `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string    `gorm:"column:network_no" json:"network_no" example:"NET12345"`
-	ProjectNo       string    `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
+	ActivityNo      string    `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
 	UpdatedAt       time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy       string    `gorm:"column:updated_by" json:"-"`
 }

@@ -41,7 +41,7 @@ func (h *DriverLicenseConfirmerHandler) SetQueryRoleDept(user *models.AuthenUser
 	return query
 }
 func (h *DriverLicenseConfirmerHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('10') and is_deleted = '0'")
+	return query.Where("ref_request_annual_driver_status_code in ('10') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -144,7 +144,7 @@ func (h *DriverLicenseConfirmerHandler) SearchRequests(c *gin.Context) {
 		return
 	}
 	for i := range requests {
-		requests[i].RefRequestAnnualDriverStatusName = statusNameMap[requests[i].RefDriverLicenseTypeCode]
+		requests[i].RefRequestAnnualDriverStatusName = statusNameMap[requests[i].RefRequestAnnualDriverStatusCode]
 	}
 
 	// Build the summary query
@@ -279,6 +279,10 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
 		}
 	}
+	request.RefRequestAnnualDriverStatusName = LicenseStatusNameMapConfirmer[request.RefRequestAnnualDriverStatusCode]
+	request.CreatedRequestImageUrl = funcs.GetEmpImage(request.CreatedRequestEmpID)
+	request.ConfirmedRequestImageUrl = funcs.GetEmpImage(request.ConfirmedRequestEmpID)
+	request.ApprovedRequestImageUrl = funcs.GetEmpImage(request.ApprovedRequestEmpID)
 	request.ProgressRequestHistory = GetProgressRequestHistory(request)
 	c.JSON(http.StatusOK, request)
 }
@@ -310,7 +314,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualCanceled(c *gin
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "90"
@@ -365,7 +369,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualRejected(c *gin
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "11"
@@ -421,7 +425,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualConfirmed(c *gi
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 	request.RefRequestAnnualDriverStatusCode = "20"
@@ -464,7 +468,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualApprover(c *gin
 	if c.IsAborted() {
 		return
 	}
-	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualResponse
+	var request, driverLicenseAnnual models.VmsDriverLicenseAnnualApprover
 	var result struct {
 		models.VmsDriverLicenseAnnualApprover
 		models.VmsTrnRequestAnnualDriverNo
@@ -477,7 +481,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualApprover(c *gin
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&driverLicenseAnnual, "trn_request_annual_driver_uid = ? AND is_deleted = ?", request.TrnRequestAnnualDriverUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Driver license annual can not update", "message": messages.ErrAnnualCannotUpdate.Error()})
 		return
 	}
 

@@ -46,21 +46,21 @@ var StatusDriverAnnualLicense = map[string]string{
 
 func GetProgressRequestHistory(request models.VmsDriverLicenseAnnualResponse) []models.ProgressRequestHistory {
 	var progressRequestHistory []models.ProgressRequestHistory
-	if request.RefRequestAnnualDriverStatusCode == "10" {
+	if request.RefRequestAnnualDriverStatusCode >= "10" {
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "ขออนุมัติ",
 			ProgressDateTime: request.CreatedRequestDatetime,
 		})
 	}
-	if request.RefRequestAnnualDriverStatusCode == "20" {
+	if request.RefRequestAnnualDriverStatusCode >= "20" {
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "อนุมัติจากต้นสังกัด",
 			ProgressDateTime: request.ConfirmedRequestDatetime,
 		})
 	}
-	if request.RefRequestAnnualDriverStatusCode == "30" {
+	if request.RefRequestAnnualDriverStatusCode >= "30" {
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "อนุมัติให้ทำหน้าที่ขับรถยนต์",
@@ -112,7 +112,8 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		driver.LicenseStatusCode = "10"
 		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
 	}
-
+	driver.TrnRequestAnnualDriverUID = license.TrnRequestAnnualDriverUID
+	driver.RequestAnnualDriverNo = license.RequestAnnualDriverNo
 	driver.AnnualYYYY = license.AnnualYYYY
 	driver.DriverLicense = models.VmsDriverLicenseCardLicense{
 		EmpID:                    license.CreatedRequestEmpID,
@@ -318,6 +319,10 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
 		}
 	}
+	request.RefRequestAnnualDriverStatusName = LicenseStatusNameMapConfirmer[request.RefRequestAnnualDriverStatusCode]
+	request.CreatedRequestImageUrl = funcs.GetEmpImage(request.CreatedRequestEmpID)
+	request.ConfirmedRequestImageUrl = funcs.GetEmpImage(request.ConfirmedRequestEmpID)
+	request.ApprovedRequestImageUrl = funcs.GetEmpImage(request.ApprovedRequestEmpID)
 	request.ProgressRequestHistory = GetProgressRequestHistory(request)
 	c.JSON(http.StatusOK, request)
 }

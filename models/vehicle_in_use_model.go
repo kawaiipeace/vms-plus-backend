@@ -215,19 +215,6 @@ func (VmsTrnTripDetail) TableName() string {
 	return "public.vms_trn_trip_detail"
 }
 
-// VmsTrnAddFuel_List
-type VmsTrnAddFuel_List struct {
-	TrnAddFuelUid        string    `gorm:"column:trn_add_fuel_uid" json:"trn_add_fuel_uid" example:"123e4567-e89b-12d3-a456-426614174000"`
-	TrnRequestUID        string    `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	TripStartDatetime    time.Time `gorm:"column:trip_start_datetime" json:"trip_start_datetime" example:"2025-03-26T08:00:00"`
-	TripEndDatetime      time.Time `gorm:"column:trip_end_datetime" json:"trip_end_datetime" example:"2025-03-26T10:00:00"`
-	TripDeparturePlace   string    `gorm:"column:trip_departure_place" json:"trip_departure_place" example:"Changi Airport"`
-	TripDestinationPlace string    `gorm:"column:trip_destination_place" json:"trip_destination_place" example:"Marina Bay Sands"`
-	TripStartMiles       int       `gorm:"column:trip_start_miles" json:"trip_start_miles" example:"5000"`
-	TripEndMiles         int       `gorm:"column:trip_end_miles" json:"trip_end_miles" example:"5050"`
-	TripDetail           string    `gorm:"column:trip_detail" json:"trip_detail" example:"Routine transport between airport and hotel."`
-}
-
 // VmsTrnAddFuel_Request
 type VmsTrnAddFuelRequest struct {
 	TrnRequestUID        string    `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
@@ -254,8 +241,8 @@ type VmsTrnAddFuel struct {
 	MasVehicleDepartmentUID          string                `gorm:"column:mas_vehicle_department_uid" json:"mas_vehicle_department_uid"`
 	AddFuelDateTime                  time.Time             `gorm:"column:add_fuel_date_time" json:"add_fuel_date_time" example:"2025-03-26T08:00:00Z"`
 	RefCostTypeCode                  int                   `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
-	RefContType                      VmsRefCostType        `gorm:"foreignKey:RefCostTypeCode;references:RefCostTypeCode" json:"ref_cost_type"`
-	RefOilStationBrandId             int                   `gorm:"column:ref_oil_station_brand_id" json:"ref_oil_station_brand_id" example:"1"`
+	RefCostType                      VmsRefCostType        `gorm:"foreignKey:RefCostTypeCode;references:RefCostTypeCode" json:"ref_cost_type"`
+	RefOilStationBrandID             int                   `gorm:"column:ref_oil_station_brand_id" json:"ref_oil_station_brand_id" example:"1"`
 	RefOilStationBrand               VmsRefOilStationBrand `gorm:"foreignKey:RefOilStationBrandId;references:RefOilStationBrandId" json:"ref_oil_station_brand"`
 	RefFuelTypeID                    int                   `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id" example:"1"`
 	RefFuelType                      VmsRefFuelType        `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"ref_fuel_type"`
