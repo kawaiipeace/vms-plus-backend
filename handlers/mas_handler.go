@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -593,4 +594,60 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, lists)
+}
+
+// ListHoliday godoc
+// @Summary Retrieve the Holidays
+// @Description This endpoint allows a user to retrieve Holidays.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param start_date query string false "Start date (YYYY-MM-DD)"
+// @Param end_date query string false "End date (YYYY-MM-DD)"
+// @Router /api/mas/holidays [get]
+func (h *MasHandler) ListHoliday(c *gin.Context) {
+	var holidays []models.VmsMasHolidays
+	query := config.DB
+	query = query.Where("is_deleted = ?", "0")
+	query = query.Order("mas_holidays_date")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	if startDate != "" {
+		query = query.Where("mas_holidays_date >= ?", startDate)
+	}
+	if endDate != "" {
+		query = query.Where("mas_holidays_date <= ?", endDate)
+	}
+	if err := query.Find(&holidays).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve holidays", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	// Add weekends (Saturday and Sunday) to holidays
+	if startDate != "" && endDate != "" {
+		start, err := time.Parse("2006-01-02", startDate)
+		if err == nil {
+			end, err := time.Parse("2006-01-02", endDate)
+			if err == nil {
+				// Iterate through dates and add weekends
+				for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+					if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
+						holidays = append(holidays, models.VmsMasHolidays{
+							HolidaysDate: d,
+							HolidaysDetail: map[time.Weekday]string{
+								time.Saturday: "วันเสาร์",
+								time.Sunday:   "วันอาทิตย์",
+							}[d.Weekday()],
+						})
+					}
+				}
+			}
+		}
+	}
+	// Sort holidays by date
+	sort.Slice(holidays, func(i, j int) bool {
+		return holidays[i].HolidaysDate.Before(holidays[j].HolidaysDate)
+	})
+	c.JSON(http.StatusOK, holidays)
 }

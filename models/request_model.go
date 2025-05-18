@@ -257,14 +257,15 @@ type VmsTrnRequestRequestNo struct {
 }
 
 type ProgressRequestStatus struct {
-	ProgressIcon string `gorm:"column:progress_icon" json:"progress_icon"`
-	ProgressName string `gorm:"column:progress_name" json:"progress_name"`
+	ProgressIcon     string    `gorm:"column:progress_icon" json:"progress_icon"`
+	ProgressName     string    `gorm:"column:progress_name" json:"progress_name"`
+	ProgressDatetime time.Time `gorm:"column:progress_datetime" json:"progress_datetime"`
 }
 
 type ProgressRequestHistory struct {
 	ProgressIcon     string    `gorm:"column:progress_icon" json:"progress_icon"`
 	ProgressName     string    `gorm:"column:progress_name" json:"progress_name"`
-	ProgressDateTime time.Time `gorm:"column:progress_datetime" json:"progress_datetime"`
+	ProgressDatetime time.Time `gorm:"column:progress_datetime" json:"progress_datetime"`
 }
 
 // VmsTrnRequestVehicleUser

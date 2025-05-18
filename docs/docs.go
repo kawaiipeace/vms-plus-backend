@@ -4023,6 +4023,48 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-license-user/resend-license-annual/{trn_request_annual_driver_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows resending a driver license annual record.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Driver-license-user"
+                ],
+                "summary": "Resend driver license annual record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)",
+                        "name": "trn_request_annual_driver_uid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VmsDriverLicenseAnnualRequest data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsDriverLicenseAnnualRequest"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/driver-license-user/update-license-annual-canceled": {
             "put": {
                 "security": [
@@ -4674,6 +4716,64 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-management/work-report": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get driver work report by date range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers-management"
+                ],
+                "summary": "Get driver work report",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Show all vehicles (1 for true, 0 for false)",
+                        "name": "show_all",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Array of driver mas_driver_uid",
+                        "name": "mas_driver_uid",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/driver/search": {
             "get": {
                 "security": [
@@ -5231,6 +5331,44 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Search by Vendor Code or Vendor Name",
                         "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/mas/holidays": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to retrieve Holidays.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Retrieve the Holidays",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "end_date",
                         "in": "query"
                     }
                 ],
@@ -7083,6 +7221,30 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve all payment type codes",
+                "responses": {}
+            }
+        },
+        "/api/ref/driver-status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all driver statuses.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all driver statuses",
                 "responses": {}
             }
         },
@@ -10575,14 +10737,6 @@ const docTemplate = `{
                 "ref_driver_license_type_code": {
                     "type": "string",
                     "example": "1"
-                },
-                "request_expire_date": {
-                    "type": "string",
-                    "example": "2023-12-31T00:00:00Z"
-                },
-                "request_issue_date": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
                 }
             }
         },

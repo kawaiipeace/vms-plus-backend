@@ -163,7 +163,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 	for i := range requests {
 		var existingCarpool models.VmsMasCarpoolRequest
 		queryRole := h.SetQueryRole(user, config.DB)
-		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, "0").First(&existingCarpool).Error; err != nil {
+		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 			return
 		}

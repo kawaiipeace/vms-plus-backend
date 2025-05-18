@@ -47,6 +47,8 @@ type Config struct {
 	MinIoSecretKey      string
 	DevSaveFilePath     string
 	DevSaveFileUrl      string
+	UserHubEndPoint     string
+	UserHubSecretKey    string
 }
 
 // AppConfig is a globally accessible configuration variable
@@ -86,6 +88,8 @@ func InitConfig() {
 		MinIoSecretKey:      os.Getenv("MINIO_SECRET_KEY"),
 		DevSaveFilePath:     os.Getenv("DEV_SAVE_FILE_PATH"),
 		DevSaveFileUrl:      os.Getenv("DEV_SAVE_FILE_URL"),
+		UserHubEndPoint:     os.Getenv("USER_HUB_END_POINT"),
+		UserHubSecretKey:    os.Getenv("USER_HUB_SECRET_KEY"),
 	}
 	fmt.Printf("load AppConfig: %s %d\n", AppConfig.AppName, AppConfig.Port)
 }

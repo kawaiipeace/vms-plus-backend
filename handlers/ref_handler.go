@@ -309,3 +309,22 @@ func (h *RefHandler) ListLeaveTimeType(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, lists)
 }
+
+// ListDriverStatus godoc
+// @Summary Retrieve all driver statuses
+// @Description This endpoint retrieves all driver statuses.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/driver-status [get]
+func (h *RefHandler) ListDriverStatus(c *gin.Context) {
+	var lists []models.VmsRefDriverStatus
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}

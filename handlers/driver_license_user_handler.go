@@ -22,7 +22,7 @@ func (h *DriverLicenseUserHandler) SetQueryRole(user *models.AuthenUserEmp, quer
 	if user.EmpID == "" {
 		return query
 	}
-	return query
+	return query.Where("created_request_emp_id = ?", user.EmpID)
 }
 
 func (h *DriverLicenseUserHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -37,7 +37,7 @@ func (h *DriverLicenseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm
 
 var StatusDriverAnnualLicense = map[string]string{
 	"10": "ไม่มีใบอนุญาต",
-	"20": "กำลังดำเนินการ",
+	"20": "รออนุมัติ",
 	"30": "อนุมัติแล้ว",
 	"31": "มีผลปีถัดไป",
 	"80": "หมดอายุ",
@@ -50,21 +50,21 @@ func GetProgressRequestHistory(request models.VmsDriverLicenseAnnualResponse) []
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "ขออนุมัติ",
-			ProgressDateTime: request.CreatedRequestDatetime,
+			ProgressDatetime: request.CreatedRequestDatetime,
 		})
 	}
 	if request.RefRequestAnnualDriverStatusCode >= "20" {
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "อนุมัติจากต้นสังกัด",
-			ProgressDateTime: request.ConfirmedRequestDatetime,
+			ProgressDatetime: request.ConfirmedRequestDatetime,
 		})
 	}
 	if request.RefRequestAnnualDriverStatusCode >= "30" {
 		progressRequestHistory = append(progressRequestHistory, models.ProgressRequestHistory{
 			ProgressIcon:     "3",
 			ProgressName:     "อนุมัติให้ทำหน้าที่ขับรถยนต์",
-			ProgressDateTime: request.ApprovedRequestDatetime,
+			ProgressDatetime: request.ApprovedRequestDatetime,
 		})
 	}
 	return progressRequestHistory
@@ -190,8 +190,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = empUser.MobilePhone
-	request.ConfirmedRequestPhoneNumber = empUser.DeskPhone
+	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
+	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -199,8 +199,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = empUser.MobilePhone
-	request.ApprovedRequestPhoneNumber = empUser.DeskPhone
+	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
+	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = ""
@@ -236,6 +236,92 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": result})
 }
 
+// ResendDriverLicenseAnnual godoc
+// @Summary Resend driver license annual record
+// @Description This endpoint allows resending a driver license annual record.
+// @Tags Driver-license-user
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param trn_request_annual_driver_uid path string true "trnRequestAnnualDriverUID (trn_request_annual_driver_uid)"
+// @Param data body models.VmsDriverLicenseAnnualRequest true "VmsDriverLicenseAnnualRequest data"
+// @Router /api/driver-license-user/resend-license-annual/{trn_request_annual_driver_uid} [put]
+func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	trnRequestAnnualDriverUID := c.Param("trn_request_annual_driver_uid")
+	var request models.VmsDriverLicenseAnnualRequest
+	var result struct {
+		models.VmsDriverLicenseAnnualRequest
+		RequestAnnualDriverNo     string `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
+		TrnRequestAnnualDriverUID string `gorm:"column:trn_request_annual_driver_uid" json:"trn_request_annual_driver_uid"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+	var existsRequest models.VmsDriverLicenseAnnualRequest
+	query := h.SetQueryRole(user, config.DB)
+	query.First(&existsRequest, "trn_request_annual_driver_uid = ? AND is_deleted = ? AND ref_request_annual_driver_status_code = ?", trnRequestAnnualDriverUID, "0", "11")
+	if existsRequest.TrnRequestAnnualDriverUID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+
+	request.TrnRequestAnnualDriverUID = trnRequestAnnualDriverUID
+	request.CreatedRequestEmpID = user.EmpID
+	empUser := funcs.GetUserEmpInfo(request.CreatedRequestEmpID)
+	request.CreatedRequestEmpName = empUser.FullName
+	request.CreatedRequestEmpPosition = empUser.Position
+	request.CreatedRequestDeptSap = empUser.DeptSAP
+	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
+	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
+	request.CreatedRequestMobileNumber = empUser.MobilePhone
+	request.CreatedRequestPhoneNumber = empUser.DeskPhone
+	request.CreatedRequestDatetime = existsRequest.CreatedRequestDatetime
+
+	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
+	request.ConfirmedRequestEmpName = confirmUser.FullName
+	request.ConfirmedRequestEmpPosition = confirmUser.Position
+	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
+	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
+	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
+	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
+	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
+
+	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
+	request.ApprovedRequestEmpName = approveUser.FullName
+	request.ApprovedRequestEmpPosition = approveUser.Position
+	request.ApprovedRequestDeptSap = approveUser.DeptSAP
+	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
+	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
+	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
+	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
+
+	request.RefRequestAnnualDriverStatusCode = "10"
+	request.RejectedRequestEmpPosition = existsRequest.RejectedRequestEmpPosition
+	request.CanceledRequestEmpPosition = existsRequest.CanceledRequestEmpPosition
+
+	request.UpdatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.RequestAnnualDriverNo = existsRequest.RequestAnnualDriverNo
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resend driver license annual record", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	if err := config.DB.First(&result, "trn_request_annual_driver_uid = ?", request.TrnRequestAnnualDriverUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK, gin.H{"message": "Driver license annual record resend successfully", "result": result})
+}
+
 // GetDriverLicenseAnnual godoc
 // @Summary Retrieve a specific driver license annual record
 // @Description Get the details of a driver license annual record by its unique identifier
@@ -264,59 +350,143 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "10" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
+			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้ขออนุมัติ",
+			EmpID:        request.CreatedRequestEmpID,
+			EmpName:      request.CreatedRequestEmpName,
+			EmpPosition:  request.CreatedRequestEmpPosition,
+			DeptSAP:      request.CreatedRequestDeptSap,
+			DeptSAPShort: request.CreatedRequestDeptSapNameShort,
+			DeptSAPFull:  request.CreatedRequestDeptSapNameFull,
+			PhoneNumber:  request.CreatedRequestPhoneNumber,
+			MobileNumber: request.CreatedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "11" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด"},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        request.ConfirmedRequestEmpID,
+			EmpName:      request.ConfirmedRequestEmpName,
+			EmpPosition:  request.ConfirmedRequestEmpPosition,
+			DeptSAP:      request.ConfirmedRequestDeptSap,
+			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
+			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
+			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
+			MobileNumber: request.ConfirmedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "20" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
-			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        request.ConfirmedRequestEmpID,
+			EmpName:      request.ConfirmedRequestEmpName,
+			EmpPosition:  request.ConfirmedRequestEmpPosition,
+			DeptSAP:      request.ConfirmedRequestDeptSap,
+			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
+			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
+			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
+			MobileNumber: request.ConfirmedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "21" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
-			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ"},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ", ProgressDatetime: request.RejectedRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        request.ConfirmedRequestEmpID,
+			EmpName:      request.ConfirmedRequestEmpName,
+			EmpPosition:  request.ConfirmedRequestEmpPosition,
+			DeptSAP:      request.ConfirmedRequestDeptSap,
+			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
+			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
+			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
+			MobileNumber: request.ConfirmedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ"},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี"},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
 		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติให้ทำหน้าที่ขับรถประจำปี",
+			EmpID:        request.ApprovedRequestEmpID,
+			EmpName:      request.ApprovedRequestEmpName,
+			EmpPosition:  request.ApprovedRequestEmpPosition,
+			DeptSAP:      request.ApprovedRequestDeptSap,
+			DeptSAPShort: request.ApprovedRequestDeptSapShort,
+			DeptSAPFull:  request.ApprovedRequestDeptSapFull,
+			PhoneNumber:  request.ApprovedRequestPhoneNumber,
+			MobileNumber: request.ApprovedRequestMobileNumber,
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.CreatedRequestEmpID {
+		request.ProgressRequestStatus = []models.ProgressRequestStatus{
+			{ProgressIcon: "2", ProgressName: "ยกเลิก", ProgressDatetime: request.CanceledRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้ขออนุมัติ",
+			EmpID:        request.CreatedRequestEmpID,
+			EmpName:      request.CreatedRequestEmpName,
+			EmpPosition:  request.CreatedRequestEmpPosition,
+			DeptSAP:      request.CreatedRequestDeptSap,
+			DeptSAPShort: request.CreatedRequestDeptSapNameShort,
+			DeptSAPFull:  request.CreatedRequestDeptSapNameFull,
+			PhoneNumber:  request.CreatedRequestPhoneNumber,
+			MobileNumber: request.CreatedRequestMobileNumber,
+		}
+	}
+	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.ConfirmedRequestEmpID {
 
-	}
-	if request.RefRequestAnnualDriverStatusCode == "90" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิก"},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด", ProgressDatetime: request.CanceledRequestDatetime},
+		}
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        request.ConfirmedRequestEmpID,
+			EmpName:      request.ConfirmedRequestEmpName,
+			EmpPosition:  request.ConfirmedRequestEmpPosition,
+			DeptSAP:      request.ConfirmedRequestDeptSap,
+			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
+			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
+			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
+			MobileNumber: request.ConfirmedRequestMobileNumber,
 		}
 	}
-	if request.RefRequestAnnualDriverStatusCode == "91" {
+
+	if request.RefRequestAnnualDriverStatusCode == "93" && request.CanceledRequestEmpID == request.ApprovedRequestEmpID {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอ"},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด", ProgressDatetime: request.ApprovedRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ", ProgressDatetime: request.CanceledRequestDatetime},
 		}
-	}
-	if request.RefRequestAnnualDriverStatusCode == "92" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
-		}
-	}
-	if request.RefRequestAnnualDriverStatusCode == "93" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ"},
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติให้ทำหน้าที่ขับรถประจำปี",
+			EmpID:        request.ApprovedRequestEmpID,
+			EmpName:      request.ApprovedRequestEmpName,
+			EmpPosition:  request.ApprovedRequestEmpPosition,
+			DeptSAP:      request.ApprovedRequestDeptSap,
+			DeptSAPShort: request.ApprovedRequestDeptSapShort,
+			DeptSAPFull:  request.ApprovedRequestDeptSapFull,
+			PhoneNumber:  request.ApprovedRequestPhoneNumber,
+			MobileNumber: request.ApprovedRequestMobileNumber,
 		}
 	}
 	request.RefRequestAnnualDriverStatusName = LicenseStatusNameMapConfirmer[request.RefRequestAnnualDriverStatusCode]

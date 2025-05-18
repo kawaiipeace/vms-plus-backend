@@ -51,23 +51,18 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 	var drivers []models.VmsMasCarpoolDriverList
 	query := config.DB.Table("vms_mas_carpool_driver cpd").
 		Select(
-			`cpd.mas_carpool_driver_uid,
-			 cpd.mas_carpool_uid,
-			 d.mas_driver_uid,
-			d.driver_image,
-			d.driver_name,
-			d.driver_nickname,
-			d.driver_dept_sap_short_name_hire,
-			d.driver_contact_number,
-			(select driver_license_end_date from vms_mas_driver_license s where s.mas_driver_uid=d.mas_driver_uid) driver_license_end_date,
-			d.approved_job_driver_end_date,
-			d.driver_average_satisfaction_score,
-			d.ref_driver_status_code,
-			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
-			d.is_active
-		`).
+			`cpd.mas_carpool_driver_uid, cpd.mas_carpool_uid, d.mas_driver_uid,
+			d.driver_image, d.driver_name, d.driver_nickname,
+			d.driver_dept_sap_short_name_hire, d.driver_contact_number,
+			dl.driver_license_end_date,
+			d.approved_job_driver_end_date, d.driver_average_satisfaction_score,
+			d.ref_driver_status_code, rds.ref_driver_status_desc AS driver_status_name,
+			d.is_active`).
 		Joins("LEFT JOIN vms_mas_driver d ON d.mas_driver_uid = cpd.mas_driver_uid").
-		Where("cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?", masCarpoolUID, "0")
+		Joins("LEFT JOIN vms_mas_driver_license dl ON dl.mas_driver_uid = d.mas_driver_uid").
+		Joins("LEFT JOIN vms_ref_driver_status rds ON rds.ref_driver_status_code = d.ref_driver_status_code").
+		Where("cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?", masCarpoolUID, "0").
+		Group("cpd.mas_carpool_driver_uid, cpd.mas_carpool_uid, d.mas_driver_uid, dl.driver_license_end_date, rds.ref_driver_status_desc")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {

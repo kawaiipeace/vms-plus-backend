@@ -16,6 +16,7 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -308,6 +309,15 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	var req models.OTP_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.Phone == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+	ok, err := userhub.CheckPhoneNumber(req.Phone)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking phone number", "message": err.Error()})
+		return
+	}
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid phone number", "message": "หมายเลขโทรศัพท์ไม่มีในระบบ"})
 		return
 	}
 	refCode := funcs.RandomRefCode(4)

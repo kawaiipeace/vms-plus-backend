@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tealeg/xlsx"
 	"gorm.io/gorm"
 )
 
@@ -61,57 +62,48 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	var drivers []models.VmsMasDriverList
-	query := h.SetQueryRole(user, config.DB)
-	query = query.Model(&models.VmsMasDriverList{})
-	query = query.Select("vms_mas_driver.*,(select max(driver_license_end_date) from vms_mas_driver_license where mas_driver_uid = vms_mas_driver.mas_driver_uid) as driver_license_end_date")
-	query = query.Where("is_deleted = ?", "0")
+	query := h.SetQueryRole(user, config.DB).
+		Model(&models.VmsMasDriverList{}).
+		Select("vms_mas_driver.*, dl.driver_license_end_date").
+		Joins("LEFT JOIN LATERAL (SELECT mas_driver_uid, driver_license_end_date FROM vms_mas_driver_license ORDER BY driver_license_end_date DESC LIMIT 1) dl ON vms_mas_driver.mas_driver_uid = dl.mas_driver_uid").
+		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
 
-	name := strings.ToUpper(c.Query("name"))
-	if name != "" {
-		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	if name := strings.ToUpper(c.Query("name")); name != "" {
+		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
-		query = query.Where("driver_dept_sap_work = ?", driverDeptSAP)
+		query = query.Where("vms_mas_driver.driver_dept_sap_work = ?", driverDeptSAP)
 	}
 
 	if workType := c.Query("work_type"); workType != "" {
-		workTypes := strings.Split(workType, ",")
-		query = query.Where("work_type IN (?)", workTypes)
+		query = query.Where("vms_mas_driver.work_type IN (?)", strings.Split(workType, ","))
 	}
 
 	if statusCodes := c.Query("ref_driver_status_code"); statusCodes != "" {
-		statusCodeList := strings.Split(statusCodes, ",")
-		query = query.Where("ref_driver_status_code IN (?)", statusCodeList)
+		query = query.Where("vms_mas_driver.ref_driver_status_code IN (?)", strings.Split(statusCodes, ","))
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
-		isActiveList := strings.Split(isActive, ",")
-		query = query.Where("is_active IN (?)", isActiveList)
+		query = query.Where("vms_mas_driver.is_active IN (?)", strings.Split(isActive, ","))
 	}
 
 	if licenseEndDate := c.Query("driver_license_end_date"); licenseEndDate != "" {
-		query = query.Where("driver_license_end_date <= ?", licenseEndDate)
+		query = query.Where("dl.driver_license_end_date <= ?", licenseEndDate)
 	}
 
 	if approvedEndDate := c.Query("approved_job_driver_end_date"); approvedEndDate != "" {
-		query = query.Where("approved_job_driver_end_date <= ?", approvedEndDate)
+		query = query.Where("vms_mas_driver.approved_job_driver_end_date <= ?", approvedEndDate)
 	}
 
 	orderBy := c.Query("order_by")
-	orderDir := c.Query("order_dir")
-	if orderDir != "desc" {
-		orderDir = "asc"
-	}
+	orderDir := c.DefaultQuery("order_dir", "asc")
+
 	switch orderBy {
-	case "driver_name":
-		query = query.Order("driver_name " + orderDir)
-	case "driver_license_end_date":
-		query = query.Order("driver_license_end_date " + orderDir)
-	case "approved_job_driver_end_date":
-		query = query.Order("approved_job_driver_end_date " + orderDir)
+	case "driver_name", "driver_license_end_date", "approved_job_driver_end_date":
+		query = query.Order(orderBy + " " + orderDir)
 	default:
-		query = query.Order("driver_name " + orderDir) // Default ordering by name
+		query = query.Order("driver_name " + orderDir)
 	}
 
 	var total int64
@@ -130,7 +122,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	}
 
 	if len(drivers) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "No drivers found",
 			"pagination": gin.H{
 				"page":       page,
@@ -1062,4 +1054,122 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Drivers imported successfully", "count": len(drivers)})
+}
+
+// ReportDriverWork godoc
+// @Summary Get driver work report
+// @Description Get driver work report by date range
+// @Tags Drivers-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param show_all query string false "Show all vehicles (1 for true, 0 for false)"
+// @Param mas_driver_uid body []string true "Array of driver mas_driver_uid"
+// @Router /api/driver-management/work-report [post]
+func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+	var masDriverUIDs []string
+	if err := c.ShouldBindJSON(&masDriverUIDs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mas_driver_uid format", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+
+	var driverWorkReports []models.DriverWorkReport
+
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_driver AS d").
+		Select(`d.mas_driver_uid, d.driver_name, d.driver_nickname, d.driver_id, 
+				d.driver_dept_sap_short_work, d.driver_dept_sap_full_work, 
+				r.reserve_start_datetime, r.reserve_end_datetime,
+				v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
+				v.vehicle_license_plate_province_full, v."CarTypeDetail" AS vehicle_car_type_detail,
+				td.trip_start_datetime, td.trip_end_datetime, td.trip_departure_place, td.trip_destination_place,
+				td.trip_start_miles, td.trip_end_miles, td.trip_detail`).
+		Joins("INNER JOIN vms_trn_request r ON r.mas_carpool_driver_uid = d.mas_driver_uid").
+		Joins("INNER JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = r.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid").
+		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
+		Where("r.reserve_start_datetime BETWEEN ? AND ? OR r.reserve_end_datetime BETWEEN ? AND ? OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime",
+			startDate, endDate, startDate, endDate, startDate, endDate)
+
+	query = query.Where("d.mas_driver_uid::Text IN (?)", masDriverUIDs)
+
+	if err := query.Find(&driverWorkReports).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Internal server error"})
+		return
+	}
+
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Driver Work Reports")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Excel sheet", "message": err.Error()})
+		return
+	}
+
+	// Add header row
+	headerRow := sheet.AddRow()
+	headers := []string{
+		"รหัสพนักงานขับรถ", "ชื่อพนักงานขับรถ", "ชื่อเล่น", "รหัสประจำตัว",
+		"หน่วยงาน (ย่อ)", "หน่วยงาน (เต็ม)", "วันเวลาเริ่มงาน", "วันเวลาสิ้นสุดงาน",
+		"ทะเบียนรถ", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)", "ประเภทรถ",
+		"วันเวลาเริ่มต้นการเดินทาง", "วันเวลาสิ้นสุดการเดินทาง", "สถานที่ออกเดินทาง", "สถานที่ถึง",
+		"ระยะทางเริ่มต้น", "ระยะทางสิ้นสุด", "รายละเอียดการเดินทาง",
+	}
+	for _, header := range headers {
+		cell := headerRow.AddCell()
+		cell.Value = header
+	}
+
+	// Add data rows
+	for _, report := range driverWorkReports {
+		row := sheet.AddRow()
+		row.AddCell().Value = report.MasDriverUID
+		row.AddCell().Value = report.DriverName
+		row.AddCell().Value = report.DriverNickname
+		row.AddCell().Value = report.DriverID
+		row.AddCell().Value = report.DriverDeptSapShortWork
+		row.AddCell().Value = report.DriverDeptSapFullWork
+		row.AddCell().Value = report.ReserveStartDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.VehicleLicensePlate
+		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
+		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
+		row.AddCell().Value = report.VehicleCarTypeDetail
+		row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.TripDeparturePlace
+		row.AddCell().Value = report.TripDestinationPlace
+		row.AddCell().Value = fmt.Sprintf("%f", report.TripStartMiles)
+		row.AddCell().Value = fmt.Sprintf("%f", report.TripEndMiles)
+	}
+
+	// Write the file to response
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=driver_work_reports.xlsx")
+	c.Header("File-Name", fmt.Sprintf("driver_work_reports_%s_to_%s.xlsx", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+	if err := file.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
+		return
+	}
 }

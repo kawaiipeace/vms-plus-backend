@@ -173,12 +173,6 @@ definitions:
       ref_driver_license_type_code:
         example: "1"
         type: string
-      request_expire_date:
-        example: "2023-12-31T00:00:00Z"
-        type: string
-      request_issue_date:
-        example: "2023-01-01T00:00:00Z"
-        type: string
     type: object
   models.VmsMasCarpoolActive:
     properties:
@@ -3763,6 +3757,32 @@ paths:
       summary: Retrieve a specific driver license annual record
       tags:
       - Driver-license-user
+  /api/driver-license-user/resend-license-annual/{trn_request_annual_driver_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows resending a driver license annual record.
+      parameters:
+      - description: trnRequestAnnualDriverUID (trn_request_annual_driver_uid)
+        in: path
+        name: trn_request_annual_driver_uid
+        required: true
+        type: string
+      - description: VmsDriverLicenseAnnualRequest data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Resend driver license annual record
+      tags:
+      - Driver-license-user
   /api/driver-license-user/update-license-annual-canceled:
     put:
       consumes:
@@ -4175,6 +4195,43 @@ paths:
       summary: Update driver resign status
       tags:
       - Drivers-management
+  /api/driver-management/work-report:
+    post:
+      consumes:
+      - application/json
+      description: Get driver work report by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of driver mas_driver_uid
+        in: body
+        name: mas_driver_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get driver work report
+      tags:
+      - Drivers-management
   /api/driver/{mas_driver_uid}:
     get:
       consumes:
@@ -4526,6 +4583,29 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve the Driver Vendors
+      tags:
+      - MAS
+  /api/mas/holidays:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Holidays.
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Holidays
       tags:
       - MAS
   /api/mas/satisfaction_survey_questions:
@@ -5685,6 +5765,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve all payment type codes
+      tags:
+      - REF
+  /api/ref/driver-status:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all driver statuses.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all driver statuses
       tags:
       - REF
   /api/ref/fuel-type:

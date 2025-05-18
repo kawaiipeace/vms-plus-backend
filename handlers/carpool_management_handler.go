@@ -484,9 +484,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 	}
 	var admins []models.VmsMasCarpoolAdminList
 	query = config.DB.Table("vms_mas_carpool_admin cpa").
-		Select("cpa.*,dept.dept_short admin_dept_sap_short,emp.full_name admin_emp_name").
+		Select("cpa.*,dept.dept_short admin_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.admin_dept_sap").
-		Joins("LEFT JOIN vms_user.mas_employee emp ON emp.emp_id = cpa.admin_emp_no").
 		Where("mas_carpool_uid = ? AND cpa.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -904,9 +903,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 
 	var approvers []models.VmsMasCarpoolApproverList
 	query := config.DB.Table("vms_mas_carpool_approver cpa").
-		Select("cpa.*, dept.dept_short approver_dept_sap_short, emp.full_name approver_emp_name").
+		Select("cpa.*, dept.dept_short approver_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.approver_dept_sap").
-		Joins("LEFT JOIN vms_user.mas_employee emp ON emp.emp_id = cpa.approver_emp_no").
 		Where("mas_carpool_uid = ? AND cpa.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))

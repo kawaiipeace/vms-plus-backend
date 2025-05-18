@@ -289,6 +289,7 @@ func main() {
 	router.GET("/api/driver-management/replacement-drivers", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetReplacementDrivers)
 	router.GET("/api/driver-management/timeline", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriverTimeLine)
 	router.POST("/api/driver-management/import-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.ImportDriver)
+	router.POST("/api/driver-management/work-report", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriverWorkReport)
 
 	//DriverLicenseUserHandler
 	driverLicenseUserHandler := handlers.DriverLicenseUserHandler{Role: "vehicle-user"}
@@ -296,6 +297,7 @@ func main() {
 	router.POST("/api/driver-license-user/create-license-annual", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.CreateDriverLicenseAnnual)
 	router.GET("/api/driver-license-user/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.GetDriverLicenseAnnual)
 	router.PUT("/api/driver-license-user/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.UpdateDriverLicenseAnnualCanceled)
+	router.PUT("/api/driver-license-user/resend-license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.ResendDriverLicenseAnnual)
 
 	//DriverLicenseConfirmerHandler
 	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "level1-approval"}
@@ -373,6 +375,7 @@ func main() {
 	router.GET("/api/mas/driver-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverDepartment)
 	router.GET("/api/mas/user-confirmer-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListConfirmerLicenseUser)
 	router.GET("/api/mas/user-approval-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListApprovalLicenseUser)
+	router.GET("/api/mas/holidays", funcs.ApiKeyAuthenMiddleware(), masHandler.ListHoliday)
 
 	//RefHandler
 	refHandler := handlers.RefHandler{}
@@ -390,6 +393,7 @@ func main() {
 	router.GET("/api/ref/carpool-choose-car", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseCar)
 	router.GET("/api/ref/vehicle-key-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleKeyType)
 	router.GET("/api/ref/leave-time-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListLeaveTimeType)
+	router.GET("/api/ref/driver-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverStatus)
 
 	//LogHandler
 	logHandler := handlers.LogHandler{}

@@ -108,13 +108,3 @@ type VmsTrnAnnualDriver struct {
 func (VmsTrnAnnualDriver) TableName() string {
 	return "vms_trn_request_annual_driver"
 }
-
-// VmsRefDriverStatus
-type VmsRefDriverStatus struct {
-	RefDriverStatusCode int    `gorm:"column:ref_driver_status_code;primaryKey" json:"ref_driver_status_code"`
-	RefDriverStatusDesc string `gorm:"column:ref_driver_status_desc" json:"ref_driver_status_desc"`
-}
-
-func (VmsRefDriverStatus) TableName() string {
-	return "vms_ref_driver_status"
-}

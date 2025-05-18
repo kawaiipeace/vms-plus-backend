@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // AuthenUserEmp
 type MasUser struct {
 	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
@@ -113,4 +115,13 @@ type VmsMasDriverVendor struct {
 
 func (VmsMasDriverVendor) TableName() string {
 	return "vms_mas_driver_vendor"
+}
+
+type VmsMasHolidays struct {
+	HolidaysDate   time.Time `gorm:"column:mas_holidays_date" json:"mas_holidays_date"`
+	HolidaysDetail string    `gorm:"column:mas_holidays_detail" json:"mas_holidays_detail"`
+}
+
+func (VmsMasHolidays) TableName() string {
+	return "vms_mas_holidays"
 }

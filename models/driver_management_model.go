@@ -393,3 +393,26 @@ type DriverTrnRequest struct {
 func (DriverTrnRequest) TableName() string {
 	return "public.vms_trn_request"
 }
+
+type DriverWorkReport struct {
+	MasDriverUID                     string    `json:"mas_driver_uid"`
+	DriverName                       string    `json:"driver_name"`
+	DriverNickname                   string    `json:"driver_nickname"`
+	DriverID                         string    `json:"driver_id"`
+	DriverDeptSapShortWork           string    `json:"driver_dept_sap_short_work"`
+	DriverDeptSapFullWork            string    `json:"driver_dept_sap_full_work"`
+	ReserveStartDatetime             time.Time `json:"reserve_start_datetime"`
+	ReserveEndDatetime               time.Time `json:"reserve_end_datetime"`
+	WorkType                         string    `json:"work_type"`
+	VehicleLicensePlate              string    `json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string    `json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string    `json:"vehicle_license_plate_province_full"`
+	VehicleCarTypeDetail             string    `json:"vehicle_car_type_detail"`
+	TripStartDatetime                time.Time `json:"trip_start_datetime"`
+	TripEndDatetime                  time.Time `json:"trip_end_datetime"`
+	TripDeparturePlace               string    `json:"trip_departure_place"`
+	TripDestinationPlace             string    `json:"trip_destination_place"`
+	TripStartMiles                   float64   `json:"trip_start_miles"`
+	TripEndMiles                     float64   `json:"trip_end_miles"`
+	TripDetail                       string    `json:"trip_detail"`
+}
