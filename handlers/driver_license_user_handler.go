@@ -269,7 +269,7 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	}
 	var existsRequest models.VmsDriverLicenseAnnualRequest
 	query := h.SetQueryRole(user, config.DB)
-	query.First(&existsRequest, "trn_request_annual_driver_uid = ? AND is_deleted = ? AND ref_request_annual_driver_status_code = ?", trnRequestAnnualDriverUID, "0", "11")
+	query.First(&existsRequest, "trn_request_annual_driver_uid = ? AND is_deleted = ? AND ref_request_annual_driver_status_code in (?)", trnRequestAnnualDriverUID, "0", []string{"11", "21"})
 	if existsRequest.TrnRequestAnnualDriverUID == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return

@@ -93,7 +93,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621
 	if config.AppConfig.IsDev {
-		if err := config.DBu.First(&empUser, "emp_id = ?", "990002").Error; err != nil {
+		if err := config.DBu.First(&empUser, "emp_id = ?", "700001").Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return &empUser
