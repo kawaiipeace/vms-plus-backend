@@ -22,15 +22,9 @@ type BookingUserHandler struct {
 }
 
 var MenuNameMapUser = map[string]string{
-<<<<<<< HEAD
-	"20,21,30,31,41,50,51,60,70,71": "กำลังดำเนินการ",
-	"80":                            "เสร็จสิ้น",
-	"90":                            "ยกเลิกคำขอ",
-=======
 	"20,21,30,31,40,41,50,51,60,70,71": "กำลังดำเนินการ",
 	"80":                               "เสร็จสิ้น",
 	"90":                               "ยกเลิกคำขอ",
->>>>>>> origin/dev
 }
 
 var StatusNameMapUser = map[string]string{
