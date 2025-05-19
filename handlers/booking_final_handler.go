@@ -7,9 +7,12 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type BookingFinalHandler struct {
@@ -31,6 +34,16 @@ var StatusNameMapFinal = map[string]string{
 	"90": "ยกเลิกคำขอ",
 }
 
+func (h *BookingFinalHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query.Where("created_request_emp_id = ?", user.EmpID)
+}
+func (h *BookingFinalHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('40') and is_deleted = '0'")
+}
+
 // MenuRequests godoc
 // @Summary Summary booking requests by request status code
 // @Description Summary booking requests, counts grouped by request status code
@@ -42,20 +55,18 @@ var StatusNameMapFinal = map[string]string{
 // @Router /api/booking-final/menu-requests [get]
 func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-
 	statusMenuMap := MenuNameMapFinal
-
-	summary, err := funcs.MenuRequests(statusMenuMap)
+	query := h.SetQueryRole(user, config.DB)
+	summary, err := funcs.MenuRequests(statusMenuMap, query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
-	// Respond with the grouped summary
 	c.JSON(http.StatusOK, summary)
 }
 
@@ -75,7 +86,7 @@ func (h *BookingFinalHandler) MenuRequests(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/booking-final/search-requests [get]
 func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -90,13 +101,16 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-	query := config.DB.Table("public.vms_trn_request AS req").
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
 		Select(
-			`req.*, status.ref_request_status_desc, case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_name,
-			 case req.is_pea_employee_driver when '1' then req.driver_mas_dept_sap_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_dept_name,
-			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_dept_name,
-			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_carpool_name
-			`).
+			`req.*,
+			v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_name,
+			case req.is_pea_employee_driver when '1' then req.driver_emp_dept_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_dept_name,
+			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_dept_name,       
+			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_carpool_name
+		`).
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
@@ -105,16 +119,17 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.start_datetime >= ?", startDate)
+		query = query.Where("req.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.start_datetime <= ?", endDate)
+		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
+
 	// Ordering
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
@@ -145,7 +160,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 	offset := (pageInt - 1) * pageSizeInt
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -153,7 +168,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range requests {
@@ -172,7 +187,8 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the summary query
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+	summaryQuery := h.SetQueryRole(user, config.DB)
+	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
@@ -183,7 +199,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		Count                int    `gorm:"column:count"`
 	}{}
 	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -203,6 +219,10 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		})
 	}
 
+	if requests == nil {
+		requests = []models.VmsTrnRequestAdminList{}
+		summary = []models.VmsTrnRequestSummary{}
+	}
 	// Return both the filtered requests and the complete summary
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
@@ -258,88 +278,96 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 
 	}
 	if request.RefRequestStatusCode == "90" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิก"},
+
+		if request.CanceledRequestRole == "vehicle-user" {
+			request.ProgressRequestStatus = []models.ProgressRequestStatus{
+				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},
+			}
 		}
-	}
-	if request.RefRequestStatusCode == "91" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},
+		if request.CanceledRequestRole == "level1-approval" {
+			request.ProgressRequestStatus = []models.ProgressRequestStatus{
+				{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
+			}
 		}
-	}
-	if request.RefRequestStatusCode == "92" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
+		if request.CanceledRequestRole == "admin-approval" {
+			request.ProgressRequestStatus = []models.ProgressRequestStatus{
+				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
+			}
 		}
-	}
-	if request.RefRequestStatusCode == "93" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
-		}
-	}
-	if request.RefRequestStatusCode == "94" {
-		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
+		if request.CanceledRequestRole == "final-approval" {
+			request.ProgressRequestStatus = []models.ProgressRequestStatus{
+				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
+				{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
+				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
+			}
 		}
 	}
 	c.JSON(http.StatusOK, request)
 }
 
-// UpdateSendedBack godoc
-// @Summary Update sended back status for an item
-// @Description This endpoint allows users to update the sended back status of an item.
+// UpdateRejected godoc
+// @Summary Update rejected status for an item
+// @Description This endpoint allows users to update the rejected status of an item.
 // @Tags Booking-final
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequestSendedBack true "VmsTrnRequestSendedBack data"
-// @Router /api/booking-final/update-sended-back [put]
-func (h *BookingFinalHandler) UpdateSendedBack(c *gin.Context) {
+// @Param data body models.VmsTrnRequestRejected true "VmsTrnRequestRejected data"
+// @Router /api/booking-final/update-rejected [put]
+func (h *BookingFinalHandler) UpdateRejected(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnRequestSendedBack
+	var request, trnRequest models.VmsTrnRequestRejected
 	var result struct {
-		models.VmsTrnRequestSendedBack
+		models.VmsTrnRequestRejected
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
 	request.RefRequestStatusCode = "41"
-	request.SendedBackRequestEmpID = empUser.EmpID
-	request.SendedBackRequestEmpName = empUser.FullName
-	request.SendedBackRequestDeptSAP = empUser.DeptSAP
-	request.SendedBackRequestDeptSAPShort = empUser.DeptSAPShort
-	request.SendedBackRequestDeptSAPFull = empUser.DeptSAPFull
+	rejectUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.RejectedRequestEmpID = rejectUser.EmpID
+	request.RejectedRequestEmpName = rejectUser.FullName
+	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
+	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
+	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
+	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
+	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestPosition = rejectUser.Position
+	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.SendedBackRequestReason,
-		user.EmpID)
+
+	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+		request.RefRequestStatusCode,
+		"ผู้อนุมัติตีกลับคำขอ",
+		user.EmpID,
+		"final-approval",
+		request.RejectedRequestReason,
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -366,38 +394,79 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-
+	request.RefRequestStatusCode = "50"
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.RefRequestStatusCode = "50" //
 	request.ApprovedRequestEmpID = empUser.EmpID
 	request.ApprovedRequestEmpName = empUser.FullName
 	request.ApprovedRequestDeptSAP = empUser.DeptSAP
-	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
-	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
+	request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
+	request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
+	request.ApprovedRequestDeskPhone = empUser.DeskPhone
+	request.ApprovedRequestMobilePhone = empUser.MobilePhone
+	request.ApprovedRequestPosition = empUser.Position
+	request.ApprovedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"ผู้ดูแลยืนยันคำขอแล้ว",
-		user.EmpID)
+
+	// Check if a record exists in vms_trn_vehicle_key_handover
+
+	var approvedWithReceiveKey models.VmsTrnRequestApprovedWithRecieiveKey
+	if err := config.DB.First(&approvedWithReceiveKey, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+	var keyHandover models.VmsTrnReceivedKeyPEA
+	if err := config.DB.First(&keyHandover, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Create a new record if it doesn't exist
+			newKeyHandover := models.VmsTrnVehicleKeyHandover{
+				HandoverUid:      uuid.New().String(),
+				TrnRequestUID:    request.TrnRequestUID,
+				AppointmentStart: approvedWithReceiveKey.ReceivedKeyStartDatetime,
+				AppointmentEnd:   approvedWithReceiveKey.ReceivedKeyEndDatetime,
+				ReceiverType:     0,
+				CreatedAt:        time.Now(),
+				CreatedBy:        user.EmpID,
+				UpdatedAt:        time.Now(),
+				UpdatedBy:        user.EmpID,
+			}
+
+			if err := config.DB.Create(&newKeyHandover).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+		} else {
+			// Handle other errors
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to query key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+		request.RefRequestStatusCode,
+		"ผู้อนุมัติ อนุมัติคำขอแล้ว",
+		user.EmpID,
+		"final-approval",
+		"",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -428,33 +497,41 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
 	request.RefRequestStatusCode = "90"
-	request.UpdatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
-	request.CanceledRequestEmpID = empUser.EmpID
-	request.CanceledRequestEmpName = empUser.FullName
-	request.CanceledRequestDeptSAP = empUser.DeptSAP
-	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
-	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	cancelUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.CanceledRequestEmpID = cancelUser.EmpID
+	request.CanceledRequestEmpName = cancelUser.FullName
+	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
+	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
+	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
+	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
+	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
+
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.CanceledRequestReason,
-		user.EmpID)
+
+	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+		request.RefRequestStatusCode,
+		"ยกเลิกคำขอ",
+		user.EmpID,
+		"final-approval",
+		request.CanceledRequestReason,
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

@@ -8,13 +8,30 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tealeg/xlsx"
+	"gorm.io/gorm"
 )
 
 type VehicleManagementHandler struct {
 	Role string
+}
+
+func (h *VehicleManagementHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
+}
+
+func (h *VehicleManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query
 }
 
 // SearchVehicles godoc
@@ -36,7 +53,7 @@ type VehicleManagementHandler struct {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-management/search [get]
 func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -46,17 +63,20 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 
 	var vehicles []models.VmsMasVehicleManagementList
 
-	query := config.DB.Table("public.vms_mas_vehicle AS v").
-		Select(`v.mas_vehicle_uid,v.vehicle_license_plate,v.vehicle_brand_name,v.vehicle_model_name,v.ref_vehicle_type_code,
-				(select max(ref_vehicle_type_name) from vms_ref_vehicle_type s where s.ref_vehicle_type_code=v.ref_vehicle_type_code) ref_vehicle_type_name,
-				(select max(s.dept_short) from vms_mas_department s where s.dept_sap=d.vehicle_owner_dept_sap) vehicle_owner_dept_short,
-				v.ref_vehicle_type_code,d.fleet_card_no,'1' is_tax_credit,d.vehicle_mileage,
-				d.vehicle_get_date,d.ref_vehicle_status_code,v.ref_fuel_type_id,d.is_active,
-				(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=v.mas_vehicle_uid) vehicle_carpool_name
-            `).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
-
-	query = query.Where("v.is_deleted = ?", "0")
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`
+		v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
+		rt.ref_vehicle_type_name, md.dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
+		d.vehicle_get_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name, vs.ref_vehicle_status_short_name
+	`).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_ref_vehicle_type AS rt ON rt.ref_vehicle_type_code = v.ref_vehicle_type_code").
+		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = d.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = v.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid").
+		Joins("LEFT JOIN vms_ref_vehicle_status AS vs ON vs.ref_vehicle_status_code = d.ref_vehicle_status_code").
+		Where("v.is_deleted = ?", "0")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -68,12 +88,12 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if categoryCode := c.Query("ref_vehicle_category_code"); categoryCode != "" {
-		query = query.Where("ref_vehicle_category_code = ?", categoryCode)
+		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
 	}
 
 	if statusCodes := c.Query("ref_vehicle_status_code"); statusCodes != "" {
 		statusCodeList := strings.Split(statusCodes, ",")
-		query = query.Where("ref_vehicle_status_code IN (?)", statusCodeList)
+		query = query.Where("d.ref_vehicle_status_code IN (?)", statusCodeList)
 	}
 
 	if fuelTypeID := c.Query("ref_fuel_type_id"); fuelTypeID != "" {
@@ -108,14 +128,16 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		Offset(offset)
 
 	if err := query.
-		Preload("VmsRefFuelType").
+		Preload("RefFuelType").
+		Preload("RefVehicleStatus").
 		Find(&vehicles).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
+		vehicles[i].RefVehicleStatus.RefVehicleStatusName = vehicles[i].RefVehicleStatusShortName
 		funcs.TrimStringFields(&vehicles[i])
 	}
 
@@ -163,21 +185,373 @@ func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? and is_deleted = ?", request.MasVehicleUID, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.First(&vehicle, "mas_vehicle_uid = ? and is_deleted = ?", request.MasVehicleUID, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Model(&vehicle).Update("is_active", request.IsActive).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "mas_vehicle_uid = ?", request.MasVehicleUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// GetVehicleTimeLine godoc
+// @Summary Get vehicle timeline
+// @Description Get vehicle timeline by date range
+// @Tags Vehicle-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param vehicle_owner_dept_sap query string false "Filter by vehicle owner department SAP"
+// @Param vehicel_car_type_detail query string false "Filter by Car type"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/vehicle-management/timeline [get]
+func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	var vehicles []models.VehicleTimeLine
+
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
+				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
+				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
+				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
+				v.vehicle_brand_name,v.vehicle_model_name`).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+			"r.reserve_start_datetime BETWEEN ? AND ? "+
+			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
+			startDate, endDate, startDate, endDate, startDate, endDate).
+		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+
+	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
+		query = query.Where("d.vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
+	}
+
+	if vehicleCarTypeDetail := c.Query("vehicel_car_type_detail"); vehicleCarTypeDetail != "" {
+		query = query.Where("v.\"CarTypeDetail\" = ?", vehicleCarTypeDetail)
+	}
+	// Pagination
+	page := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "10")
+	var pageInt, pageSizeInt int
+	fmt.Sscanf(page, "%d", &pageInt)
+	fmt.Sscanf(limit, "%d", &pageSizeInt)
+	if pageInt < 1 {
+		pageInt = 1
+	}
+	if pageSizeInt < 1 {
+		pageSizeInt = 10
+	}
+	offset := (pageInt - 1) * pageSizeInt
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	query = query.Offset(offset).Limit(pageSizeInt)
+
+	if err := query.Find(&vehicles).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range vehicles {
+		// Preload the vehicle requests for each vehicle
+		if err := config.DB.Table("vms_trn_request").
+			Preload("TripDetails").
+			Preload("MasDriver").
+			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
+			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+
+		for j := range vehicles[i].VehicleTrnRequests {
+			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"pagination": gin.H{
+			"total":      total,
+			"page":       page,
+			"limit":      pageSizeInt,
+			"totalPages": (total + int64(pageSizeInt) - 1) / int64(pageSizeInt), // Calculate total pages
+		},
+		"vehicles": vehicles,
+	})
+}
+
+// ReportTripDetail godoc
+// @Summary Get vehicle report trip detail
+// @Description Get vehicle report trip by date range
+// @Tags Vehicle-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param show_all query string false "Show all vehicles (1 for true, 0 for false)"
+// @Param mas_vehicle_uid body []string true "Array of vehicle mas_vehicle_uid"
+// @Router /api/vehicle-management/report-trip-detail [post]
+func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+	var masVehicleUIDs []string
+	if err := c.ShouldBindJSON(&masVehicleUIDs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mas_vehicle_uid format", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+	var tripReports []models.VehicleReportTripDetail
+
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
+				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
+				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
+				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				v."CarTypeDetail" AS vehicle_car_type_detail,
+				v.vehicle_brand_name,v.vehicle_model_name,
+				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_detail`).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+			"r.reserve_start_datetime BETWEEN ? AND ? "+
+			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
+			startDate, endDate, startDate, endDate, startDate, endDate).
+		Joins("JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND ("+
+			"td.trip_start_datetime BETWEEN ? AND ? "+
+			"OR td.trip_end_datetime BETWEEN ? AND ? "+
+			"OR ? BETWEEN td.trip_start_datetime AND td.trip_end_datetime "+
+			"OR ? BETWEEN td.trip_start_datetime AND td.trip_end_datetime)",
+			startDate, endDate, startDate, endDate, startDate, endDate).
+		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+
+	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
+
+	if err := query.Find(&tripReports).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Internal server error"})
+		return
+	}
+
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Trip Reports")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Excel sheet", "message": err.Error()})
+		return
+	}
+
+	// Add header row
+	headerRow := sheet.AddRow()
+	headers := []string{
+		"รหัสยานพาหนะ", "ป้ายทะเบียน", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)",
+		"ชื่อหน่วยงาน", "ชื่อคาร์พูล", "รายละเอียดประเภทรถ", "เวลาเริ่มต้นการเดินทาง", "เวลาสิ้นสุดการเดินทาง",
+		"สถานที่ออกเดินทาง", "สถานที่ปลายทาง", "ระยะไมล์เริ่มต้น", "ระยะไมล์สิ้นสุด", "รายละเอียดการเดินทาง",
+	}
+	for _, header := range headers {
+		cell := headerRow.AddCell()
+		cell.Value = header
+	}
+
+	// Add data rows
+	for _, report := range tripReports {
+		row := sheet.AddRow()
+		row.AddCell().Value = report.MasVehicleUID
+		row.AddCell().Value = report.VehicleLicensePlate
+		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
+		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
+		row.AddCell().Value = report.VehicleDeptName
+		row.AddCell().Value = report.CarpoolName
+		row.AddCell().Value = report.VehicleCarTypeDetail
+		row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.TripDeparturePlace
+		row.AddCell().Value = report.TripDestinationPlace
+		row.AddCell().Value = strconv.FormatFloat(float64(report.TripStartMiles), 'f', 2, 64)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.TripEndMiles), 'f', 2, 64)
+		row.AddCell().Value = report.TripDetail
+	}
+
+	// Write the file to response
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=trip_reports.xlsx")
+	c.Header("File-Name", fmt.Sprintf("trip_reports_%s_to_%s.xlsx", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+	if err := file.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
+		return
+	}
+}
+
+// ReportAddFuel godoc
+// @Summary Get vehicle report add fuel detail
+// @Description Get vehicle report add fuel by date range
+// @Tags Vehicle-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param start_date query string true "Start date (YYYY-MM-DD)"
+// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param show_all query string false "Show all vehicles (1 for true, 0 for false)"
+// @Param mas_vehicle_uid body []string true "Array of vehicle mas_vehicle_uid"
+// @Router /api/vehicle-management/report-add-fuel [post]
+func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+	var masVehicleUIDs []string
+	if err := c.ShouldBindJSON(&masVehicleUIDs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mas_vehicle_uid format", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+	var fuelReports []models.VehicleReportAddFuel
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
+				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
+				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				v.vehicle_brand_name,v.vehicle_model_name,
+				af.add_fuel_date_time, af.mile, af.tax_invoice_date, af.tax_invoice_no,af.price_per_liter,af.sum_liter,af.sum_price,
+				(select ref_cost_type_name from vms_ref_cost_type where ref_cost_type_code = af.ref_cost_type_code) as cost_type_name,
+				(select ref_oil_station_brand_name_th from vms_ref_oil_station_brand where ref_oil_station_brand_id = af.ref_oil_station_brand_id) as oil_station_brand_name,	
+				(select ref_fuel_type_name_th from vms_ref_fuel_type where ref_fuel_type_id = af.ref_fuel_type_id) as fuel_type_name,
+				(select ref_payment_type_name from vms_ref_payment_type where ref_payment_type_code = af.ref_payment_type_code) as payment_type_name
+				`).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
+		Joins("INNER JOIN vms_trn_add_fuel af ON af.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+			"af.add_fuel_date_time BETWEEN ? AND ?)", startDate, endDate).
+		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+
+	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
+
+	if err := query.Find(&fuelReports).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Fuel Reports")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Excel sheet", "message": err.Error()})
+		return
+	}
+
+	// Add header row
+	headerRow := sheet.AddRow()
+	headers := []string{
+		"รหัสยานพาหนะ", "ป้ายทะเบียน", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)", "ชื่อหน่วยงาน", "ชื่อคาร์พูล",
+		"วันที่เติมน้ำมัน", "เลขไมล์", "วันที่ใบกำกับภาษี", "เลขที่ใบกำกับภาษี", "ราคาต่อลิตร", "จำนวนลิตร",
+		"ราคารวม", "ประเภทค่าใช้จ่าย", "แบรนด์สถานีบริการน้ำมัน", "ประเภทน้ำมัน", "ประเภทการชำระเงิน",
+	}
+	for _, header := range headers {
+		cell := headerRow.AddCell()
+		cell.Value = header
+	}
+
+	// Add data rows
+	for _, report := range fuelReports {
+		row := sheet.AddRow()
+		row.AddCell().Value = report.MasVehicleUID
+		row.AddCell().Value = report.VehicleLicensePlate
+		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
+		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
+		row.AddCell().Value = report.VehicleDeptName
+		row.AddCell().Value = report.CarpoolName
+		row.AddCell().Value = report.AddFuelDateTime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = strconv.FormatFloat(float64(report.Mile), 'f', 2, 64)
+		row.AddCell().Value = report.TaxInvoiceDate.Format("2006-01-02")
+		row.AddCell().Value = report.TaxInvoiceNo
+		row.AddCell().Value = strconv.FormatFloat(float64(report.PricePerLiter), 'f', 2, 64)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.SumLiter), 'f', 2, 64)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.SumPrice), 'f', 2, 64)
+		row.AddCell().Value = report.RefCostType
+		row.AddCell().Value = report.RefOilStationBrand
+		row.AddCell().Value = report.RefFuelType
+		row.AddCell().Value = report.RefPaymentType
+	}
+
+	// Write the file to response
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=fuel_reports.xlsx")
+	c.Header("File-Name", fmt.Sprintf("fuel_reports_%s_to_%s.xlsx", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+	if err := file.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
+		return
+	}
 }

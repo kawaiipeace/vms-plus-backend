@@ -1,5 +1,26 @@
 package models
 
+import "time"
+
+// AuthenUserEmp
+type MasUser struct {
+	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
+	FirstName    string `gorm:"column:first_name" json:"first_name"`
+	LastName     string `gorm:"column:last_name" json:"last_name"`
+	FullName     string `gorm:"column:full_name" json:"full_name"`
+	Position     string `gorm:"column:posi_text" json:"posi_text"`
+	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
+	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
+	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
+	MobilePhone  string `gorm:"column:mobile_number" json:"mobile_number"`
+	DeskPhone    string `gorm:"column:internal_number" json:"internal_number"`
+	BusinessArea string `gorm:"column:business_area" json:"business_area"`
+}
+
+func (MasUser) TableName() string {
+	return "mas_employee"
+}
+
 //MasUserEmp
 type MasUserEmp struct {
 	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
@@ -7,13 +28,15 @@ type MasUserEmp struct {
 	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
 	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
+	Position     string `gorm:"column:posi_text" json:"posi_text"`
 	TelMobile    string `gorm:"column:tel_mobile" json:"tel_mobile"`
 	TelInternal  string `gorm:"column:tel_internal" json:"tel_internal"`
+	BusinessArea string `gorm:"column:business_area" json:"business_area"`
 	ImageUrl     string `gorm:"column:image_url" json:"image_url"`
 }
 
 func (MasUserEmp) TableName() string {
-	return "vms_user.mas_employee"
+	return "mas_employee"
 }
 
 // MasUserDriver
@@ -30,14 +53,14 @@ type MasUserDriver struct {
 }
 
 func (MasUserDriver) TableName() string {
-	return "vms_user.mas_employee"
+	return "mas_employee"
 }
 
 // VmsMasSatisfactionSurveyQuestions
 type VmsMasSatisfactionSurveyQuestions struct {
-	MasSatisfactionSurveyQuestionsCode  string `gorm:"column:mas_satisfaction_survey_questions_code;" json:"mas_satisfaction_survey_questions_code"`
-	MasSatisfactionSurveyQuestionsTitle string `gorm:"column:mas_satisfaction_survey_questions_title" json:"mas_satisfaction_survey_questions_title"`
-	MasSatisfactionSurveyQuestionsDesc  string `gorm:"column:mas_satisfaction_survey_questions_desc" json:"mas_satisfaction_survey_questions_desc"`
+	MasSatisfactionSurveyQuestionsUID string `gorm:"column:mas_satisfaction_survey_questions_uid;" json:"mas_satisfaction_survey_questions_uid"`
+	QuestionTitle                     string `gorm:"column:question_title" json:"question_title"`
+	QuestionsDescription              string `gorm:"column:questions_description" json:"questions_description"`
 }
 
 func (VmsMasSatisfactionSurveyQuestions) TableName() string {
@@ -81,5 +104,24 @@ type VmsMasDepartmentTree struct {
 }
 
 func (VmsMasDepartmentTree) TableName() string {
-	return "vms_user.mas_department"
+	return "mas_department"
+}
+
+//VmsMasDriverVendor
+type VmsMasDriverVendor struct {
+	MasVendorCode string `gorm:"column:mas_vendor_code" json:"mas_vendor_code"`
+	MasVendorName string `gorm:"column:mas_vendor_name" json:"mas_vendor_name"`
+}
+
+func (VmsMasDriverVendor) TableName() string {
+	return "vms_mas_driver_vendor"
+}
+
+type VmsMasHolidays struct {
+	HolidaysDate   time.Time `gorm:"column:mas_holidays_date" json:"mas_holidays_date"`
+	HolidaysDetail string    `gorm:"column:mas_holidays_detail" json:"mas_holidays_detail"`
+}
+
+func (VmsMasHolidays) TableName() string {
+	return "vms_mas_holidays"
 }

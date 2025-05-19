@@ -8,6 +8,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,16 @@ type VehicleInUseUserHandler struct {
 var StatusNameMapVehicelInUseUser = map[string]string{
 	"51": "รับยานพาหนะ",
 	"60": "เดินทาง",
+}
+
+func (h *VehicleInUseUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
+}
+func (h *VehicleInUseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -42,7 +53,7 @@ var StatusNameMapVehicelInUseUser = map[string]string{
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-in-use-user/search-requests [get]
 func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -57,12 +68,13 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
-		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
-
+	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
 		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -140,7 +152,8 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the summary query
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+	summaryQuery := h.SetQueryRole(user, config.DB)
+	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
@@ -169,6 +182,10 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 			RefRequestStatusName: name,
 			Count:                count,
 		})
+	}
+	if requests == nil {
+		requests = []models.VmsTrnRequestList{}
+		summary = []models.VmsTrnRequestSummary{}
 	}
 	// Sort the summary by RefRequestStatusCode
 	sort.Slice(summary, func(i, j int) bool {
@@ -227,7 +244,7 @@ func (h *VehicleInUseUserHandler) CreateVehicleTripDetail(c *gin.Context) {
 
 	var request models.VmsTrnTripDetail
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 	request.TrnTripDetailUID = uuid.New().String()
@@ -244,8 +261,11 @@ func (h *VehicleInUseUserHandler) CreateVehicleTripDetail(c *gin.Context) {
 		MasCarpoolUID                   string `gorm:"column:mas_carpool_uid"`
 		EmployeeOrDriverID              string `gorm:"column:driver_emp_id"`
 	}
-	if err := config.DB.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking not found"})
+
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.MasVehicleUID = func() string {
@@ -302,9 +322,10 @@ func (h *VehicleInUseUserHandler) UpdateVehicleTripDetail(c *gin.Context) {
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
+
 	var existing models.VmsTrnTripDetail
 	if err := config.DB.Where("trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").First(&existing).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
@@ -312,7 +333,14 @@ func (h *VehicleInUseUserHandler) UpdateVehicleTripDetail(c *gin.Context) {
 	}
 	var request models.VmsTrnTripDetailRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -346,22 +374,28 @@ func (h *VehicleInUseUserHandler) DeleteVehicleTripDetail(c *gin.Context) {
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 
 	var existing models.VmsTrnTripDetail
 	if err := config.DB.Where("trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").First(&existing).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
 	if err := config.DB.Model(&existing).UpdateColumns(map[string]interface{}{
 		"is_deleted": "1",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete", "message": messages.ErrInternalServer.Error()})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
@@ -379,25 +413,33 @@ func (h *VehicleInUseUserHandler) DeleteVehicleTripDetail(c *gin.Context) {
 // @Param search query string false "Search keyword (matches place)"
 // @Router /api/vehicle-in-use-user/travel-details/{trn_request_uid} [get]
 func (h *VehicleInUseUserHandler) GetVehicleTripDetails(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	uid := c.Param("trn_request_uid")
 	trnRequestUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
-	query := config.DB
+
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trnRequestUid).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+
+	queryTrip := config.DB
 	if search := c.Query("search"); search != "" {
-		query = query.Where("trip_departure_place ILIKE ? OR trip_destination_place ILIKE ?", "%"+search+"%", "%"+search+"%")
+		queryTrip = queryTrip.Where("trip_departure_place ILIKE ? OR trip_destination_place ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	// Fetch the vehicle record from the database
 	var trips []models.VmsTrnTripDetailList
-	if err := query.Find(&trips, "trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
+	if err := queryTrip.Find(&trips, "trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
@@ -416,20 +458,26 @@ func (h *VehicleInUseUserHandler) GetVehicleTripDetails(c *gin.Context) {
 // @Param trn_trip_detail_uid path string true "TrnTripDetailUID"
 // @Router /api/vehicle-in-use-user/travel-detail/{trn_trip_detail_uid} [get]
 func (h *VehicleInUseUserHandler) GetVehicleTripDetail(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	uid := c.Param("trn_trip_detail_uid")
 	trnTripDetailUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	// Fetch the vehicle record from the database
 	var trip models.VmsTrnTripDetail
 	if err := config.DB.First(&trip, "trn_trip_detail_uid = ? AND is_deleted = ?", trnTripDetailUid, "0").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trip not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trip.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -455,7 +503,7 @@ func (h *VehicleInUseUserHandler) CreateVehicleAddFuel(c *gin.Context) {
 
 	var request models.VmsTrnAddFuel
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
@@ -468,8 +516,10 @@ func (h *VehicleInUseUserHandler) CreateVehicleAddFuel(c *gin.Context) {
 		MasCarpoolUID                    string `gorm:"column:mas_carpool_uid"`
 		RefCostTypeCode                  int    `gorm:"column:ref_cost_type_code"`
 	}
-	if err := config.DB.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.RefCostTypeCode = trnRequest.RefCostTypeCode
@@ -499,7 +549,7 @@ func (h *VehicleInUseUserHandler) CreateVehicleAddFuel(c *gin.Context) {
 	request.IsDeleted = "0"
 
 	if err := config.DB.Create(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -525,19 +575,26 @@ func (h *VehicleInUseUserHandler) UpdateVehicleAddFuel(c *gin.Context) {
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 
 	var existing models.VmsTrnAddFuel
 	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&existing).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
 	var request models.VmsTrnAddFuelRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
@@ -546,7 +603,7 @@ func (h *VehicleInUseUserHandler) UpdateVehicleAddFuel(c *gin.Context) {
 	existing.UpdatedAt = time.Now()
 
 	if err := config.DB.Save(&existing).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -571,12 +628,20 @@ func (h *VehicleInUseUserHandler) DeleteVehicleAddFuel(c *gin.Context) {
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	var existing models.VmsTrnAddFuel
 	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&existing).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -585,7 +650,7 @@ func (h *VehicleInUseUserHandler) DeleteVehicleAddFuel(c *gin.Context) {
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete", "message": messages.ErrInternalServer.Error()})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
@@ -603,30 +668,38 @@ func (h *VehicleInUseUserHandler) DeleteVehicleAddFuel(c *gin.Context) {
 // @Param search query string false "Search keyword (matches tax_invoice_no)"
 // @Router /api/vehicle-in-use-user/add-fuel-details/{trn_request_uid} [get]
 func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	uid := c.Param("trn_request_uid")
 	trnRequestUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 
-	query := config.DB.Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0")
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trnRequestUid).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+
+	queryTrip := config.DB
+	queryTrip = queryTrip.Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0")
 	if search := c.Query("search"); search != "" {
-		query = query.Where("tax_invoice_no ILIKE ?", "%"+search+"%")
+		queryTrip = query.Where("tax_invoice_no ILIKE ?", "%"+search+"%")
 	}
 
 	var fuels []models.VmsTrnAddFuel
-	query = query.
-		Preload("RefContType").
+	queryTrip = queryTrip.
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType")
-	if err := query.Find(&fuels).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entries not found"})
+	if err := queryTrip.Find(&fuels).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entries not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -644,19 +717,26 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 // @Param trn_add_fuel_uid path string true "TrnAddFuelUID"
 // @Router /api/vehicle-in-use-user/add-fuel-detail/{trn_add_fuel_uid} [get]
 func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetail(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	uid := c.Param("trn_add_fuel_uid")
 	trnAddFuelUid, err := uuid.Parse(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	var fuel models.VmsTrnAddFuel
 	if err := config.DB.Where("trn_add_fuel_uid = ? AND is_deleted = ?", trnAddFuelUid, "0").First(&fuel).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Add Fuel entry not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+
+	var trnRequest models.VmsTrnRequestList
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", fuel.TrnRequestUID).First(&trnRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -674,24 +754,22 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/vehicle-in-use-user/travel-card/{trn_request_uid} [get]
 func (h *VehicleInUseUserHandler) GetTravelCard(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	id := c.Param("trn_request_uid")
-	trnRequestUid, err := uuid.Parse(id)
+	trnRequestUID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	var request models.VmsTrnTravelCard
-	if err := config.DB.
-		Preload("RefContType").
-		Preload("RefOilStationBrand").
-		Preload("RefFuelType").
-		Preload("RefPaymentType").
-		First(&request, "trn_request_uid = ?", trnRequestUid).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.
+		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.VehicleUserImageURL = config.DefaultAvatarURL
@@ -722,13 +800,13 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 	}
 	var trnRequest models.VmsTrnRequestResponse
 	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
 	var reqs []models.VmsTrnSatisfactionSurveyAnswers
 	if err := c.ShouldBindJSON(&reqs); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
@@ -742,23 +820,23 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 				req.SurveyAnswerDate = time.Now()
 				req.SurveyAnswerEmpID = user.EmpID
 				if err := config.DB.Create(&req).Error; err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create record: %v", err)})
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create record: %v", err), "message": messages.ErrInternalServer.Error()})
 					return
 				}
 			} else {
 				// Handle other errors
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check existence: %v", err)})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check existence: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
 		} else {
 			// Handle record exists (update logic)
 			existing.TrnRequestUID = trnRequestUID.String()
-			existing.SurveyAnswer = req.SurveyAnswer
+			existing.SurveyAnswerScore = req.SurveyAnswerScore
 			existing.SurveyAnswerDate = time.Now()
 			existing.SurveyAnswerEmpID = user.EmpID
 
 			if err := config.DB.Save(&existing).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update record: %v", err)})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
 		}
@@ -787,12 +865,14 @@ func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
@@ -804,34 +884,45 @@ func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
 	request.ReturnedVehicleEmpID = empUser.EmpID
 	request.ReturnedVehicleEmpName = empUser.FullName
 	request.ReturnedVehicleDeptSAP = empUser.DeptSAP
-	request.ReturnedVehicleDeptSAPShort = empUser.DeptSAPShort
-	request.ReturnedVehicleDeptSAPFull = empUser.DeptSAPFull
+	request.ReturnedVehicleDeptNameShort = empUser.DeptSAPShort
+	request.ReturnedVehicleDeptNameFull = empUser.DeptSAPFull
 	for i := range request.VehicleImages {
 		request.VehicleImages[i].TrnVehicleImgReturnedUID = uuid.New().String()
 		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID
+		request.VehicleImages[i].CreatedAt = time.Now()
+		request.VehicleImages[i].CreatedBy = user.EmpID
+		request.VehicleImages[i].UpdatedAt = time.Now()
+		request.VehicleImages[i].UpdatedBy = user.EmpID
+		request.VehicleImages[i].IsDeleted = "0"
 	}
 
 	if len(request.VehicleImages) > 0 {
 		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
 			return
 		}
 	}
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.
 		Preload("VehicleImages").
 		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"ส่งคืนกุญแจและยานพาหนะแล้ว รอตรวจสอบและยืนยันการส่งคืน",
-		user.EmpID)
+
+	if result.RefRequestStatusCode == request.RefRequestStatusCode {
+		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+			request.RefRequestStatusCode,
+			"ส่งคืนกุญแจและยานพาหนะ",
+			user.EmpID,
+			"vehicle-user",
+			"",
+		)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
