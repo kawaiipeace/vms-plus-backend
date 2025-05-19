@@ -6,6 +6,7 @@ import (
 	"strings"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -28,11 +29,12 @@ type VehicleHandler struct {
 // @Param vehicle_owner_dept query string false "Filter by icle Owner Department"
 // @Param car_type query string false "Filter by Car Type"
 // @Param category_code query string false "Filter by Vehicle Category Code"
+// @Param ref_trip_type_code query int false "Filter by Trip Type Code (0: Round Trip, 1: Overnight)"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle/search [get]
 func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -40,15 +42,21 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	ownerDept := c.Query("vehicle_owner_dept") // Filter by vehicle owner department
 	carType := c.Query("car_type")             // Filter by car type
 	categoryCode := c.Query("category_code")   // Filter by car type
+	ref_trip_type_code, _ := strconv.Atoi(c.Query("ref_trip_type_code"))
 
+	//	user.BusinessArea = "J000"
 	//carpool
 	var carpools []models.VmsMasCarpoolCarBooking
-	config.DB.
+	queryCarpool := config.DB
+	queryCarpool = queryCarpool.Model(&models.VmsMasCarpoolCarBooking{})
+	queryCarpool = queryCarpool.Where("is_deleted = '0' AND is_active = '1'")
+	queryCarpool = queryCarpool.Where("ref_carpool_choose_car_id IN (2, 3)")
+	queryCarpool = queryCarpool.Where("carpool_main_business_area= ?", user.BusinessArea)
+	//queryCarpool = queryCarpool.Where("(select count(*) from vms_mas_carpool_vehicle cpv where is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) > 0 AND " +
+	//	"(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) > 0")
+	queryCarpool.
 		Preload("RefCarpoolChooseCar").
 		Table("vms_mas_carpool cp").
-		Where("is_deleted = '0' AND is_active = '1' AND ref_carpool_choose_car_id IN (2, 3) /*AND " +
-			"(select count(*) from vms_mas_carpool_vehicle cpv where is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) > 0 AND " +
-			"(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) > 0*/").
 		Find(&carpools)
 
 	totalGroups := len(carpools)
@@ -67,8 +75,14 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleList
 	var total int64
 
-	query := config.DB.Model(&models.VmsMasVehicleList{})
-	query = query.Where("is_deleted = '0'")
+	query := config.DB.Table("vms_mas_vehicle v").Select("*")
+	query = query.Joins("LEFT JOIN vms_mas_vehicle_department vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
+	query = query.Where("v.is_deleted = '0'")
+	query = query.Where("vd.ref_vehicle_status_code = '0' and vd.is_deleted = '0' and vd.is_active = '1'")
+	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba = ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))", user.BureauDeptSap, user.BusinessArea, ref_trip_type_code)
+	//ref_other_use_code = 2 -> ref_trip_type_code=1 ค้างแรม
+	//ref_other_use_code = 1 -> ref_trip_type_code=0 ไปกลับ
+
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
 		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
@@ -87,7 +101,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 
 	// Count total records
 	query.Count(&total)
-
+	query = query.Select("v.*")
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 	vehicles = models.AssignVehicleImageFromIndex(vehicles)
@@ -128,7 +142,7 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 	// Parse the string ID to uuid.UUID
 	parsedID, err := uuid.Parse(vehicleID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid vehicle ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid vehicle ID", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 
@@ -137,7 +151,7 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 	if err := config.DB.Preload("RefFuelType").
 		Preload("VehicleDepartment.VehicleUser").
 		First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", parsedID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	vehicle.Age = vehicle.CalculateAge()
@@ -187,6 +201,39 @@ func (h *VehicleHandler) GetTypes(c *gin.Context) {
 	c.JSON(http.StatusOK, types)
 }
 
+// GetCarTypeDetails godoc
+// @Summary Get car type details
+// @Description Fetches details of car types including their names and descriptions
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/vehicle/car-types-by-detail [get]
+func (h *VehicleHandler) GetCarTypeDetails(c *gin.Context) {
+	var carTypeDetails []models.VmsRefCarTypeDetail
+
+	query := `
+		SELECT 
+			DISTINCT trim("CarTypeDetail") AS car_type_detail
+		FROM 
+			vms_mas_vehicle
+		WHERE 
+			is_deleted = '0' AND "CarTypeDetail">''
+		GROUP BY 
+			"CarTypeDetail"
+	`
+
+	// Execute the query
+	if err := config.DB.Raw(query).Scan(&carTypeDetails).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch car type details", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	// Respond with the result
+	c.JSON(http.StatusOK, carTypeDetails)
+}
+
 // GetDepartments godoc
 // @Summary Get department list
 // @Description Fetches a list of departments grouped by dept_sap, including dept_short and dept_full
@@ -221,7 +268,7 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 
 	// Execute the query
 	if err := config.DB.Raw(query).Scan(&departments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 

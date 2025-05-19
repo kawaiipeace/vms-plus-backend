@@ -8,13 +8,25 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BookingAdminDeptHandler struct {
 	Role string
+}
+
+func (h *BookingAdminDeptHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query.Where("created_request_emp_id = ?", user.EmpID)
+}
+func (h *BookingAdminDeptHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('30') and is_deleted = '0'")
 }
 
 // MenuRequests godoc
@@ -28,16 +40,16 @@ type BookingAdminDeptHandler struct {
 // @Router /api/booking-admin-dept/menu-requests [get]
 func (h *BookingAdminDeptHandler) MenuRequests(c *gin.Context) {
 	// Get authenticated user role if needed
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 
 	statusMenuMap := MenuNameMapAdmin
-
-	summary, err := funcs.MenuRequests(statusMenuMap)
+	query := h.SetQueryRole(user, config.DB)
+	summary, err := funcs.MenuRequests(statusMenuMap, query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, summary)
@@ -62,7 +74,7 @@ func (h *BookingAdminDeptHandler) MenuRequests(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/booking-admin-dept/search-requests [get]
 func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -78,25 +90,34 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-	query := config.DB.Table("public.vms_trn_request AS req").
-		Select(
-			`req.*, status.ref_request_status_desc, case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_name,
-			 case req.is_pea_employee_driver when '1' then req.driver_mas_dept_sap_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid::text=req.mas_carpool_driver_uid) end driver_dept_name,
-			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_dept_name,
-			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid::text=req.mas_vehicle_uid) vehicle_carpool_name
-			`).
-		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select(`
+		req.*, 
+		v.vehicle_license_plate, v.vehicle_license_plate_province_short, v.vehicle_license_plate_province_full,
+		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_name) AS driver_name,
+		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_dept_sap_hire) AS driver_dept_name,
+		md.dept_short AS vehicle_dept_name,
+		mc.carpool_name AS vehicle_carpool_name
+	`).
+		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_driver AS d ON d.mas_driver_uid = req.mas_carpool_driver_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department AS mvd ON mvd.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = mvd.vehicle_owner_dept_sap").
+		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
+	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
 		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.start_datetime >= ?", startDate)
+		query = query.Where("req.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.start_datetime <= ?", endDate)
+		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
@@ -133,7 +154,7 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	offset := (pageInt - 1) * pageSizeInt
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -141,7 +162,7 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range requests {
@@ -160,7 +181,8 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the summary query
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+	summaryQuery := h.SetQueryRole(user, config.DB)
+	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
@@ -171,7 +193,7 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 		Count                int    `gorm:"column:count"`
 	}{}
 	if err := summaryQuery.Scan(&dbSummary).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -194,6 +216,10 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	sort.Slice(summary, func(i, j int) bool {
 		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
 	})
+	if requests == nil {
+		requests = []models.VmsTrnRequestAdminList{}
+		summary = []models.VmsTrnRequestSummary{}
+	}
 	// Return both the filtered requests and the complete summary
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
@@ -288,58 +314,66 @@ func (h *BookingAdminDeptHandler) GetRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, request)
 }
 
-// UpdateSendedBack godoc
-// @Summary Update sended back status for an item
-// @Description This endpoint allows users to update the sended back status of an item.
+// UpdateRejected godoc
+// @Summary Update rejected status for an item
+// @Description This endpoint allows users to update the rejected status of an item.
 // @Tags Booking-admin-dept
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param data body models.VmsTrnRequestSendedBack true "VmsTrnRequestSendedBack data"
-// @Router /api/booking-admin-dept/update-sended-back [put]
-func (h *BookingAdminDeptHandler) UpdateSendedBack(c *gin.Context) {
+// @Param data body models.VmsTrnRequestRejected true "VmsTrnRequestRejected data"
+// @Router /api/booking-admin-dept/update-rejected [put]
+func (h *BookingAdminDeptHandler) UpdateRejected(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnRequestSendedBack
+	var request, trnRequest models.VmsTrnRequestRejected
 	var result struct {
-		models.VmsTrnRequestSendedBack
+		models.VmsTrnRequestRejected
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
-
 	request.RefRequestStatusCode = "31"
-	request.SendedBackRequestEmpID = empUser.EmpID
-	request.SendedBackRequestEmpName = empUser.FullName
-	request.SendedBackRequestDeptSAP = empUser.DeptSAP
-	request.SendedBackRequestDeptSAPShort = empUser.DeptSAPShort
-	request.SendedBackRequestDeptSAPFull = empUser.DeptSAPFull
+	rejectUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.RejectedRequestEmpID = rejectUser.EmpID
+	request.RejectedRequestEmpName = rejectUser.FullName
+	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
+	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
+	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
+	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
+	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestPosition = rejectUser.Position
+	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.SendedBackRequestReason,
-		user.EmpID)
+	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+		request.RefRequestStatusCode,
+		"ผู้ดูแลยานพาหนะตีกลับคำขอ",
+		user.EmpID,
+		"admin-dept-approval",
+		request.RejectedRequestReason,
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -365,38 +399,43 @@ func (h *BookingAdminDeptHandler) UpdateApproved(c *gin.Context) {
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-
-	empUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
-	request.RefRequestStatusCode = "40" //
-	request.ApprovedRequestEmpID = empUser.EmpID
-	request.ApprovedRequestEmpName = empUser.FullName
-	request.ApprovedRequestDeptSAP = empUser.DeptSAP
-	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
-	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
-	request.UpdatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
-
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	requestStatus := models.VmsTrnRequestUpdateRecieivedKeyStatus{
+		RefRequestStatusCode: "40", //
+		TrnRequestUID:        request.TrnRequestUID,
+		UpdatedAt:            time.Now(),
+		UpdatedBy:            user.EmpID,
+	}
+	if err := config.DB.Save(&requestStatus).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"ผู้ดูแลยืนยันคำขอแล้ว",
-		user.EmpID)
+
+	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+		requestStatus.RefRequestStatusCode,
+		"ผู้ดูแลยานพาหนะ ตรวจสอบผ่านแล้ว",
+		user.EmpID,
+		"admin-approval",
+		"",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
@@ -423,39 +462,47 @@ func (h *BookingAdminDeptHandler) UpdateCanceled(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
-	request.RefRequestStatusCode = "90"
-	request.UpdatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
-	request.CanceledRequestEmpID = empUser.EmpID
-	request.CanceledRequestEmpName = empUser.FullName
-	request.CanceledRequestDeptSAP = empUser.DeptSAP
-	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
-	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
+	request.RefRequestStatusCode = "90" //
+	cancelUser := funcs.GetUserEmpInfo(user.EmpID)
+	request.CanceledRequestEmpID = cancelUser.EmpID
+	request.CanceledRequestEmpName = cancelUser.FullName
+	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
+	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
+	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
+	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
+	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
+
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		result.CanceledRequestReason,
-		user.EmpID)
-
+	if result.RefRequestStatusCode == request.RefRequestStatusCode {
+		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
+			request.RefRequestStatusCode,
+			"ยกเลิกคำขอ",
+			user.EmpID,
+			"admin-dept-approval",
+			request.CanceledRequestReason,
+		)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -482,25 +529,40 @@ func (h *BookingAdminDeptHandler) UpdateVehicleUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
+
+	vehicleUser := funcs.GetUserEmpInfo(request.VehicleUserEmpID)
+	request.VehicleUserEmpID = vehicleUser.EmpID
+	request.VehicleUserEmpName = vehicleUser.FullName
+	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
+	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
+	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
+	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
+	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserPosition = vehicleUser.Position
+
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
+
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -526,28 +588,27 @@ func (h *BookingAdminDeptHandler) UpdateTrip(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
+
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
-	if request.TripType == 0 {
-		config.DB.Model(&trnRequest).Update("trip_type", 0)
-	}
-
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
@@ -575,24 +636,26 @@ func (h *BookingAdminDeptHandler) UpdatePickup(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
@@ -618,26 +681,27 @@ func (h *BookingAdminDeptHandler) UpdateDocument(c *gin.Context) {
 		models.VmsTrnRequestDocument
 		models.VmsTrnRequestRequestNo
 	}
-
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
@@ -665,24 +729,26 @@ func (h *BookingAdminDeptHandler) UpdateCost(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
@@ -710,24 +776,26 @@ func (h *BookingAdminDeptHandler) UpdateDriver(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
@@ -754,24 +822,32 @@ func (h *BookingAdminDeptHandler) UpdateVehicle(c *gin.Context) {
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
+	var vehicle models.VmsMasVehicle
+	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
+		request.VehicleLicensePlate = strings.TrimSpace(vehicle.VehicleLicensePlate)
+		request.VehicleLicensePlateProvinceShort = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceShort)
+		request.VehicleLicensePlateProvinceFull = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceFull)
+	}
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})

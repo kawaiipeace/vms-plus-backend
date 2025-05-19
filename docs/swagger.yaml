@@ -147,7 +147,7 @@ definitions:
         example: "2024-12-31T00:00:00Z"
         type: string
       driver_certificate_img:
-        example: certificate_image_url
+        example: http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cert.png
         type: string
       driver_certificate_issue_date:
         example: "2023-01-01T00:00:00Z"
@@ -165,19 +165,13 @@ definitions:
         example: "2025-12-31T00:00:00Z"
         type: string
       driver_license_img:
-        example: image_url
+        example: http://pntdev.ddns.net:28089/VMS_PLUS/PIX/license.png
         type: string
       driver_license_no:
         example: DL12345678
         type: string
       ref_driver_license_type_code:
         example: "1"
-        type: string
-      request_expire_date:
-        example: "2023-12-31T00:00:00Z"
-        type: string
-      request_issue_date:
-        example: "2023-01-01T00:00:00Z"
         type: string
     type: object
   models.VmsMasCarpoolActive:
@@ -267,11 +261,22 @@ definitions:
       carpool_dept_sap:
         example: "10001"
         type: string
-      carpool_main_business_area:
-        example: "0000"
-        type: string
       carpool_name:
         example: carpool_name
+        type: string
+      carpool_type:
+        example: "1"
+        type: string
+      is_active:
+        type: string
+      is_must_pass_status_30:
+        example: "0"
+        type: string
+      is_must_pass_status_40:
+        example: "0"
+        type: string
+      is_must_pass_status_50:
+        example: "0"
         type: string
       ref_carpool_choose_car_id:
         example: 1
@@ -318,11 +323,11 @@ definitions:
       contract_no:
         example: CON123456
         type: string
-      driver_dept_sap_short_name_hire:
-        example: HR
+      driver_dept_sap_hire:
+        example: "1000"
         type: string
-      driver_dept_sap_short_name_work:
-        example: กยจ.
+      driver_dept_sap_work:
+        example: "10001"
         type: string
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
@@ -408,9 +413,6 @@ definitions:
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
-      replace_mas_driver_uid:
-        example: 8d14e6df-5d65-486e-b079-393d9c817a09
-        type: string
       replaced_mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
@@ -489,11 +491,11 @@ definitions:
       driver_contact_number:
         example: "+1234567890"
         type: string
-      driver_dept_sap_short_name_hire:
-        example: HR
+      driver_dept_sap_hire:
+        example: "1000"
         type: string
-      driver_dept_sap_short_name_work:
-        example: กยจ.
+      driver_dept_sap_work:
+        example: "10001"
         type: string
       driver_documents:
         items:
@@ -642,7 +644,7 @@ definitions:
         example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_license_plate:
         type: string
@@ -684,13 +686,13 @@ definitions:
         example: INV1234567890
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnInspectVehicleImages:
     properties:
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_images:
         items:
@@ -700,22 +702,25 @@ definitions:
   models.VmsTrnReceivedKeyDriver:
     properties:
       trn_request_uid:
-        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnReceivedKeyOutSider:
     properties:
-      outsider_name:
-        example: John Doe
+      received_key_emp_id:
+        example: "3101000000026"
+        type: string
+      received_key_fullname:
+        example: Somchai Prasert
         type: string
       received_key_mobile_contact_number:
         example: "0812345678"
         type: string
       received_key_remark:
-        example: OutSider received the key
+        example: Outsider received the key
         type: string
       trn_request_uid:
-        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnReceivedKeyPEA:
@@ -733,7 +738,7 @@ definitions:
         example: Employee received the key
         type: string
       trn_request_uid:
-        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnReceivedVehicle:
@@ -751,7 +756,7 @@ definitions:
         example: Minor scratch on bumper
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_images:
         items:
@@ -761,7 +766,7 @@ definitions:
   models.VmsTrnReceivedVehicleImages:
     properties:
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_images:
         items:
@@ -789,7 +794,7 @@ definitions:
         example: OK
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestAccepted:
@@ -798,19 +803,19 @@ definitions:
         example: "2025-04-16T14:30:00Z"
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestApproved:
     properties:
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestApprovedWithRecieiveKey:
     properties:
-      approved_request_emp_id:
-        example: "990001"
+      received_key_end_datetime:
+        example: "2025-02-16T09:30:00Z"
         type: string
       received_key_end_datetime:
         example: "2025-02-16T09:30:00Z"
@@ -822,15 +827,7 @@ definitions:
         example: "2025-02-16T08:00:00Z"
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-    type: object
-  models.VmsTrnRequestApprover:
-    properties:
-      approved_request_emp_id:
-        type: string
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestCanceled:
@@ -839,19 +836,43 @@ definitions:
         example: Test Cancel
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+    type: object
+  models.VmsTrnRequestConfirmed:
+    properties:
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+    type: object
+  models.VmsTrnRequestConfirmer:
+    properties:
+      confirmed_request_emp_id:
+        example: "700001"
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestCost:
     properties:
-      cost_no:
-        example: COSTNO123
+      activity_no:
+        example: A12345
+        type: string
+      cost_center:
+        example: B0002211
+        type: string
+      network_no:
+        example: NET12345
         type: string
       ref_cost_type_code:
-        example: "2"
-        type: string
+        example: 1
+        type: integer
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      wbs_no:
+        example: WBS12345
         type: string
     type: object
   models.VmsTrnRequestDocument:
@@ -863,7 +884,7 @@ definitions:
         example: REF123456
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestDriver:
@@ -872,68 +893,65 @@ definitions:
         example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestPickup:
     properties:
       pickup_datetime:
-        example: "2025-02-16T08:00:00Z"
+        example: "2025-02-16T08:30:00Z"
         type: string
       pickup_place:
         example: Main Office
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+    type: object
+  models.VmsTrnRequestRejected:
+    properties:
+      rejected_request_reason:
+        example: Test Reject
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestRequest:
     properties:
-      approved_request_dept_sap:
-        example: Finance
-        type: string
-      approved_request_dept_sap_full:
-        example: Finance
-        type: string
-      approved_request_dept_sap_short:
-        example: Finance
-        type: string
-      approved_request_emp_id:
-        description: Step 4
-        example: EMP67890
-        type: string
-      approved_request_emp_name:
-        example: Jane Doe
+      activity_no:
+        example: A12345
         type: string
       attached_document:
         example: document.pdf
         type: string
       car_user_internal_contact_number:
-        example: "1234567890"
+        example: "1122"
         type: string
       car_user_mobile_contact_number:
         example: "0987654321"
         type: string
-      cost_no:
-        example: COST2024001
+      confirmed_request_emp_id:
+        description: Step 4
+        example: "501621"
         type: string
-      driver_emp_dept_sap:
-        example: DPT001
+      cost_center:
+        example: B0002211
         type: string
       driver_emp_id:
         example: "700001"
         type: string
-      driver_emp_name:
-        example: John Doe
-        type: string
       driver_internal_contact_number:
-        example: "1234567890"
+        example: "1221"
         type: string
       driver_mobile_contact_number:
         example: "0987654321"
         type: string
       end_datetime:
         example: "2025-01-01T10:00:00Z"
+        type: string
+      is_admin_choose_driver:
+        example: "0"
         type: string
       is_admin_choose_vehicle:
         example: "0"
@@ -945,6 +963,7 @@ definitions:
         example: "0"
         type: string
       mas_carpool_driver_uid:
+        description: Step 3
         example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
         type: string
       mas_carpool_uid:
@@ -952,7 +971,10 @@ definitions:
         example: 389b0f63-4195-4ece-bf35-0011c2f5f28c
         type: string
       mas_vehicle_uid:
-        example: 389b0f63-4195-4ece-bf35-0011c2f5f28c
+        example: 21d2ea5a-4ad6-4a95-a64d-73b72d43bd55
+        type: string
+      network_no:
+        example: NET12345
         type: string
       number_of_passengers:
         example: 3
@@ -967,7 +989,7 @@ definitions:
         example: Main Office
         type: string
       ref_cost_type_code:
-        example: 101
+        example: 1
         type: integer
       reference_number:
         example: REF123456
@@ -975,11 +997,10 @@ definitions:
       remark:
         example: Urgent request
         type: string
-      requested_vehicle_type_id:
-        example: 1
-        type: integer
-      reserved_time_type:
-        example: "1"
+      request_no:
+        type: string
+      requested_vehicle_type:
+        example: Sedan
         type: string
       start_datetime:
         example: "2025-01-01T08:00:00Z"
@@ -987,27 +1008,21 @@ definitions:
       trip_type:
         example: 1
         type: integer
-      vehicle_user_dept_sap:
-        example: DPT001
-        type: string
       vehicle_user_emp_id:
         description: Step1
         example: "990001"
         type: string
-      vehicle_user_emp_name:
-        example: John Doe
+      wbs_no:
+        example: WBS12345
         type: string
       work_place:
         example: Head Office
         type: string
     type: object
-  models.VmsTrnRequestSendedBack:
+  models.VmsTrnRequestResend:
     properties:
-      sended_back_request_reason:
-        example: Test Send Back
-        type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestTrip:
@@ -1022,10 +1037,7 @@ definitions:
         example: Business Meeting
         type: string
       remark:
-        example: Special request for parking spot
-        type: string
-      reserved_time_type:
-        example: "1"
+        example: Urgent request
         type: string
       start_datetime:
         example: "2025-01-01T08:00:00Z"
@@ -1034,7 +1046,7 @@ definitions:
         example: 1
         type: integer
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       work_place:
         example: Head Office
@@ -1052,7 +1064,7 @@ definitions:
         example: "2025-02-16T08:00:00Z"
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyConfirmed:
@@ -1064,7 +1076,7 @@ definitions:
         example: 1
         type: integer
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyDetail:
@@ -1076,7 +1088,7 @@ definitions:
         example: 1
         type: integer
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestVehicle:
@@ -1085,28 +1097,28 @@ definitions:
         example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestVehicleType:
     properties:
-      requested_vehicle_type_id:
-        example: 1
-        type: integer
+      requested_vehicle_type:
+        example: Sedan
+        type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnRequestVehicleUser:
     properties:
       car_user_internal_contact_number:
-        example: "1234567890"
+        example: "1122"
         type: string
       car_user_mobile_contact_number:
         example: "0987654321"
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_user_emp_id:
         example: "990001"
@@ -1132,7 +1144,7 @@ definitions:
         example: OK
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_images:
         items:
@@ -1142,7 +1154,7 @@ definitions:
   models.VmsTrnReturnedVehicleImages:
     properties:
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
       vehicle_images:
         items:
@@ -1167,7 +1179,7 @@ definitions:
         example: OK
         type: string
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
   models.VmsTrnSatisfactionSurveyAnswers:
@@ -1203,7 +1215,7 @@ definitions:
         example: 5000
         type: integer
       trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
     type: object
 info:
@@ -1431,26 +1443,26 @@ paths:
       summary: Update pickup details for a booking request
       tags:
       - Booking-admin-dept
-  /api/booking-admin-dept/update-sended-back:
+  /api/booking-admin-dept/update-rejected:
     put:
       consumes:
       - application/json
-      description: This endpoint allows users to update the sended back status of
-        an item.
+      description: This endpoint allows users to update the rejected status of an
+        item.
       parameters:
-      - description: VmsTrnRequestSendedBack data
+      - description: VmsTrnRequestRejected data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
+          $ref: '#/definitions/models.VmsTrnRequestRejected'
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update sended back status for an item
+      summary: Update rejected status for an item
       tags:
       - Booking-admin-dept
   /api/booking-admin-dept/update-trip:
@@ -1744,28 +1756,6 @@ paths:
       summary: Update pickup details for a booking request
       tags:
       - Booking-admin
-  /api/booking-admin/update-sended-back:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows users to update the sended back status of
-        an item.
-      parameters:
-      - description: VmsTrnRequestSendedBack data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update sended back status for an item
-      tags:
-      - Booking-admin
   /api/booking-admin/update-trip:
     put:
       consumes:
@@ -1832,7 +1822,7 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-admin
-  /api/booking-approver/menu-requests:
+  /api/booking-confirmer/menu-requests:
     get:
       consumes:
       - application/json
@@ -1845,8 +1835,8 @@ paths:
       - AuthorizationAuth: []
       summary: Summary booking requests by request status code
       tags:
-      - Booking-approver
-  /api/booking-approver/request/{trn_request_uid}:
+      - Booking-confirmer
+  /api/booking-confirmer/request/{trn_request_uid}:
     get:
       consumes:
       - application/json
@@ -1866,8 +1856,8 @@ paths:
       - AuthorizationAuth: []
       summary: Retrieve a specific booking request
       tags:
-      - Booking-approver
-  /api/booking-approver/search-requests:
+      - Booking-confirmer
+  /api/booking-confirmer/search-requests:
     get:
       consumes:
       - application/json
@@ -1916,20 +1906,20 @@ paths:
       - AuthorizationAuth: []
       summary: Search booking requests and get summary counts by request status code
       tags:
-      - Booking-approver
-  /api/booking-approver/update-approved:
+      - Booking-confirmer
+  /api/booking-confirmer/update-approved:
     put:
       consumes:
       - application/json
       description: This endpoint allows users to update the sended back status of
         an item.
       parameters:
-      - description: VmsTrnRequestApproved data
+      - description: VmsTrnRequestConfirmed data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestApproved'
+          $ref: '#/definitions/models.VmsTrnRequestConfirmed'
       produces:
       - application/json
       responses: {}
@@ -1938,8 +1928,8 @@ paths:
       - AuthorizationAuth: []
       summary: Update sended back status for an item
       tags:
-      - Booking-approver
-  /api/booking-approver/update-canceled:
+      - Booking-confirmer
+  /api/booking-confirmer/update-canceled:
     put:
       consumes:
       - application/json
@@ -1959,20 +1949,20 @@ paths:
       - AuthorizationAuth: []
       summary: Update cancel status for an item
       tags:
-      - Booking-approver
-  /api/booking-approver/update-sended-back:
+      - Booking-confirmer
+  /api/booking-confirmer/update-rejected:
     put:
       consumes:
       - application/json
       description: This endpoint allows users to update the sended back status of
         an item.
       parameters:
-      - description: VmsTrnRequestSendedBack data
+      - description: VmsTrnRequestRejected data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
+          $ref: '#/definitions/models.VmsTrnRequestRejected'
       produces:
       - application/json
       responses: {}
@@ -1981,7 +1971,7 @@ paths:
       - AuthorizationAuth: []
       summary: Update sended back status for an item
       tags:
-      - Booking-approver
+      - Booking-confirmer
   /api/booking-driver/menu-requests:
     get:
       consumes:
@@ -2121,26 +2111,26 @@ paths:
       summary: Update cancel status for an item
       tags:
       - Booking-final
-  /api/booking-final/update-sended-back:
+  /api/booking-final/update-rejected:
     put:
       consumes:
       - application/json
-      description: This endpoint allows users to update the sended back status of
-        an item.
+      description: This endpoint allows users to update the rejected status of an
+        item.
       parameters:
-      - description: VmsTrnRequestSendedBack data
+      - description: VmsTrnRequestRejected data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
+          $ref: '#/definitions/models.VmsTrnRequestRejected'
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update sended back status for an item
+      summary: Update rejected status for an item
       tags:
       - Booking-final
   /api/booking-user/create-request:
@@ -2249,28 +2239,6 @@ paths:
       summary: Search booking requests and get summary counts by request status code
       tags:
       - Booking-user
-  /api/booking-user/update-approver:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the approver user
-        of their booking request.
-      parameters:
-      - description: VmsTrnRequestApprover data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestApprover'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update approver for a booking request
-      tags:
-      - Booking-user
   /api/booking-user/update-canceled:
     put:
       consumes:
@@ -2290,6 +2258,28 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Update cancel status for an item
+      tags:
+      - Booking-user
+  /api/booking-user/update-confirmer:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows a booking user to update the confirmer user
+        of their booking request.
+      parameters:
+      - description: VmsTrnRequestConfirmer data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnRequestConfirmer'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update confirmer for a booking request
       tags:
       - Booking-user
   /api/booking-user/update-cost:
@@ -2358,26 +2348,25 @@ paths:
       summary: Update pickup details for a booking request
       tags:
       - Booking-user
-  /api/booking-user/update-sended-back:
+  /api/booking-user/update-resend:
     put:
       consumes:
       - application/json
-      description: This endpoint allows users to update the sended back status of
-        an item.
+      description: This endpoint allows users re-send reqeust.
       parameters:
-      - description: VmsTrnRequestSendedBack data
+      - description: VmsTrnRequestResend data
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
+          $ref: '#/definitions/models.VmsTrnRequestResend'
       produces:
       - application/json
       responses: {}
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Update sended back status for an item
+      summary: re-send reqeust
       tags:
       - Booking-user
   /api/booking-user/update-trip:
@@ -3015,11 +3004,77 @@ paths:
       summary: Set active status for a carpool driver
       tags:
       - Carpool-management
-  /api/carpool-management/mas-department:
+  /api/carpool-management/driver-timeline/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get driver timeline by date range
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: driver_name,driver_nickname,driver_dept_sap_short_name_work to
+          search
+        in: query
+        name: search
+        type: string
+      - description: 'work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type
+          (comma-separated, e.g., ''1,2'')'
+        in: query
+        name: work_type
+        type: string
+      - description: Filter by driver status code (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_driver_status_code
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get driver timeline
+      tags:
+      - Carpool-management
+  /api/carpool-management/mas-department/{carpool_type}:
     get:
       consumes:
       - application/json
       description: This endpoint allows a user to Pea Department.
+      parameters:
+      - description: CarpoolType (trn_request_uid)
+        in: path
+        name: carpool_type
+        required: true
+        type: string
+      - description: Search by DeptSap Code or DetpSap Name
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses: {}
@@ -3275,6 +3330,48 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Set active status for a carpool vehicle
+      tags:
+      - Carpool-management
+  /api/carpool-management/vehicle-timeline/{mas_carpool_uid}:
+    get:
+      consumes:
+      - application/json
+      description: Get Carpool vehicle timeline by date range
+      parameters:
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: path
+        name: mas_carpool_uid
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Filter by Car type
+        in: query
+        name: vehicel_car_type_detail
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: Filter by vehicle status code (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_vehicle_status_code
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get Carpool vehicle timeline
       tags:
       - Carpool-management
   /api/driver-license-approver/license-annual/{trn_request_annual_driver_uid}:
@@ -3663,6 +3760,32 @@ paths:
       summary: Retrieve a specific driver license annual record
       tags:
       - Driver-license-user
+  /api/driver-license-user/resend-license-annual/{trn_request_annual_driver_uid}:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows resending a driver license annual record.
+      parameters:
+      - description: trnRequestAnnualDriverUID (trn_request_annual_driver_uid)
+        in: path
+        name: trn_request_annual_driver_uid
+        required: true
+        type: string
+      - description: VmsDriverLicenseAnnualRequest data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsDriverLicenseAnnualRequest'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Resend driver license annual record
+      tags:
+      - Driver-license-user
   /api/driver-license-user/update-license-annual-canceled:
     put:
       consumes:
@@ -3748,6 +3871,26 @@ paths:
       summary: Retrieve a specific driver
       tags:
       - Drivers-management
+  /api/driver-management/import-driver:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows importing driver data from a CSV file.
+      parameters:
+      - description: CSV file containing driver data
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Import driver data from CSV
+      tags:
+      - Drivers-management
   /api/driver-management/replacement-drivers:
     get:
       consumes:
@@ -3826,6 +3969,57 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Get drivers by name with pagination
+      tags:
+      - Drivers-management
+  /api/driver-management/timeline:
+    get:
+      consumes:
+      - application/json
+      description: Get driver timeline by date range
+      parameters:
+      - description: driver_name,driver_nickname,driver_dept_sap_short_name_work to
+          search
+        in: query
+        name: search
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: 'work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type
+          (comma-separated, e.g., ''1,2'')'
+        in: query
+        name: work_type
+        type: string
+      - description: Filter by driver status code (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_driver_status_code
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+        in: query
+        name: is_active
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get driver timeline
       tags:
       - Drivers-management
   /api/driver-management/update-driver-contract:
@@ -4002,6 +4196,43 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Update driver resign status
+      tags:
+      - Drivers-management
+  /api/driver-management/work-report:
+    post:
+      consumes:
+      - application/json
+      description: Get driver work report by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of driver mas_driver_uid
+        in: body
+        name: mas_driver_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get driver work report
       tags:
       - Drivers-management
   /api/driver/{mas_driver_uid}:
@@ -4319,6 +4550,67 @@ paths:
       summary: Retrieve the Department Tree
       tags:
       - MAS
+  /api/mas/driver-departments:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Driver Departments.
+      parameters:
+      - description: Search by DeptSap Code or DetpSap Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Driver Departments
+      tags:
+      - MAS
+  /api/mas/driver-vendors:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Driver Vendors.
+      parameters:
+      - description: Search by Vendor Code or Vendor Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Driver Vendors
+      tags:
+      - MAS
+  /api/mas/holidays:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Holidays.
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Holidays
+      tags:
+      - MAS
   /api/mas/satisfaction_survey_questions:
     get:
       consumes:
@@ -4339,6 +4631,11 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve Admin Approval Users.
       parameters:
+      - description: TrnReuestUID
+        in: query
+        name: trn_request_uid
+        required: true
+        type: string
       - description: Search by Employee ID or Full Name
         in: query
         name: search
@@ -4352,11 +4649,11 @@ paths:
       summary: Retrieve the Admin Approval Users
       tags:
       - MAS
-  /api/mas/user-approval-users:
+  /api/mas/user-approval-license-users:
     get:
       consumes:
       - application/json
-      description: This endpoint allows a user to retrieve Approval Users.
+      description: This endpoint allows a user to retrieve Approval License Users.
       parameters:
       - description: Search by Employee ID or Full Name
         in: query
@@ -4368,7 +4665,45 @@ paths:
       security:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
-      summary: Retrieve the Approval Users
+      summary: Retrieve the Approval License Users
+      tags:
+      - MAS
+  /api/mas/user-confirmer-license-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Confirmer License Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Confirmer License Users
+      tags:
+      - MAS
+  /api/mas/user-confirmer-users:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to retrieve Confirmer Users.
+      parameters:
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve the Confirmer Users
       tags:
       - MAS
   /api/mas/user-driver-users:
@@ -4396,6 +4731,11 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve Final Approval User.
       parameters:
+      - description: TrnReuestUID
+        in: query
+        name: trn_request_uid
+        required: true
+        type: string
       - description: Search by Employee ID or Full Name
         in: query
         name: search
@@ -4415,13 +4755,14 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve ReceivedKey Users.
       parameters:
-      - description: Search by Employee ID or Full Name
-        in: query
-        name: search
-        type: string
       - description: TrnReuestUID
         in: query
         name: trn_request_uid
+        required: true
+        type: string
+      - description: Search by Employee ID or Full Name
+        in: query
+        name: search
         type: string
       produces:
       - application/json
@@ -5387,6 +5728,20 @@ paths:
       summary: Retrieve a specific cost type
       tags:
       - REF
+  /api/ref/driver-certificate-type:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all driver certificate types.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all driver certificate types
+      tags:
+      - REF
   /api/ref/driver-license-type:
     get:
       consumes:
@@ -5413,6 +5768,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve all payment type codes
+      tags:
+      - REF
+  /api/ref/driver-status:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all driver statuses.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all driver statuses
       tags:
       - REF
   /api/ref/fuel-type:
@@ -7020,6 +7389,28 @@ paths:
       summary: Update vehicle inspect for a booking request
       tags:
       - Vehicle-inspection-admin
+  /api/vehicle-inspection-admin/update-rejected:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows to update the booking request status to "Sended
+        Back"
+      parameters:
+      - description: VmsTrnRequestRejected data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnRequestRejected'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update booking request to "Sended Back" status
+      tags:
+      - Vehicle-inspection-admin
   /api/vehicle-inspection-admin/update-returned-vehicle:
     put:
       consumes:
@@ -7060,28 +7451,6 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Update vehicle return for a booking request
-      tags:
-      - Vehicle-inspection-admin
-  /api/vehicle-inspection-admin/update-sended-back:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows to update the booking request status to "Sended
-        Back"
-      parameters:
-      - description: VmsTrnRequestSendedBack data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestSendedBack'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update booking request to "Sended Back" status
       tags:
       - Vehicle-inspection-admin
   /api/vehicle-inspection-admin/update-travel-detail/{trn_trip_detail_uid}:
@@ -7131,6 +7500,80 @@ paths:
       summary: Retrieve details of a specific trip detail
       tags:
       - Vehicle-inspection-admin
+  /api/vehicle-management/report-add-fuel:
+    post:
+      consumes:
+      - application/json
+      description: Get vehicle report add fuel by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of vehicle mas_vehicle_uid
+        in: body
+        name: mas_vehicle_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle report add fuel detail
+      tags:
+      - Vehicle-management
+  /api/vehicle-management/report-trip-detail:
+    post:
+      consumes:
+      - application/json
+      description: Get vehicle report trip by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Show all vehicles (1 for true, 0 for false)
+        in: query
+        name: show_all
+        type: string
+      - description: Array of vehicle mas_vehicle_uid
+        in: body
+        name: mas_vehicle_uid
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle report trip detail
+      tags:
+      - Vehicle-management
   /api/vehicle-management/search:
     get:
       consumes:
@@ -7184,6 +7627,47 @@ paths:
       summary: Get vehicles by license plate, brand, or model with pagination
       tags:
       - Vehicle-management
+  /api/vehicle-management/timeline:
+    get:
+      consumes:
+      - application/json
+      description: Get vehicle timeline by date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Filter by vehicle owner department SAP
+        in: query
+        name: vehicle_owner_dept_sap
+        type: string
+      - description: Filter by Car type
+        in: query
+        name: vehicel_car_type_detail
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get vehicle timeline
+      tags:
+      - Vehicle-management
   /api/vehicle-management/update-vehicle-is-active:
     put:
       consumes:
@@ -7226,6 +7710,20 @@ paths:
       summary: Retrieve details of a specific vehicle
       tags:
       - Vehicle
+  /api/vehicle/car-types-by-detail:
+    get:
+      consumes:
+      - application/json
+      description: Fetches details of car types including their names and descriptions
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get car type details
+      tags:
+      - Vehicle
   /api/vehicle/departments:
     get:
       consumes:
@@ -7264,6 +7762,10 @@ paths:
         in: query
         name: category_code
         type: string
+      - description: 'Filter by Trip Type Code (0: Round Trip, 1: Overnight)'
+        in: query
+        name: ref_trip_type_code
+        type: integer
       - description: 'Page number (default: 1)'
         in: query
         name: page

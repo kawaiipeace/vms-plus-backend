@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,7 @@ func (h *RefHandler) ListRequestStatus(c *gin.Context) {
 	var lists []models.VmsRefRequestStatus
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -45,7 +46,7 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 	var lists []models.VmsRefCostType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	for i := range lists {
@@ -84,7 +85,7 @@ func (h *RefHandler) GetCostType(c *gin.Context) {
 	var costType models.VmsRefCostType
 	if err := config.DB.
 		First(&costType, "ref_cost_type_code = ?", code).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Cost type not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cost type not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	if costType.RefCostTypeCode == "1" {
@@ -151,7 +152,7 @@ func (h *RefHandler) ListVehicleImgSide(c *gin.Context) {
 	var lists []models.VmsRefVehicleImgSide
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -170,7 +171,7 @@ func (h *RefHandler) ListPaymentTypeCode(c *gin.Context) {
 	var lists []models.VmsRefPaymentType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -189,7 +190,7 @@ func (h *RefHandler) ListDriverOtherUse(c *gin.Context) {
 	var lists []models.VmsRefOtherUse
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -208,7 +209,26 @@ func (h *RefHandler) ListDriverLicenseType(c *gin.Context) {
 	var lists []models.VmsRefDriverLicenseType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListDriverCertificateType godoc
+// @Summary Retrieve all driver certificate types
+// @Description This endpoint retrieves all driver certificate types.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/driver-certificate-type [get]
+func (h *RefHandler) ListDriverCertificateType(c *gin.Context) {
+	var lists []models.VmsRefDriverCertificateType
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -227,7 +247,7 @@ func (h *RefHandler) ListCarpoolChooseCar(c *gin.Context) {
 	var lists []models.VmsRefCarpoolChooseCar
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -246,7 +266,7 @@ func (h *RefHandler) ListCarpoolChooseDriver(c *gin.Context) {
 	var lists []models.VmsRefCarpoolChooseDriver
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -265,7 +285,7 @@ func (h *RefHandler) ListVehicleKeyType(c *gin.Context) {
 	var lists []models.VmsRefVehicleKeyType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
@@ -284,7 +304,26 @@ func (h *RefHandler) ListLeaveTimeType(c *gin.Context) {
 	var lists []models.VmsRefLeaveTimeType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListDriverStatus godoc
+// @Summary Retrieve all driver statuses
+// @Description This endpoint retrieves all driver statuses.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/driver-status [get]
+func (h *RefHandler) ListDriverStatus(c *gin.Context) {
+	var lists []models.VmsRefDriverStatus
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, lists)
