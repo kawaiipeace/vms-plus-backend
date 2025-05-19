@@ -104,13 +104,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		First(&license).Error
 
 	if err == nil {
-		if license.RefRequestAnnualDriverStatusCode == "30" {
-			driver.LicenseStatusCode = "30"
-		} else if license.RefRequestAnnualDriverStatusCode == "90" {
-			driver.LicenseStatusCode = "90"
-		} else {
-			driver.LicenseStatusCode = "20"
-		}
+		driver.LicenseStatusCode = license.RefRequestAnnualDriverStatusCode
 		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
 	} else {
 		driver.LicenseStatusCode = "00"
