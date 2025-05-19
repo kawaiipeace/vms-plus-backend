@@ -83,15 +83,9 @@ func (h *BookingConfirmerHandler) MenuRequests(c *gin.Context) {
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
-<<<<<<<< HEAD:handlers/booking_approver_handler.go
-// @Router /api/booking-approver/search-requests [get]
-func (h *BookingApproverHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
-========
 // @Router /api/booking-confirmer/search-requests [get]
 func (h *BookingConfirmerHandler) SearchRequests(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
->>>>>>>> origin/dev:handlers/booking_confirmer_handler.go
 	if c.IsAborted() {
 		return
 	}
