@@ -12,17 +12,19 @@ import (
 type LogHandler struct {
 }
 
-func GetRoleOfCreater(refRequestStatusCode string) string {
-	switch refRequestStatusCode {
-	case "20":
-		return "ผู้สร้างคำขอ"
-	case "21":
-	case "30":
+func GetRoleOfCreater(role string) string {
+	switch role {
+	case "vehicle-user":
+		return "ผู้ใช้ยานพาหนะ"
+	case "level1-approval":
 		return "ผู้อนุมัติต้นสังกัด"
-	case "40":
+	case "admin-approval":
+	case "admin-dept-approval":
 		return "ผู้ดูแลยานพาหนะ"
-	case "90":
-		return "ผู้สร้างคำขอ"
+	case "final-approval":
+		return "ผู้อนุมัติขั้นสุดท้าย"
+	case "driver":
+		return "คนขับรถ"
 	default:
 		return ""
 	}
@@ -48,12 +50,11 @@ func (h *LogHandler) GetLogRequest(c *gin.Context) {
 
 	offset := (page - 1) * limit
 	var total int64
-	config.DB.Model(&models.LogRequest{}).Where("trn_request_uid = ?", trnRequestUID).Count(&total)
+	config.DB.Model(&models.LogRequest{}).Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUID, "0").Count(&total)
 
-	if err := config.DB.Preload("CreatedByEmp").
-		Preload("Status").
-		Where("trn_request_uid = ?", trnRequestUID).
-		Order("created_at desc").
+	if err := config.DB.
+		Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUID, "0").
+		Order("log_request_action_datetime").
 		Limit(limit).
 		Offset(offset).
 		Find(&logRequests).Error; err != nil {
@@ -62,7 +63,7 @@ func (h *LogHandler) GetLogRequest(c *gin.Context) {
 	}
 
 	for i := range logRequests {
-		logRequests[i].RoleOfCreater = GetRoleOfCreater(logRequests[i].Status.RefRequestStatusCode)
+		logRequests[i].RoleOfCreater = GetRoleOfCreater(logRequests[i].ActionByRole)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

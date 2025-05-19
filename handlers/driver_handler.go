@@ -6,6 +6,7 @@ import (
 	"strings"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
@@ -66,7 +67,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 	if err := query.
 		Preload("DriverStatus").
 		Find(&drivers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range drivers {
@@ -140,7 +141,7 @@ func (h *DriverHandler) GetDriversOtherDept(c *gin.Context) {
 		Preload("DriverStatus").
 		Find(&drivers)
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -200,7 +201,7 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 	masDriverUID := c.Param("mas_driver_uid")
 	parsedID, err := uuid.Parse(masDriverUID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid MasDriverUID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid MasDriverUID", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	var driver models.VmsMasDriver
@@ -211,7 +212,7 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 		Preload("DriverLicense.DriverLicenseType").
 		Preload("DriverStatus").
 		First(&driver, "mas_driver_uid = ?", parsedID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 	driver.Age = driver.CalculateAgeInYearsMonths()

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"vms_plus_be/config"
+	"vms_plus_be/messages"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -68,14 +69,14 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 	// Parse the uploaded file
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required", "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
 	// Open the file
 	src, err := file.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	defer src.Close()
@@ -103,7 +104,7 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 		ContentType: file.Header.Get("Content-Type"),
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file", "details": err.Error(), "bucket_name": bucketName})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file", "details": err.Error(), "bucket_name": bucketName, "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -146,7 +147,7 @@ func (h *UploadHandler) ViewFile(c *gin.Context) {
 	// Get the object from MinIO
 	object, err := minioClient.GetObject(context.Background(), bucketName, fileName, minio.GetObjectOptions{})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -157,7 +158,7 @@ func (h *UploadHandler) ViewFile(c *gin.Context) {
 	// Serve the object content as a response
 	_, err = io.Copy(c.Writer, object)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file content"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file content", "message": messages.ErrInternalServer.Error()})
 	}
 }
 
@@ -175,7 +176,7 @@ func (h *UploadHandler) ListFiles(c *gin.Context) {
 	// Iterate through the objects in the bucket
 	for object := range objectCh {
 		if object.Err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list files", "details": object.Err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list files", "details": object.Err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}
 		files = append(files, map[string]interface{}{
@@ -222,7 +223,8 @@ func DevUploadFile(c *gin.Context) {
 	err := os.MkdirAll(uploadDir, os.ModePerm)
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "Unable to create upload directory",
+			"error":   "Unable to create upload directory",
+			"message": messages.ErrInternalServer.Error(),
 		})
 		return
 	}

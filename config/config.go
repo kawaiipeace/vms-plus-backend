@@ -13,6 +13,7 @@ import (
 
 // DB instance
 var DB *gorm.DB
+var DBu *gorm.DB
 
 type ContextKey string
 
@@ -27,6 +28,7 @@ type Config struct {
 	Port                int
 	LogLevel            string
 	Dsn_DB              string
+	Dsn_DBu             string
 	ApiKey              string
 	JWTSecret           string
 	JwtAccessTokenTime  int
@@ -45,6 +47,8 @@ type Config struct {
 	MinIoSecretKey      string
 	DevSaveFilePath     string
 	DevSaveFileUrl      string
+	UserHubEndPoint     string
+	UserHubSecretKey    string
 }
 
 // AppConfig is a globally accessible configuration variable
@@ -67,6 +71,7 @@ func InitConfig() {
 		Port:                getEnvAsInt("PORT", 28080),
 		LogLevel:            os.Getenv("LOG_LEVEL"),
 		Dsn_DB:              os.Getenv("DSN_DB"),
+		Dsn_DBu:             os.Getenv("DSN_DB_USER"),
 		ApiKey:              os.Getenv("API_KEY"),
 		JWTSecret:           os.Getenv("JWT_SECRET"),
 		JwtAccessTokenTime:  60,   // Default: 60 minutes
@@ -83,6 +88,8 @@ func InitConfig() {
 		MinIoSecretKey:      os.Getenv("MINIO_SECRET_KEY"),
 		DevSaveFilePath:     os.Getenv("DEV_SAVE_FILE_PATH"),
 		DevSaveFileUrl:      os.Getenv("DEV_SAVE_FILE_URL"),
+		UserHubEndPoint:     os.Getenv("USER_HUB_END_POINT"),
+		UserHubSecretKey:    os.Getenv("USER_HUB_SECRET_KEY"),
 	}
 	fmt.Printf("load AppConfig: %s %d\n", AppConfig.AppName, AppConfig.Port)
 }
@@ -98,9 +105,11 @@ func InitDB() {
 	var err error
 	DB, err = gorm.Open(postgres.Open(AppConfig.Dsn_DB), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to connect to database vms_plus:", err)
 	}
 
-	log.Println("Database connected")
-
+	DBu, err = gorm.Open(postgres.Open(AppConfig.Dsn_DB), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database user:", err)
+	}
 }

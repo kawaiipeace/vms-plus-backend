@@ -29,17 +29,17 @@ type VmsMasCarpoolRequest struct {
 	CarpoolContactPlace      string                        `gorm:"column:carpool_contact_place" json:"carpool_contact_place" example:"city"`
 	CarpoolDeptSap           string                        `gorm:"column:carpool_dept_sap"  json:"carpool_dept_sap" example:"10001"`
 	CarpoolContactNumber     string                        `gorm:"column:carpool_contact_number" json:"carpool_contact_number" example:"111"`
-	CarpoolMainBusinessArea  string                        `gorm:"column:carpool_main_business_area" json:"carpool_main_business_area" example:"0000"`
+	CarpoolMainBusinessArea  string                        `gorm:"column:carpool_main_business_area" json:"-"`
 	Remark                   string                        `gorm:"column:remark" json:"remark" example:"remark"`
 	RefCarpoolChooseCarID    int                           `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
 	RefCarpoolChooseDriverID int                           `gorm:"column:ref_carpool_choose_driver_id" json:"ref_carpool_choose_driver_id" example:"1"`
-	CarpoolType              string                        `gorm:"column:carpool_type" json:"-"`
+	CarpoolType              string                        `gorm:"column:carpool_type" json:"carpool_type" example:"1"`
 	CarpoolAuthorizedDepts   []VmsMasCarpoolAuthorizedDept `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_authorized_depts"`
 	IsHaveDriverForCarpool   string                        `gorm:"column:is_have_driver_for_carpool" json:"-"`
-	IsMustPassStatus30       string                        `gorm:"column:is_must_pass_status_30" json:"-"`
-	IsMustPassStatus40       string                        `gorm:"column:is_must_pass_status_40" json:"-"`
-	IsMustPassStatus50       string                        `gorm:"column:is_must_pass_status_50" json:"-"`
-	IsActive                 string                        `gorm:"column:is_active" json:"-"`
+	IsMustPassStatus30       string                        `gorm:"column:is_must_pass_status_30" json:"is_must_pass_status_30" example:"0"`
+	IsMustPassStatus40       string                        `gorm:"column:is_must_pass_status_40" json:"is_must_pass_status_40" example:"0"`
+	IsMustPassStatus50       string                        `gorm:"column:is_must_pass_status_50" json:"is_must_pass_status_50" example:"0"`
+	IsActive                 string                        `gorm:"column:is_active" json:"is_active"`
 	CreatedAt                time.Time                     `gorm:"column:created_at;autoCreateTime" json:"-"`
 	UpdatedAt                time.Time                     `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy                string                        `gorm:"column:created_by" json:"-"`
@@ -64,28 +64,28 @@ func (VmsMasCarpoolActive) TableName() string {
 
 // VmsMasCarpoolResponse
 type VmsMasCarpoolResponse struct {
-	MasCarpoolUID            string                    `gorm:"column:mas_carpool_uid;primaryKey" json:"mas_carpool_uid"`
-	CarpoolName              string                    `gorm:"column:carpool_name" json:"carpool_name" example:"carpool_name"`
-	CarpoolContactPlace      string                    `gorm:"column:carpool_contact_place" json:"carpool_contact_place" example:"city"`
-	CarpoolDeptSap           string                    `gorm:"column:carpool_dept_sap"`
-	CarpoolContactNumber     string                    `gorm:"column:carpool_contact_number" json:"carpool_contact_number" example:"111"`
-	CarpoolMainBusinessArea  string                    `gorm:"column:carpool_main_business_area" json:"carpool_main_business_area" example:"0000"`
-	Remark                   string                    `gorm:"column:remark" json:"remark" example:"remark"`
-	RefCarpoolChooseCarID    int                       `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
-	RefCarpoolChooseDriverID int                       `gorm:"column:ref_carpool_choose_driver_id" json:"ref_carpool_choose_driver_id" example:"1"`
-	CarpoolType              string                    `gorm:"column:carpool_type" json:"-"`
-	IsHaveDriverForCarpool   string                    `gorm:"column:is_have_driver_for_carpool" json:"-"`
-	IsMustPassStatus30       string                    `gorm:"column:is_must_pass_status_30" json:"-"`
-	IsMustPassStatus40       string                    `gorm:"column:is_must_pass_status_40" json:"-"`
-	IsMustPassStatus50       string                    `gorm:"column:is_must_pass_status_50" json:"-"`
-	IsActive                 string                    `gorm:"column:is_active" json:"is_active"`
-	CarpoolChooseDriver      VmsRefCarpoolChooseDriver `gorm:"foreignKey:RefCarpoolChooseDriverID;references:RefCarpoolChooseDriverID" json:"carpool_choose_driver"`
-	CarpoolChooseCar         VmsRefCarpoolChooseCar    `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"carpool_choose_car"`
-
-	CarpoolAdmins    []VmsMasCarpoolAdmin    `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_admins"`
-	CarpoolApprovers []VmsMasCarpoolApprover `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_approvers"`
-	CarpoolVehicles  []VmsMasCarpoolVehicle  `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_vehicles"`
-	CarpoolDrivers   []VmsMasCarpoolDriver   `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_drivers"`
+	MasCarpoolUID            string                                `gorm:"column:mas_carpool_uid;primaryKey" json:"mas_carpool_uid"`
+	CarpoolName              string                                `gorm:"column:carpool_name" json:"carpool_name" example:"carpool_name"`
+	CarpoolContactPlace      string                                `gorm:"column:carpool_contact_place" json:"carpool_contact_place" example:"city"`
+	CarpoolDeptSap           string                                `gorm:"column:carpool_dept_sap"`
+	CarpoolContactNumber     string                                `gorm:"column:carpool_contact_number" json:"carpool_contact_number" example:"111"`
+	CarpoolMainBusinessArea  string                                `gorm:"column:carpool_main_business_area" json:"carpool_main_business_area" example:"0000"`
+	Remark                   string                                `gorm:"column:remark" json:"remark" example:"remark"`
+	RefCarpoolChooseCarID    int                                   `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
+	RefCarpoolChooseDriverID int                                   `gorm:"column:ref_carpool_choose_driver_id" json:"ref_carpool_choose_driver_id" example:"1"`
+	CarpoolType              string                                `gorm:"column:carpool_type" json:"-"`
+	IsHaveDriverForCarpool   string                                `gorm:"column:is_have_driver_for_carpool" json:"-"`
+	IsMustPassStatus30       string                                `gorm:"column:is_must_pass_status_30" json:"is_must_pass_status_30" example:"0"`
+	IsMustPassStatus40       string                                `gorm:"column:is_must_pass_status_40" json:"is_must_pass_status_40" example:"0"`
+	IsMustPassStatus50       string                                `gorm:"column:is_must_pass_status_50" json:"is_must_pass_status_50" example:"0"`
+	IsActive                 string                                `gorm:"column:is_active" json:"is_active"`
+	CarpoolChooseDriver      VmsRefCarpoolChooseDriver             `gorm:"foreignKey:RefCarpoolChooseDriverID;references:RefCarpoolChooseDriverID" json:"carpool_choose_driver"`
+	CarpoolChooseCar         VmsRefCarpoolChooseCar                `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"carpool_choose_car"`
+	CarpoolAuthorizedDepts   []VmsMasCarpoolAuthorizedDeptResponse `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_authorized_depts"`
+	CarpoolAdmins            []VmsMasCarpoolAdmin                  `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_admins"`
+	CarpoolApprovers         []VmsMasCarpoolApprover               `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_approvers"`
+	CarpoolVehicles          []VmsMasCarpoolVehicle                `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_vehicles"`
+	CarpoolDrivers           []VmsMasCarpoolDriver                 `gorm:"foreignKey:MasCarpoolUID;references:MasCarpoolUID" json:"carpool_drivers"`
 
 	IsCarpoolReady        bool `gorm:"column:is_carpool_ready" json:"is_carpool_ready"`
 	IsCarpoolChooseDriver bool `gorm:"column:is_carpool_choose_driver" json:"is_carpool_choose_driver"`
@@ -228,6 +228,10 @@ type VmsMasCarpoolVehicle struct {
 	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy            string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
+
+	StartDate               time.Time `gorm:"column:start_date" json:"-"`
+	EndDate                 time.Time `gorm:"column:end_date" json:"-"`
+	MasVehicleDepartmentUID string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
 }
 
 func (VmsMasCarpoolVehicle) TableName() string {
@@ -315,5 +319,19 @@ type VmsMasCarpoolAuthorizedDept struct {
 }
 
 func (VmsMasCarpoolAuthorizedDept) TableName() string {
+	return "vms_mas_carpool_authorized_dept"
+}
+
+type VmsMasCarpoolAuthorizedDeptResponse struct {
+	MasCarpoolAuthorizedDeptUID string           `gorm:"column:mas_carpool_authorized_dept_uid;primaryKey" json:"-"`
+	MasCarpoolUID               string           `gorm:"column:mas_carpool_uid" json:"-"`
+	DeptSap                     string           `gorm:"column:dept_sap" json:"dept_sap" example:"10001"`
+	CreatedAt                   time.Time        `gorm:"column:created_at;autoCreateTime" json:"-"`
+	CreatedBy                   string           `gorm:"column:created_by" json:"-"`
+	IsDeleted                   string           `gorm:"column:is_deleted" json:"-"`
+	MasDepartment               VmsMasDepartment `gorm:"foreignKey:DeptSap;references:DeptSAP" json:"mas_department"`
+}
+
+func (VmsMasCarpoolAuthorizedDeptResponse) TableName() string {
 	return "vms_mas_carpool_authorized_dept"
 }

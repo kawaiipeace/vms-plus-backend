@@ -4,7 +4,7 @@ import "time"
 
 //VmsTrnReceivedVehicle
 type VmsTrnReceivedVehicle struct {
-	TrnRequestUID         string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"8bd09808-61fa-42fd-8a03-bf961b5678cd"`
+	TrnRequestUID         string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	PickupDatetime        time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
 	MileStart             int       `gorm:"column:mile_start" json:"mile_start" example:"10000"`
 	FuelStart             int       `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
@@ -14,8 +14,8 @@ type VmsTrnReceivedVehicle struct {
 	ReceivedVehicleEmpID        string                 `gorm:"column:received_vehicle_emp_id" json:"-"`
 	ReceivedVehicleEmpName      string                 `gorm:"column:received_vehicle_emp_name" json:"-"`
 	ReceivedVehicleDeptSAP      string                 `gorm:"column:received_vehicle_dept_sap" json:"-"`
-	ReceivedVehicleDeptSAPShort string                 `gorm:"column:received_vehicle_dept_sap_short" json:"-"`
-	ReceivedVehicleDeptSAPFull  string                 `gorm:"column:received_vehicle_dept_sap_full" json:"-"`
+	ReceivedVehicleDeptSAPShort string                 `gorm:"column:received_vehicle_dept_name_short" json:"-"`
+	ReceivedVehicleDeptSAPFull  string                 `gorm:"column:received_vehicle_dept_name_full" json:"-"`
 	RefRequestStatusCode        string                 `gorm:"column:ref_request_status_code" json:"-"`
 	UpdatedAt                   time.Time              `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                   string                 `gorm:"column:updated_by" json:"-"`
@@ -27,10 +27,15 @@ func (VmsTrnReceivedVehicle) TableName() string {
 
 // VehicleImageReceived
 type VehicleImageReceived struct {
-	TrnVehicleImgReceivedUID string `gorm:"column:trn_vehicle_img_received_uid;primaryKey" json:"-"`
-	TrnRequestUID            string `gorm:"column:trn_request_uid;type:uuid;" json:"-"`
-	RefVehicleImgSideCode    int    `gorm:"column:ref_vehicle_img_side_code" json:"ref_vehicle_img_side_code" example:"1"`
-	VehicleImgFile           string `gorm:"column:vehicle_img_file" json:"vehicle_img_file" example:"http://vms.pea.co.th/side_image.jpg"`
+	TrnVehicleImgReceivedUID string    `gorm:"column:trn_vehicle_img_received_uid;primaryKey" json:"-"`
+	TrnRequestUID            string    `gorm:"column:trn_request_uid;" json:"-"`
+	RefVehicleImgSideCode    int       `gorm:"column:ref_vehicle_img_side_code" json:"ref_vehicle_img_side_code" example:"1"`
+	VehicleImgFile           string    `gorm:"column:vehicle_img_file" json:"vehicle_img_file" example:"http://vms.pea.co.th/side_image.jpg"`
+	CreatedAt                time.Time `gorm:"column:created_at" json:"-"`
+	CreatedBy                string    `gorm:"column:created_by" json:"-"`
+	UpdatedAt                time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy                string    `gorm:"column:updated_by" json:"-"`
+	IsDeleted                string    `gorm:"column:is_deleted" json:"-"`
 }
 
 func (VehicleImageReceived) TableName() string {

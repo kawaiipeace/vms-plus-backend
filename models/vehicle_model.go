@@ -6,15 +6,18 @@ import (
 )
 
 type VmsMasVehicleList struct {
-	MasVehicleUID       string `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	VehicleLicensePlate string `gorm:"column:vehicle_license_plate;uniqueIndex" json:"vehicle_license_plate"`
-	VehicleBrandName    string `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
-	VehicleModelName    string `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	CarType             string `gorm:"column:car_type" json:"car_type"`
-	VehicleOwnerDeptSAP string `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
-	VehicleImg          string `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
-	Seat                int    `gorm:"column:Seat" json:"seat"`
-	IsAdminChooseDriver bool   `json:"is_admin_choose_driver"`
+	MasVehicleUID                    string `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleBrandName                 string `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
+	CarType                          string `gorm:"column:car_type" json:"car_type"`
+	VehicleOwnerDeptSAP              string `gorm:"column:dept_short" json:"vehicle_owner_dept_sap"`
+	VehicleImg                       string `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
+	VehicleColor                     string `gorm:"column:vehicle_color" json:"vehicle_color"`
+	Seat                             int    `gorm:"column:Seat" json:"seat"`
+	IsAdminChooseDriver              bool   `json:"is_admin_choose_driver"`
 }
 
 func (VmsMasVehicleList) TableName() string {
@@ -60,6 +63,14 @@ type VmsRefVehicleType struct {
 
 func (VmsRefVehicleType) TableName() string {
 	return "vms_ref_vehicle_type"
+}
+
+type VmsRefCarTypeDetail struct {
+	CarTypeDetail string `gorm:"column:car_type_detail" json:"car_type_detail"`
+}
+
+func (VmsRefCarTypeDetail) TableName() string {
+	return "vms_mas_vehicle"
 }
 
 func AssignTypeImageFromIndex(vehicle_types []VmsRefVehicleType) []VmsRefVehicleType {
