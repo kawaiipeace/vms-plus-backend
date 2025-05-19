@@ -529,6 +529,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.
 	request.ApprovedRequestDeptSAPShort = empUser.DeptSAPShort
 	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
 	request.ApprovedRequestDatetime = time.Now()
+	request.AnnualYYYY = driverLicenseAnnual.AnnualYYYY
 
 	request.RequestIssueDate = request.ApprovedRequestDatetime
 	annualYearEnd := time.Date(driverLicenseAnnual.AnnualYYYY-543, 12, 31, 23, 59, 59, 0, time.UTC)
