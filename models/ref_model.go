@@ -86,6 +86,17 @@ func (VmsRefDriverLicenseType) TableName() string {
 	return "vms_ref_driver_license_type"
 }
 
+//VmsRefDriverCertificateType
+type VmsRefDriverCertificateType struct {
+	RefDriverCertificateTypeCode int    `gorm:"column:ref_driver_certificate_type_code;primaryKey" json:"ref_driver_certificate_type_code"`
+	RefDriverCertificateTypeName string `gorm:"column:ref_driver_certificate_type_name" json:"ref_driver_certificate_type_name"`
+	RefDriverCertificateTypeDesc string `gorm:"column:ref_driver_certificate_type_desc" json:"ref_driver_certificate_type_desc"`
+}
+
+func (VmsRefDriverCertificateType) TableName() string {
+	return "vms_ref_driver_certificate_type"
+}
+
 // VmsRefCarpoolChooseCar
 type VmsRefCarpoolChooseCar struct {
 	RefCarpoolChooseCarID int    `gorm:"primaryKey;column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id"`
@@ -128,9 +139,8 @@ func (VmsRefLeaveTimeType) TableName() string {
 
 // VmsRefVehicleStatus
 type VmsRefVehicleStatus struct {
-	RefVehicleStatusCode      int    `gorm:"primaryKey;column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
-	RefVehicleStatusName      string `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
-	RefVehicleStatusShortName string `gorm:"column:ref_vehicle_status_short_name" json:"ref_vehicle_status_short_name"`
+	RefVehicleStatusCode int    `gorm:"primaryKey;column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
+	RefVehicleStatusName string `gorm:"column:ref_vehicle_status_short_name" json:"ref_vehicle_status_name"`
 }
 
 func (VmsRefVehicleStatus) TableName() string {
@@ -145,4 +155,14 @@ type VmsRefTripType struct {
 
 func (VmsRefTripType) TableName() string {
 	return "vms_ref_trip_type"
+}
+
+// VmsRefDriverStatus
+type VmsRefDriverStatus struct {
+	RefDriverStatusCode int    `gorm:"column:ref_driver_status_code;primaryKey" json:"ref_driver_status_code"`
+	RefDriverStatusDesc string `gorm:"column:ref_driver_status_desc" json:"ref_driver_status_desc"`
+}
+
+func (VmsRefDriverStatus) TableName() string {
+	return "vms_ref_driver_status"
 }

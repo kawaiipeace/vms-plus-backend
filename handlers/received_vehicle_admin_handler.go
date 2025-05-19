@@ -8,10 +8,12 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
+	"vms_plus_be/messages"
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type ReceivedVehicleAdminHandler struct {
@@ -22,6 +24,16 @@ var StatusNameMapReceivedVehicleAdmin = map[string]string{
 	"51":  "รับยานพาหนะ",
 	"60":  "เดินทาง",
 	"60e": "รับยานพาหนะล่าช้า",
+}
+
+func (h *ReceivedVehicleAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if user.EmpID == "" {
+		return query
+	}
+	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
+}
+func (h *ReceivedVehicleAdminHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('51') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -43,7 +55,7 @@ var StatusNameMapReceivedVehicleAdmin = map[string]string{
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/received-vehicle-admin/search-requests [get]
 func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -58,21 +70,24 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-	query := config.DB.Table("public.vms_trn_request AS req").
-		Select("req.*, status.ref_request_status_desc,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid::text = req.mas_vehicle_uid) parking_place ").
-		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
+			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
+
+	query = query.Where("req.is_deleted = ?", "0")
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
 		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.start_datetime >= ?", startDate)
+		query = query.Where("req.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.start_datetime <= ?", endDate)
+		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
@@ -152,7 +167,8 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the summary query
-	summaryQuery := config.DB.Table("public.vms_trn_request AS req").
+	summaryQuery := h.SetQueryRole(user, config.DB)
+	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
@@ -181,6 +197,10 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 			RefRequestStatusName: name,
 			Count:                count,
 		})
+	}
+	if requests == nil {
+		requests = []models.VmsTrnRequestAdminList{}
+		summary = []models.VmsTrnRequestSummary{}
 	}
 	// Sort the summary by RefRequestStatusCode
 	sort.Slice(summary, func(i, j int) bool {
@@ -242,12 +262,14 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 		models.VmsTrnRequestRequestNo
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
 
@@ -264,30 +286,41 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 	for i := range request.VehicleImages {
 		request.VehicleImages[i].TrnVehicleImgReceivedUID = uuid.New().String()
 		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID
+		request.VehicleImages[i].CreatedAt = time.Now()
+		request.VehicleImages[i].CreatedBy = user.EmpID
+		request.VehicleImages[i].UpdatedAt = time.Now()
+		request.VehicleImages[i].UpdatedBy = user.EmpID
+		request.VehicleImages[i].IsDeleted = "0"
 	}
 
 	if len(request.VehicleImages) > 0 {
 		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReceived{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
 			return
 		}
 	}
 
 	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
 	if err := config.DB.
 		Preload("VehicleImages").
 		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	funcs.CreateTrnLog(result.TrnRequestUID,
-		result.RefRequestStatusCode,
-		"นำยานพาหนะออกไปปฎิบัติงานแล้ว รอส่งคืนยานพาหนะ",
-		user.EmpID)
+	if result.RefRequestStatusCode == request.RefRequestStatusCode {
+		funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
+			result.RefRequestStatusCode,
+			"นำยานพาหนะออกไปปฎิบัติงานแล้ว",
+			user.EmpID,
+			"admin-approval",
+			"",
+		)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -302,20 +335,22 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/received-vehicle/travel-card-admin/{trn_request_uid} [get]
 func (h *ReceivedVehicleAdminHandler) GetTravelCard(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
 	id := c.Param("trn_request_uid")
 	trnRequestUID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
 	var request models.VmsTrnTravelCard
-	if err := config.DB.
+
+	query := h.SetQueryRole(user, config.DB)
+	if err := query.
 		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.VehicleUserImageURL = config.DefaultAvatarURL
