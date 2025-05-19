@@ -108,7 +108,7 @@ func InitDB() {
 		log.Fatal("Failed to connect to database vms_plus:", err)
 	}
 
-	DBu, err = gorm.Open(postgres.Open(AppConfig.Dsn_DBu), &gorm.Config{})
+	DBu, err = gorm.Open(postgres.Open(AppConfig.Dsn_DB), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database user:", err)
 	}

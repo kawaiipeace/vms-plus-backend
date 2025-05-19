@@ -692,7 +692,7 @@ func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 
 	var fuels []models.VmsTrnAddFuel
 	queryTrip = queryTrip.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType")
@@ -727,7 +727,7 @@ func (h *VehicleInUseDriverHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 	}
 	var fuel models.VmsTrnAddFuel
 	if err := config.DB.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType").

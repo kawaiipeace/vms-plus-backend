@@ -26,6 +26,10 @@ import (
 // @in header
 // @name Authorization
 
+// @securityDefinitions.apikey ServiceKey
+// @in header
+// @name ServiceKey
+
 func main() {
 	config.InitConfig()
 	config.InitDB()
@@ -398,6 +402,10 @@ func main() {
 	//LogHandler
 	logHandler := handlers.LogHandler{}
 	router.GET("/api/log/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), logHandler.GetLogRequest)
+
+	//ServiceHandler
+	serviceHandler := handlers.ServiceHandler{}
+	router.GET("/api/service/request-booking/:request_no", serviceHandler.GetRequestBooking)
 
 	//UploadHandler
 	uploadHandler := handlers.UploadHandler{}

@@ -7416,6 +7416,36 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/service/request-booking/{request_no}": {
+            "get": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Get request booking",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Get request booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RequestNo",
+                        "name": "request_no",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/upload": {
             "post": {
                 "security": [
@@ -10629,6 +10659,14 @@ const docTemplate = `{
         "models.VmsDriverLicenseAnnualApproved": {
             "type": "object",
             "properties": {
+                "annual_yyyy": {
+                    "type": "integer",
+                    "example": 2568
+                },
+                "driver_license_expire_date": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
+                },
                 "trn_request_annual_driver_uid": {
                     "type": "string",
                     "example": "095fbfbf-378e-4507-b15f-e53ac60370e7"
@@ -11650,10 +11688,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-02-16T09:30:00Z"
                 },
-                "received_key_end_datetime": {
-                    "type": "string",
-                    "example": "2025-02-16T09:30:00Z"
-                },
                 "received_key_place": {
                     "type": "string",
                     "example": "Main Office"
@@ -12219,6 +12253,11 @@ const docTemplate = `{
             "description": "Bearer [your Authorization]",
             "type": "apiKey",
             "name": "Authorization",
+            "in": "header"
+        },
+        "ServiceKey": {
+            "type": "apiKey",
+            "name": "ServiceKey",
             "in": "header"
         }
     }

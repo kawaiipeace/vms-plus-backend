@@ -190,7 +190,7 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		})
 	}
 	if requests == nil {
-		requests = []models.VmsTrnRequestAdminList{}
+		requests = []models.VmsTrnRequestVehicleInUseList{}
 		summary = []models.VmsTrnRequestSummary{}
 	}
 	// Sort the summary by RefRequestStatusCode
@@ -703,7 +703,7 @@ func (h *VehicleInUseAdminHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 
 	var fuels []models.VmsTrnAddFuel
 	queryTrip = queryTrip.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType")
@@ -738,7 +738,7 @@ func (h *VehicleInUseAdminHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 	}
 	var fuel models.VmsTrnAddFuel
 	if err := config.DB.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType").

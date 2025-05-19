@@ -95,6 +95,12 @@ definitions:
     type: object
   models.VmsDriverLicenseAnnualApproved:
     properties:
+      annual_yyyy:
+        example: 2568
+        type: integer
+      driver_license_expire_date:
+        example: "2025-12-31T00:00:00Z"
+        type: string
       trn_request_annual_driver_uid:
         example: 095fbfbf-378e-4507-b15f-e53ac60370e7
         type: string
@@ -814,9 +820,6 @@ definitions:
     type: object
   models.VmsTrnRequestApprovedWithRecieiveKey:
     properties:
-      received_key_end_datetime:
-        example: "2025-02-16T09:30:00Z"
-        type: string
       received_key_end_datetime:
         example: "2025-02-16T09:30:00Z"
         type: string
@@ -5883,6 +5886,25 @@ paths:
       summary: Retrieve all vehicle key types
       tags:
       - REF
+  /api/service/request-booking/{request_no}:
+    get:
+      consumes:
+      - application/json
+      description: Get request booking
+      parameters:
+      - description: RequestNo
+        in: path
+        name: request_no
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ServiceKey: []
+      summary: Get request booking
+      tags:
+      - Service
   /api/upload:
     post:
       consumes:
@@ -7811,5 +7833,9 @@ securityDefinitions:
     description: Bearer [your Authorization]
     in: header
     name: Authorization
+    type: apiKey
+  ServiceKey:
+    in: header
+    name: ServiceKey
     type: apiKey
 swagger: "2.0"

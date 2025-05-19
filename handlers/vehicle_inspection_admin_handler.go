@@ -687,7 +687,7 @@ func (h *VehicleInspectionAdminHandler) GetVehicleAddFuelDetails(c *gin.Context)
 
 	var fuels []models.VmsTrnAddFuel
 	queryTrip = queryTrip.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType")
@@ -722,7 +722,7 @@ func (h *VehicleInspectionAdminHandler) GetVehicleAddFuelDetail(c *gin.Context) 
 	}
 	var fuel models.VmsTrnAddFuel
 	if err := config.DB.
-		Preload("RefContType").
+		Preload("RefCostType").
 		Preload("RefOilStationBrand").
 		Preload("RefFuelType").
 		Preload("RefPaymentType").
