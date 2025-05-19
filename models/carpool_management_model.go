@@ -228,6 +228,10 @@ type VmsMasCarpoolVehicle struct {
 	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy            string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
+
+	StartDate               time.Time `gorm:"column:start_date" json:"-"`
+	EndDate                 time.Time `gorm:"column:end_date" json:"-"`
+	MasVehicleDepartmentUID string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
 }
 
 func (VmsMasCarpoolVehicle) TableName() string {

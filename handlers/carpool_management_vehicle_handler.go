@@ -168,16 +168,18 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 			return
 		}
 	}
+	//check vehicle is exist
 	for i := range requests {
-		var existingVehicle models.VmsMasCarpoolVehicle
-		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, "0").First(&existingVehicle).Error; err == nil {
-			c.JSON(http.StatusConflict, gin.H{
-				"error":   fmt.Sprintf("Vehicle with MasCarpoolUID %s and MasVehicleUID %s already exists", requests[i].MasCarpoolUID, requests[i].MasVehicleUID),
-				"message": "ข้อมูลรถที่ระบุมีอยู่ในระบบแล้ว",
+		var existingVehicle models.VmsMasVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, "0").First(&existingVehicle).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("Vehicle with MasVehicleUID %s not found", requests[i].MasVehicleUID),
+				"message": "ข้อมูลรถที่ระบุไม่มีอยู่ในระบบ",
 			})
 			return
 		}
-
+	}
+	for i := range requests {
 		requests[i].MasCarpoolVehicleUID = uuid.New().String()
 		requests[i].CreatedAt = time.Now()
 		requests[i].CreatedBy = user.EmpID
@@ -185,6 +187,12 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		requests[i].UpdatedBy = user.EmpID
 		requests[i].IsDeleted = "0"
 		requests[i].IsActive = "1"
+		requests[i].StartDate = time.Now()
+		requests[i].EndDate = time.Now().AddDate(10, 0, 0)
+		var masVehicleDepartmentUID string
+		if err := config.DB.Table("vms_mas_vehicle_department").Where("mas_vehicle_uid = ?", requests[i].MasVehicleUID).Pluck("mas_vehicle_department_uid", &masVehicleDepartmentUID).Error; err == nil {
+			requests[i].MasVehicleDepartmentUID = masVehicleDepartmentUID
+		}
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -450,7 +458,8 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 			v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id,
 			d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
 			md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
-			v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage`).
+			v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
+			v.vehicle_brand_name,v.vehicle_model_name`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").

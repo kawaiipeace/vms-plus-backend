@@ -50,6 +50,8 @@ type VehicleTimeLine struct {
 	VehicleLicensePlateProvinceFull  string              `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 	VehicleDeptName                  string              `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 	CarpoolName                      string              `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleBrandName                 string              `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string              `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
 	VehicleCarTypeDetail             string              `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	VehicleMileage                   string              `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
 	VehicleTrnRequests               []VehicleTrnRequest `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle_t_requests"`

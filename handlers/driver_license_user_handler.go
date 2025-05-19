@@ -36,8 +36,11 @@ func (h *DriverLicenseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm
 }
 
 var StatusDriverAnnualLicense = map[string]string{
-	"10": "ไม่มีใบอนุญาต",
+	"00": "ไม่มี",
+	"10": "รออนุมัติ",
+	"11": "ตีกลับ",
 	"20": "รออนุมัติ",
+	"21": "ตีกลับ",
 	"30": "อนุมัติแล้ว",
 	"31": "มีผลปีถัดไป",
 	"80": "หมดอายุ",
@@ -91,13 +94,14 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		IsNoExpiryDate: false,
 	}
 
-	//Check VmsDriverLicenseAnnualList
+	annualYear := time.Now().Year() + 543
+
 	var license models.VmsDriverLicenseAnnualResponse
-	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ?", user.EmpID, "0").
-		Preload("DriverLicenseType").
+	query := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear)
+	err := query.Preload("DriverLicenseType").
 		Preload("DriverCertificateType").
-		Order("created_request_datetime DESC").
-		Find(&license).Error
+		Order("ref_request_annual_driver_status_code").
+		First(&license).Error
 
 	if err == nil {
 		if license.RefRequestAnnualDriverStatusCode == "30" {
@@ -109,7 +113,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		}
 		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
 	} else {
-		driver.LicenseStatusCode = "10"
+		driver.LicenseStatusCode = "00"
 		driver.LicenseStatus = StatusDriverAnnualLicense[driver.LicenseStatusCode]
 	}
 	driver.TrnRequestAnnualDriverUID = license.TrnRequestAnnualDriverUID
@@ -125,14 +129,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 	}
 
 	// Calculate the end of the year for driver.AnnualYYYY - 543
-	annualYearEnd := time.Date(driver.AnnualYYYY-543, 12, 31, 23, 59, 59, 0, time.UTC)
-
-	// Set DriverLicenseEndDate to the minimum of license.DriverLicenseExpireDate and annualYearEnd
-	if license.DriverLicenseExpireDate.Before(annualYearEnd) {
-		driver.DriverLicense.DriverLicenseEndDate = license.DriverLicenseExpireDate
-	} else {
-		driver.DriverLicense.DriverLicenseEndDate = annualYearEnd
-	}
+	driver.DriverLicense.DriverLicenseEndDate = license.RequestExpireDate
 	driver.DriverCertificate = models.VmsDriverLicenseCardCertificate{
 		EmpID:                       license.CreatedRequestEmpID,
 		DriverCertificateNo:         license.DriverCertificateNo,
@@ -144,6 +141,19 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		DriverCertificateType:       license.DriverCertificateType,
 	}
 	driver.ProgressRequestHistory = GetProgressRequestHistory(license)
+
+	//next annual
+	var licenseNext models.VmsDriverLicenseAnnualResponse
+	queryNext := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear+1)
+	errNext := queryNext.Order("ref_request_annual_driver_status_code").
+		First(&licenseNext).Error
+
+	if errNext == nil {
+		driver.NextAnnualYYYY = licenseNext.AnnualYYYY
+		driver.NextLicenseStatusCode = licenseNext.RefRequestAnnualDriverStatusCode
+		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]
+	}
+
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 

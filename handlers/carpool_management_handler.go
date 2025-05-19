@@ -525,13 +525,14 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 	}
 
 	if len(admins) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "No admin carpools found",
 			"pagination": gin.H{
 				"page":       page,
 				"limit":      limit,
 				"totalPages": (total + int64(limit) - 1) / int64(limit),
 			},
+			"admins": []models.VmsMasCarpoolAdminList{},
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
@@ -944,13 +945,14 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 	}
 
 	if len(approvers) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "No approver carpools found",
 			"pagination": gin.H{
 				"page":       page,
 				"limit":      limit,
 				"totalPages": (total + int64(limit) - 1) / int64(limit),
 			},
+			"approvers": []models.VmsMasCarpoolApproverList{},
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{

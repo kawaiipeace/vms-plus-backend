@@ -198,6 +198,10 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 			Count:                count,
 		})
 	}
+	if requests == nil {
+		requests = []models.VmsTrnRequestAdminList{}
+		summary = []models.VmsTrnRequestSummary{}
+	}
 	// Sort the summary by RefRequestStatusCode
 	sort.Slice(summary, func(i, j int) bool {
 		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode

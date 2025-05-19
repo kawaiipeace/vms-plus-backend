@@ -620,17 +620,11 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 		Order("created_request_datetime DESC").
 		Find(&license).Error
 	if err == nil {
-		if license.RefRequestAnnualDriverStatusCode == "30" {
-			user.LicenseStatusCode = "30"
-		} else if license.RefRequestAnnualDriverStatusCode == "90" {
-			user.LicenseStatusCode = "90"
-		} else {
-			user.LicenseStatusCode = "20"
-		}
+		user.LicenseStatusCode = license.RefRequestAnnualDriverStatusCode
 		user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
 	} else {
-		user.LicenseStatusCode = "10"
-		user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
+		user.LicenseStatusCode = "00"
+		user.LicenseStatus = "ไม่มี"
 	}
 
 	c.JSON(http.StatusOK, user)

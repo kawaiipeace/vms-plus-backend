@@ -157,6 +157,17 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		}
 	}
 	for i := range requests {
+		var existingDriver models.VmsMasDriver
+		if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", requests[i].MasDriverUID, "0").First(&existingDriver).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("Driver with MasDriverUID %s not exists", requests[i].MasDriverUID),
+				"message": "ไม่พบข้อมูลของคนขับ",
+			})
+			return
+		}
+	}
+
+	for i := range requests {
 		var existingDriver models.VmsMasCarpoolDriver
 		if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", requests[i].MasDriverUID, "0").First(&existingDriver).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{

@@ -530,6 +530,14 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.
 	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
 	request.ApprovedRequestDatetime = time.Now()
 
+	request.RequestIssueDate = request.ApprovedRequestDatetime
+	annualYearEnd := time.Date(driverLicenseAnnual.AnnualYYYY-543, 12, 31, 23, 59, 59, 0, time.UTC)
+	if driverLicenseAnnual.DriverLicenseExpireDate.Before(annualYearEnd) {
+		request.RequestExpireDate = driverLicenseAnnual.DriverLicenseExpireDate
+	} else {
+		request.RequestExpireDate = annualYearEnd
+	}
+
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return

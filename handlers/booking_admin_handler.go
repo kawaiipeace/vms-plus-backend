@@ -247,6 +247,10 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	sort.Slice(summary, func(i, j int) bool {
 		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
 	})
+	if requests == nil {
+		requests = []models.VmsTrnRequestAdminList{}
+		summary = []models.VmsTrnRequestSummary{}
+	}
 	// Return both the filtered requests and the complete summary
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{

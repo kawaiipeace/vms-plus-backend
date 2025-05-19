@@ -248,7 +248,8 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
 				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
-				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage`).
+				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
+				v.vehicle_brand_name,v.vehicle_model_name`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
@@ -363,7 +364,8 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
 				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
-				v."CarTypeDetail" AS vehicle_car_type_detail, 
+				v."CarTypeDetail" AS vehicle_car_type_detail,
+				v.vehicle_brand_name,v.vehicle_model_name,
 				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_detail`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
@@ -481,6 +483,7 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				v.vehicle_brand_name,v.vehicle_model_name,
 				af.add_fuel_date_time, af.mile, af.tax_invoice_date, af.tax_invoice_no,af.price_per_liter,af.sum_liter,af.sum_price,
 				(select ref_cost_type_name from vms_ref_cost_type where ref_cost_type_code = af.ref_cost_type_code) as cost_type_name,
 				(select ref_oil_station_brand_name_th from vms_ref_oil_station_brand where ref_oil_station_brand_id = af.ref_oil_station_brand_id) as oil_station_brand_name,	

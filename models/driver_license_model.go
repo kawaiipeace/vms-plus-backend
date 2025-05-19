@@ -16,6 +16,9 @@ type VmsDriverLicenseCard struct {
 	DriverLicense             VmsDriverLicenseCardLicense     `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_license"`
 	DriverCertificate         VmsDriverLicenseCardCertificate `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_certificate"`
 	ProgressRequestHistory    []ProgressRequestHistory        `gorm:"-" json:"progress_request_history"`
+	NextAnnualYYYY            int                             `gorm:"column:-" json:"next_annual_yyyy" example:"2569"`
+	NextLicenseStatusCode     string                          `gorm:"column:next_license_status_code" json:"next_license_status_code"`
+	NextLicenseStatus         string                          `gorm:"-" json:"next_license_status"`
 }
 
 func (VmsDriverLicenseCard) TableName() string {
@@ -284,6 +287,10 @@ type VmsDriverLicenseAnnualApproved struct {
 	ApprovedRequestDeptSAPFull       string    `gorm:"column:approved_request_dept_sap_full" json:"-"`
 	RefRequestAnnualDriverStatusCode string    `gorm:"column:ref_request_annual_driver_status_code" json:"-"`
 	ApprovedRequestDatetime          time.Time `gorm:"column:approved_request_datetime" json:"-"`
+	RequestIssueDate                 time.Time `gorm:"column:request_issue_date" json:"-"`
+	RequestExpireDate                time.Time `gorm:"column:request_expire_date" json:"-"`
+	DriverLicenseExpireDate          time.Time `gorm:"column:driver_license_expire_date" json:"driver_license_expire_date" example:"2025-12-31T00:00:00Z"`
+	AnnualYYYY                       int       `gorm:"column:annual_yyyy" json:"annual_yyyy" example:"2568"`
 	UpdatedAt                        time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                        string    `gorm:"column:updated_by" json:"-"`
 }
