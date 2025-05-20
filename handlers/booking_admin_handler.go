@@ -12,6 +12,7 @@ import (
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -428,7 +429,8 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var request, trnRequest models.VmsTrnRequestApprovedWithRecieiveKey
+	var request models.VmsTrnRequestApprovedWithRecieiveKey
+	var trnRequest models.VmsTrnRequestList
 	var result struct {
 		models.VmsTrnRequestApprovedWithRecieiveKey
 		models.VmsTrnRequestRequestNo
@@ -443,6 +445,7 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
+	request.HandoverUID = uuid.New().String()
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
@@ -501,7 +504,9 @@ func (h *BookingAdminHandler) UpdateCanceled(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ? AND is_deleted = ? AND created_request_emp_id = ? AND ref_request_status_code='30'", request.TrnRequestUID, "0", user.EmpID).Error; err != nil {
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryStatusCanUpdate(query)
+	if err := query.First(&trnRequest, "trn_request_uid = ? AND is_deleted = ?  AND ref_request_status_code='30'", request.TrnRequestUID, "0").Error; err != nil {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}

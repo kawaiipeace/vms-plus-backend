@@ -146,6 +146,10 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		driver.NextAnnualYYYY = licenseNext.AnnualYYYY
 		driver.NextLicenseStatusCode = licenseNext.RefRequestAnnualDriverStatusCode
 		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]
+	} else {
+		driver.NextAnnualYYYY = annualYear + 1
+		driver.NextLicenseStatusCode = "00"
+		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]
 	}
 
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
