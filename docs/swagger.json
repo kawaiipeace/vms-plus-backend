@@ -2984,8 +2984,14 @@
                     },
                     {
                         "type": "string",
-                        "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
+                        "description": "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด",
                         "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by dept_sap",
+                        "name": "dept_sap",
                         "in": "query"
                     },
                     {

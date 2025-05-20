@@ -53,7 +53,8 @@ func GetCarpoolName(MasCarpoolUID string) string {
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param search query string false "Search query for carpool_name or emp_name"
-// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
+// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด"
+// @Param dept_sap query string false "Filter by dept_sap"
 // @Param order_by query string false "Order by fields: carpool_name, number_of_drivers, number_of_vehicles"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
@@ -78,11 +79,27 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 	`)
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(carpool_name) ILIKE ? OR UPPER(emp_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(cp.carpool_name) ILIKE ? OR EXISTS (SELECT 1 FROM vms_mas_carpool_admin cpa WHERE cpa.mas_carpool_uid = cp.mas_carpool_uid AND UPPER(cpa.admin_emp_name) ILIKE ?)", "%"+search+"%", "%"+search+"%")
+	}
+	if deptSap := c.Query("dept_sap"); deptSap != "" {
+		deptSapList := strings.Split(deptSap, ",")
+		query = query.Where("EXISTS (SELECT 1 FROM vms_mas_carpool_authorized_dept cad WHERE cad.mas_carpool_uid = cp.mas_carpool_uid AND cad.dept_sap IN (?))", deptSapList)
 	}
 	if isActive := c.Query("is_active"); isActive != "" {
 		isActiveList := strings.Split(isActive, ",")
-		query = query.Where("is_active IN (?)", isActiveList)
+		conditions := []string{}
+		args := []interface{}{}
+
+		for _, status := range isActiveList {
+			if status == "2" {
+				conditions = append(conditions, "((SELECT COUNT(*) FROM vms_mas_carpool_vehicle cpv WHERE is_deleted='0' AND cpv.mas_carpool_uid=cp.mas_carpool_uid) = 0 OR (SELECT COUNT(*) FROM vms_mas_carpool_approver cpa WHERE is_deleted='0' AND cpa.mas_carpool_uid=cp.mas_carpool_uid) = 0)")
+			} else {
+				conditions = append(conditions, "cp.is_active = ?")
+				args = append(args, status)
+			}
+		}
+
+		query = query.Where(strings.Join(conditions, " OR "), args...)
 	}
 	orderBy := c.Query("order_by")
 	orderDir := c.Query("order_dir")
