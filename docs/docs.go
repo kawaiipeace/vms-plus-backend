@@ -3410,6 +3410,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Filter by Car type",
                         "name": "vehicel_car_type_detail",
                         "in": "query"
@@ -10278,6 +10284,12 @@ const docTemplate = `{
                         "name": "end_date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
                     },
                     {
                         "type": "string",
