@@ -616,8 +616,8 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 	}
 	//Check VmsDriverLicenseAnnualList
 	var license models.VmsDriverLicenseAnnualList
-	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ?", user.EmpID, "0").
-		Order("created_request_datetime DESC").
+	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", time.Now().Year()+543).
+		Order("ref_request_annual_driver_status_code").
 		Find(&license).Error
 	if err == nil {
 		user.LicenseStatusCode = license.RefRequestAnnualDriverStatusCode

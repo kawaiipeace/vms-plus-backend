@@ -490,10 +490,11 @@ func (VmsTrnRequestVehicle) TableName() string {
 
 // VmsTrnRequestApprovedWithRecieiveKey
 type VmsTrnRequestApprovedWithRecieiveKey struct {
+	HandoverUID              string    `gorm:"column:handover_uid;primaryKey" json:"-"`
 	TrnRequestUID            string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	ReceivedKeyPlace         string    `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime time.Time `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
-	ReceivedKeyEndDatetime   time.Time `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
+	ReceivedKeyPlace         string    `gorm:"column:appointment_location" json:"received_key_place" example:"Main Office"`
+	ReceivedKeyStartDatetime time.Time `gorm:"column:appointment_start" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime   time.Time `gorm:"column:appointment_end" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
 	UpdatedBy                string    `gorm:"column:updated_by" json:"-"`
 	UpdatedAt                time.Time `gorm:"column:updated_at" json:"-"`
 }
