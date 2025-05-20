@@ -3564,6 +3564,10 @@ paths:
         name: end_date
         required: true
         type: string
+      - description: Search by vehicle license plate, brand, or model
+        in: query
+        name: search
+        type: string
       - description: Filter by Car type
         in: query
         name: vehicel_car_type_detail
@@ -7872,6 +7876,10 @@ paths:
         in: query
         name: end_date
         required: true
+        type: string
+      - description: Search by vehicle license plate, brand, or model
+        in: query
+        name: search
         type: string
       - description: Filter by vehicle owner department SAP
         in: query

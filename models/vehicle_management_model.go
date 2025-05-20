@@ -54,7 +54,7 @@ type VehicleTimeLine struct {
 	VehicleModelName                 string              `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
 	VehicleCarTypeDetail             string              `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	VehicleMileage                   string              `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	VehicleTrnRequests               []VehicleTrnRequest `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle_t_requests"`
+	VehicleTrnRequests               []VehicleTrnRequest `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle_trn_requests"`
 }
 
 type VehicleTrnRequest struct {
@@ -65,6 +65,8 @@ type VehicleTrnRequest struct {
 	ReserveEndDatetime     string             `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName   string             `json:"ref_request_status_name"`
+	RefTripTypeCode        int                `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
+	WorkPlace              string             `gorm:"column:work_place" json:"work_place" example:"Head Office"`
 	VehicleUserEmpID       string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 	VehicleUserEmpName     string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptSAP     string             `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
@@ -79,6 +81,7 @@ type VehicleTrnRequest struct {
 	DriverMobileContact    string             `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
 	MasDriver              VmsMasDriverShort  `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
 	TripDetails            []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
+	TimeLineStatus         string             `gorm:"-" json:"time_line_status"`
 }
 
 func (VehicleTrnRequest) TableName() string {

@@ -143,6 +143,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		First(&licenseNext).Error
 
 	if errNext == nil {
+		driver.NextTrnRequestAnnualDriverUID = licenseNext.TrnRequestAnnualDriverUID
 		driver.NextAnnualYYYY = licenseNext.AnnualYYYY
 		driver.NextLicenseStatusCode = licenseNext.RefRequestAnnualDriverStatusCode
 		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]

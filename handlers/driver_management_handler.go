@@ -869,10 +869,10 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select("d.*").
+		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
 		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_carpool_driver_uid = d.mas_driver_uid 
+		   ON r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
 		   AND r.is_pea_employee_driver = ? 
 		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
 		   OR r.reserve_end_datetime BETWEEN ? AND ? 
@@ -934,11 +934,25 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if drivers[i].DriverTrnRequests[j].RefTripTypeCode == 1 {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
-		"drivers": drivers,
+		"drivers":    drivers,
+		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
 			"page":       pageInt,

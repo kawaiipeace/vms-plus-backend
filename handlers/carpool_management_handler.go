@@ -581,9 +581,8 @@ func (h *CarpoolManagementHandler) GetCarpoolAdmin(c *gin.Context) {
 	var admin models.VmsMasCarpoolAdminList
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("vms_mas_carpool_admin cpa").
-		Select("cpa.*, dept.dept_short admin_dept_sap_short, emp.full_name admin_emp_name").
+		Select("cpa.*, dept.dept_short admin_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.admin_dept_sap").
-		Joins("LEFT JOIN vms_user.mas_employee emp ON emp.emp_id = cpa.admin_emp_no").
 		Where("cpa.mas_carpool_admin_uid = ? AND cpa.is_deleted = ?", masCarpoolAdminUID, "0")
 
 	if err := query.First(&admin).Error; err != nil {
@@ -1003,9 +1002,8 @@ func (h *CarpoolManagementHandler) GetCarpoolApprover(c *gin.Context) {
 
 	var approver models.VmsMasCarpoolApproverList
 	query := config.DB.Table("vms_mas_carpool_approver cpa").
-		Select("cpa.*, dept.dept_short approver_dept_sap_short, emp.full_name approver_emp_name").
+		Select("cpa.*, dept.dept_short approver_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.approver_dept_sap").
-		Joins("LEFT JOIN vms_user.mas_employee emp ON emp.emp_id = cpa.approver_emp_no").
 		Where("cpa.mas_carpool_approver_uid = ? AND cpa.is_deleted = ?", masCarpoolApproverUID, "0")
 
 	if err := query.First(&approver).Error; err != nil {
