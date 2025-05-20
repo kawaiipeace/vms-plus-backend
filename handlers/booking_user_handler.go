@@ -118,6 +118,10 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.IsHaveSubRequest = "0"
 	request.MasVehicleEvUID = ""
 
+	if request.MasCarpoolUID == "" {
+		request.MasCarpoolUID = funcs.DefaultUUID()
+	}
+
 	/*if request.MasVehicleUID != "" {
 		var vehicle models.VmsMasVehicle
 		if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {

@@ -214,6 +214,10 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	trnRequestUID := c.Query("trn_request_uid")
+	if trnRequestUID == "" {
+		h.ListConfirmerLicenseUser(c)
+		return
+	}
 	search := c.Query("search")
 	var result struct {
 		MasCarpoolUID string
@@ -277,6 +281,10 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	trnRequestUID := c.Query("trn_request_uid")
+	if trnRequestUID == "" {
+		h.ListConfirmerLicenseUser(c)
+		return
+	}
 	search := c.Query("search")
 	var result struct {
 		MasCarpoolUID string

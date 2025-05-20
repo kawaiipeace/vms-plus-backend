@@ -3097,9 +3097,14 @@ paths:
         in: query
         name: search
         type: string
-      - description: Filter by is_active status (comma-separated, e.g., '1,0')
+      - description: Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน
+          1=เปิด 0=ปิด
         in: query
         name: is_active
+        type: string
+      - description: Filter by dept_sap
+        in: query
+        name: dept_sap
         type: string
       - description: 'Order by fields: carpool_name, number_of_drivers, number_of_vehicles'
         in: query
