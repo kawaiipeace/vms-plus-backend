@@ -74,3 +74,23 @@ func (h *ServiceHandler) GetRequestBooking(c *gin.Context) {
 
 	c.JSON(http.StatusOK, request)
 }
+
+func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
+	h.checkServiceKey(c)
+	if c.IsAborted() {
+		return
+	}
+	requestNo := c.Param("request_no")
+	if requestNo == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "RequestNo is required", "message": messages.ErrBadRequest.Error()})
+		return
+	}
+	var request models.VmsToEEMS
+	if err := config.DB.
+		Where("request_no = ?", requestNo).First(&request).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, request)
+}

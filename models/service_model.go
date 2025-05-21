@@ -133,3 +133,19 @@ type VmsTrnRequesService struct {
 func (VmsTrnRequesService) TableName() string {
 	return "public.vms_trn_request"
 }
+
+// MADE BY PEACE
+type VmsToEEMS struct {
+	TrnRequestUID           string 			`gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
+	RequestNo               string 			`gorm:"column:request_no" json:"request_no"`
+	VehicleLicensePlate     string 			`gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
+	ReserveStartDatetime 	time.Time		`gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   	time.Time  		`gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
+	WorkPlace          		string 			`gorm:"column:work_place" json:"work_place" example:"Head Office"`
+	WorkDescription    		string 			`gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	DocNo              		string 			`gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
+}
+
+func (VmsToEEMS) TableName() string {
+	return "public.vms_trn_request"
+}
