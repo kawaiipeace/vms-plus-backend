@@ -406,6 +406,7 @@ func main() {
 	//ServiceHandler
 	serviceHandler := handlers.ServiceHandler{}
 	router.GET("/api/service/request-booking/:request_no", serviceHandler.GetRequestBooking)
+	router.GET("/api/service/request-to-eems/:request_no", serviceHandler.GetVMSToEEMS)
 
 	//UploadHandler
 	uploadHandler := handlers.UploadHandler{}
