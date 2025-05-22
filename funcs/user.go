@@ -82,6 +82,7 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 	user := &models.AuthenJwtUsr{
 		EmpID:    claims["emp_id"].(string),
 		FullName: claims["full_name"].(string),
+		LoginBy:  claims["login_by"].(string),
 		Roles:    roles,
 	}
 

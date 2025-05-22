@@ -68,8 +68,8 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 		Joins("LEFT JOIN LATERAL (SELECT mas_driver_uid, driver_license_end_date FROM vms_mas_driver_license ORDER BY driver_license_end_date DESC LIMIT 1) dl ON vms_mas_driver.mas_driver_uid = dl.mas_driver_uid").
 		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
 
-	if name := strings.ToUpper(c.Query("name")); name != "" {
-		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	if search := strings.ToUpper(c.Query("search")); search != "" {
+		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {

@@ -67,7 +67,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
-		rt.ref_vehicle_type_name, md.dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
+		rt.ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
 		d.vehicle_get_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
@@ -88,7 +88,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if categoryCode := c.Query("ref_vehicle_category_code"); categoryCode != "" {
-		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
+		query = query.Where("v.ref_vehicle_type_code = ?", categoryCode)
 	}
 
 	if statusCodes := c.Query("ref_vehicle_status_code"); statusCodes != "" {
@@ -249,7 +249,7 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				md.dept_short AS vehicle_owner_dept_short, md.dept_full AS vehicle_owner_dept_full, mc.carpool_name AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
 				v.vehicle_brand_name,v.vehicle_model_name`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").

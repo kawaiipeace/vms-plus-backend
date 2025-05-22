@@ -80,6 +80,7 @@ type VmsMasDepartment struct {
 	DeptShort      string `gorm:"column:dept_short" json:"dept_short"`
 	DeptFull       string `gorm:"column:dept_full" json:"dept_full"`
 	CostCenterCode string `gorm:"column:cost_center_code" json:"cost_center_code"`
+	CostCenterName string `gorm:"column:cost_center_name" json:"cost_center_name"`
 }
 
 func (VmsMasDepartment) TableName() string {
