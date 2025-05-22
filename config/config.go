@@ -74,7 +74,7 @@ func InitConfig() {
 		Dsn_DBu:             os.Getenv("DSN_DB_USER"),
 		ApiKey:              os.Getenv("API_KEY"),
 		JWTSecret:           os.Getenv("JWT_SECRET"),
-		JwtAccessTokenTime:  60,   // Default: 60 minutes
+		JwtAccessTokenTime:  600,  // Default: 60 minutes
 		JwtRefreshTokenTime: 1440, // Default: 1440 minutes
 		OtpExpired:          1,    // Default: 1 minutes
 		KeyCloakClientID:    os.Getenv("KEYCLOAK_CLIENT_ID"),

@@ -425,6 +425,7 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 // @Param mas_carpool_uid path string true "MasCarpoolUID (mas_carpool_uid)"
 // @Param start_date query string true "Start date (YYYY-MM-DD)"
 // @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param search query string false "Search by vehicle license plate, brand, or model"
 // @Param vehicel_car_type_detail query string false "Filter by Car type"
 // @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
 // @Param ref_vehicle_status_code query string false "Filter by vehicle status code (comma-separated, e.g., '1,2')"
@@ -465,7 +466,7 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
 		Joins("INNER JOIN vms_mas_carpool_vehicle cv ON cv.mas_vehicle_uid = v.mas_vehicle_uid AND cv.mas_carpool_uid = ? AND cv.is_deleted = ?", masCarpoolUID, "0").
 		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_vehicle_uid = v.mas_vehicle_uid 
+		   ON r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90'
 		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
 		   OR r.reserve_end_datetime BETWEEN ? AND ? 
 		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
@@ -473,6 +474,9 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 			startDate, endDate, startDate, endDate, startDate, endDate).
 		Where("v.is_deleted= ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
+	if search := c.Query("search"); search != "" {
+		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
 		query = query.Where("d.vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
 	}
@@ -528,11 +532,25 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		}
 
 		for j := range vehicles[i].VehicleTrnRequests {
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 1 {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
-		"vehicles": vehicles,
+		"vehicles":   vehicles,
+		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
 			"page":       pageInt,

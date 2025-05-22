@@ -382,12 +382,14 @@ type DriverTrnRequest struct {
 	ReserveEndDatetime     string             `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName   string             `json:"ref_request_status_name"`
+	RefTripTypeCode        int                `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
 	VehicleUserEmpID       string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 	VehicleUserEmpName     string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptSAP     string             `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
 	VehicleUserDeskPhone   string             `gorm:"column:vehicle_user_desk_phone" json:"car_user_internal_contact_number" example:"1122"`
 	VehicleUserMobilePhone string             `gorm:"column:vehicle_user_mobile_phone" json:"car_user_mobile_contact_number" example:"0987654321"`
 	TripDetails            []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
+	TimeLineStatus         string             `gorm:"-" json:"time_line_status"`
 }
 
 func (DriverTrnRequest) TableName() string {

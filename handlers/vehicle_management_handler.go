@@ -67,7 +67,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
-		rt.ref_vehicle_type_name, md.dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
+		rt.ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
 		d.vehicle_get_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
@@ -88,7 +88,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if categoryCode := c.Query("ref_vehicle_category_code"); categoryCode != "" {
-		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
+		query = query.Where("v.ref_vehicle_type_code = ?", categoryCode)
 	}
 
 	if statusCodes := c.Query("ref_vehicle_status_code"); statusCodes != "" {
@@ -142,7 +142,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if len(vehicles) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "No vehicles found",
 			"pagination": gin.H{
 				"page":       page,
@@ -150,6 +150,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 				"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 				"vehicles":   vehicles,
 			},
+			"vehicles": []models.VmsMasVehicleManagementList{},
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
@@ -215,6 +216,7 @@ func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Param start_date query string true "Start date (YYYY-MM-DD)"
 // @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param search query string false "Search by vehicle license plate, brand, or model"
 // @Param vehicle_owner_dept_sap query string false "Filter by vehicle owner department SAP"
 // @Param vehicel_car_type_detail query string false "Filter by Car type"
 // @Param page query int false "Page number (default: 1)"
@@ -247,13 +249,13 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				md.dept_short AS vehicle_owner_dept_short, md.dept_full AS vehicle_owner_dept_full, mc.carpool_name AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
 				v.vehicle_brand_name,v.vehicle_model_name`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
-		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
@@ -261,6 +263,9 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 			startDate, endDate, startDate, endDate, startDate, endDate).
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
+	if search := c.Query("search"); search != "" {
+		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
 		query = query.Where("d.vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
 	}
@@ -305,9 +310,23 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		}
 
 		for j := range vehicles[i].VehicleTrnRequests {
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 1 {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
+
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
 			"total":      total,
@@ -315,7 +334,8 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 			"limit":      pageSizeInt,
 			"totalPages": (total + int64(pageSizeInt) - 1) / int64(pageSizeInt), // Calculate total pages
 		},
-		"vehicles": vehicles,
+		"last_month": lastMonth,
+		"vehicles":   vehicles,
 	})
 }
 
