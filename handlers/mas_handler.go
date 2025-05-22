@@ -142,7 +142,11 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 	query = query.Limit(100)
 
 	// Execute query
-	if err := query.Preload("AnnualDriver").
+	annual_yyyy := time.Now().Year() + 543
+	if err := query.Preload("AnnualDriver", func(db *gorm.DB) *gorm.DB {
+		return db.Select("annual_yyyy", "driver_license_no", "request_annual_driver_no", "driver_license_expire_date", "request_issue_date", "request_expire_date").
+			Where("is_deleted = ? and annual_yyyy = ? and ref_request_annual_driver_status_code='30'", "0", annual_yyyy)
+	}).
 		Find(&lists).Error; err != nil {
 		c.JSON(http.StatusOK, []interface{}{})
 		return
@@ -151,12 +155,6 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
 		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-		lists[i].AnnualDriver.AnnualYYYY = 2568
-		lists[i].AnnualDriver.DriverLicenseNo = "A123456"
-		lists[i].AnnualDriver.RequestAnnualDriverNo = "B00001"
-		lists[i].AnnualDriver.DriverLicenseExpireDate = time.Now().AddDate(1, 0, 0)
-		lists[i].AnnualDriver.RequestIssueDate = time.Now().AddDate(0, -6, 0)
-		lists[i].AnnualDriver.RequestExpireDate = time.Now().AddDate(0, 6, 0)
 	}
 
 	c.JSON(http.StatusOK, lists)

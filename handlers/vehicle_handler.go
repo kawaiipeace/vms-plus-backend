@@ -85,7 +85,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Apply filters if provided
@@ -96,7 +96,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 		query = query.Where("car_type = ?", carType)
 	}
 	if categoryCode != "" {
-		query = query.Where("ref_vehicle_category_code = ?", categoryCode)
+		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
 	}
 
 	// Count total records

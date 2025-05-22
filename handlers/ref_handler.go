@@ -55,7 +55,7 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 			if err := config.DB.
 				Where("dept_sap = ?", user.DeptSAP).
 				First(&department).Error; err == nil {
-				lists[i].RefCostNo = department.CostCenterCode
+				lists[i].RefCostNo = department.CostCenterCode + "  " + department.CostCenterName
 			} else {
 				lists[i].RefCostNo = ""
 			}
@@ -93,7 +93,7 @@ func (h *RefHandler) GetCostType(c *gin.Context) {
 		if err := config.DB.
 			Where("dept_sap = ?", user.DeptSAP).
 			First(&department).Error; err == nil {
-			costType.RefCostNo = department.CostCenterCode
+			costType.RefCostNo = department.CostCenterCode + "  " + department.CostCenterName
 		} else {
 			costType.RefCostNo = ""
 		}
