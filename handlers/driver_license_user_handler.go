@@ -189,8 +189,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.CreatedRequestDeptSap = empUser.DeptSAP
 	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
 	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
-	request.CreatedRequestMobileNumber = empUser.MobilePhone
-	request.CreatedRequestPhoneNumber = empUser.DeskPhone
+	request.CreatedRequestMobileNumber = empUser.TelMobile
+	request.CreatedRequestPhoneNumber = empUser.TelInternal
 	request.CreatedRequestDatetime = time.Now()
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -199,8 +199,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
-	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
+	request.ConfirmedRequestMobileNumber = confirmUser.TelMobile
+	request.ConfirmedRequestPhoneNumber = confirmUser.TelInternal
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -208,8 +208,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
-	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
+	request.ApprovedRequestMobileNumber = approveUser.TelMobile
+	request.ApprovedRequestPhoneNumber = approveUser.TelInternal
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = ""
@@ -288,8 +288,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.CreatedRequestDeptSap = empUser.DeptSAP
 	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
 	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
-	request.CreatedRequestMobileNumber = empUser.MobilePhone
-	request.CreatedRequestPhoneNumber = empUser.DeskPhone
+	request.CreatedRequestMobileNumber = empUser.TelMobile
+	request.CreatedRequestPhoneNumber = empUser.TelInternal
 	request.CreatedRequestDatetime = existsRequest.CreatedRequestDatetime
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -298,8 +298,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
-	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
+	request.ConfirmedRequestMobileNumber = confirmUser.TelMobile
+	request.ConfirmedRequestPhoneNumber = confirmUser.TelInternal
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -307,8 +307,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
-	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
+	request.ApprovedRequestMobileNumber = approveUser.TelMobile
+	request.ApprovedRequestPhoneNumber = approveUser.TelInternal
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = existsRequest.RejectedRequestEmpPosition

@@ -11,6 +11,7 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -821,31 +822,22 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/carpool-management/admin-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := h.SetQueryRoleDept(user, config.DBu)
-
-	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode: "vms",
+		Search:      search,
+		Limit:       100,
 	}
-	query = query.Limit(100)
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-	}
-
 	c.JSON(http.StatusOK, lists)
 }
 
@@ -860,31 +852,22 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/carpool-management/approver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, h.Role)
+	funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
-	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := h.SetQueryRoleDept(user, config.DBu)
-
-	if search != "" {
-		query = query.Where("emp_id = ? OR full_name ILIKE ?", search, "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode: "vms",
+		Search:      search,
+		Limit:       100,
 	}
-	query = query.Limit(100)
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-	}
-
 	c.JSON(http.StatusOK, lists)
 }
 

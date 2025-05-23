@@ -17,9 +17,9 @@ func CreateTrnLog(trnRequestUID, refStatusCode, logRemark, createdBy string) err
 }
 
 func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actionByPersonalID, actionByRole, remark string) error {
-	var user models.MasUser
+	var user models.MasUserEmp
 	if actionByRole == "driver" {
-
+		//user = GetUserEmpInfo(actionByPersonalID)
 	} else {
 		user = GetUserEmpInfo(actionByPersonalID)
 	}
@@ -30,7 +30,7 @@ func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actio
 		LogRequestActionDatetime: time.Now(),
 		ActionByPersonalID:       actionByPersonalID,
 		ActionByRole:             actionByRole,
-		ActionByFullname:         user.FirstName,
+		ActionByFullname:         user.FullName,
 		ActionByPosition:         user.Position,
 		ActionByDepartment:       user.DeptSAP,
 		ActionDetail:             actionDetail,

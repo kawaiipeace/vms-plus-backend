@@ -32,16 +32,6 @@ func (LogRequest) TableName() string {
 	return "public.vms_log_request_action"
 }
 
-type EmpUsr struct {
-	EmpID   string `gorm:"primaryKey;column:emp_id" json:"emp_id"`
-	EmpName string `gorm:"column:full_name" json:"emp_name"`
-	DeptSAP string `gorm:"column:dept_sap" json:"dept_sap"`
-}
-
-func (EmpUsr) TableName() string {
-	return "vms_user.mas_employee"
-}
-
 type RequestStatus struct {
 	RefRequestStatusCode string `gorm:"primaryKey;column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusDesc string `gorm:"column:ref_request_status_desc" json:"ref_request_status_desc"`

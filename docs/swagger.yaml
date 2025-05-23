@@ -560,6 +560,10 @@ definitions:
     type: object
   models.VmsRefCostType:
     properties:
+      cost_center_code:
+        type: string
+      cost_center_name:
+        type: string
       ref_cost_no:
         type: string
       ref_cost_type_code:
@@ -4838,6 +4842,17 @@ paths:
       summary: Retrieve the Vehicle Departments
       tags:
       - MAS
+  /api/notification:
+    get:
+      consumes:
+      - application/json
+      description: Get Notification
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Notification
+      tags:
+      - Notification
   /api/received-key-admin/request/{trn_request_uid}:
     get:
       consumes:
@@ -5912,6 +5927,25 @@ paths:
       security:
       - ServiceKey: []
       summary: Get request booking
+      tags:
+      - Service
+  /api/service/vms-to-eems/{request_no}:
+    get:
+      consumes:
+      - application/json
+      description: Get VMS to EEMS
+      parameters:
+      - description: RequestNo
+        in: path
+        name: request_no
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ServiceKey: []
+      summary: Get VMS to EEMS
       tags:
       - Service
   /api/upload:

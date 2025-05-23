@@ -399,6 +399,10 @@ func main() {
 	router.GET("/api/ref/leave-time-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListLeaveTimeType)
 	router.GET("/api/ref/driver-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverStatus)
 
+	//NotificationHandler
+	notificationHandler := handlers.NotificationHandler{}
+	router.GET("/api/notification", funcs.ApiKeyAuthenMiddleware(), notificationHandler.GetNotification)
+
 	//LogHandler
 	logHandler := handlers.LogHandler{}
 	router.GET("/api/log/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), logHandler.GetLogRequest)

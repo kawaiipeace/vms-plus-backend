@@ -69,3 +69,19 @@ func CalculateAge(date time.Time) string {
 func GetEmpImage(empID string) string {
 	return fmt.Sprintf("https://pictureapi.pea.co.th/MyphotoAPI/api/v1/Main/GetPicImg?EmpCode=%s&Type=2&SType=2", empID)
 }
+
+func GetDuration(createdAt time.Time) string {
+	duration := time.Since(createdAt)
+
+	if duration.Hours() < 24 {
+		if duration.Hours() < 1 {
+			minutes := int(duration.Minutes())
+			return fmt.Sprintf("%d นาทีที่แล้ว", minutes)
+		}
+		hours := int(duration.Hours())
+		return fmt.Sprintf("%d ชั่วโมงที่แล้ว", hours)
+	}
+
+	days := int(duration.Hours() / 24)
+	return fmt.Sprintf("%d วันที่แล้ว", days)
+}

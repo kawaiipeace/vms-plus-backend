@@ -88,8 +88,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.CreatedRequestDeptSAP = createUser.DeptSAP
 	request.CreatedRequestDeptNameShort = createUser.DeptSAPShort
 	request.CreatedRequestDeptNameFull = createUser.DeptSAPFull
-	request.CreatedRequestDeskPhone = createUser.DeskPhone
-	request.CreatedRequestMobilePhone = createUser.MobilePhone
+	request.CreatedRequestDeskPhone = createUser.TelInternal
+	request.CreatedRequestMobilePhone = createUser.TelMobile
 	request.CreatedRequestPosition = createUser.Position
 	request.CreatedRequestDatetime = time.Now()
 
@@ -99,8 +99,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -109,8 +109,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.ConfirmedRequestDeptSAP = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptNameShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptNameFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestDeskPhone = confirmUser.DeskPhone
-	request.ConfirmedRequestMobilePhone = confirmUser.MobilePhone
+	request.ConfirmedRequestDeskPhone = confirmUser.TelInternal
+	request.ConfirmedRequestMobilePhone = confirmUser.TelMobile
 	request.ConfirmedRequestPosition = confirmUser.Position
 
 	request.IsAdminChooseDriver = "0"
@@ -138,8 +138,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		request.DriverEmpDeptSAP = driverUser.DeptSAP
 		request.DriverEmpDeptNameShort = driverUser.DeptSAPShort
 		request.DriverEmpDeptNameShort = driverUser.DeptSAPFull
-		request.DriverEmpDeskPhone = driverUser.DeskPhone
-		request.DriverEmpMobilePhone = driverUser.MobilePhone
+		request.DriverEmpDeskPhone = driverUser.TelInternal
+		request.DriverEmpMobilePhone = driverUser.TelMobile
 		request.DriverEmpPosition = driverUser.Position
 	}
 
@@ -535,8 +535,8 @@ func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()
@@ -825,8 +825,8 @@ func (h *BookingUserHandler) UpdateConfirmer(c *gin.Context) {
 	request.ConfirmedRequestDeptSAP = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptNameShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptNameFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestDeskPhone = confirmUser.DeskPhone
-	request.ConfirmedRequestMobilePhone = confirmUser.MobilePhone
+	request.ConfirmedRequestDeskPhone = confirmUser.TelInternal
+	request.ConfirmedRequestMobilePhone = confirmUser.TelMobile
 	request.ConfirmedRequestPosition = confirmUser.Position
 
 	request.UpdatedAt = time.Now()
@@ -942,8 +942,8 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 

@@ -345,8 +345,8 @@ func (h *BookingFinalHandler) UpdateRejected(c *gin.Context) {
 	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
 	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
 	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
-	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
-	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestDeskPhone = rejectUser.TelInternal
+	request.RejectedRequestMobilePhone = rejectUser.TelMobile
 	request.RejectedRequestPosition = rejectUser.Position
 	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -410,8 +410,8 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	request.ApprovedRequestDeptSAP = empUser.DeptSAP
 	request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
 	request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
-	request.ApprovedRequestDeskPhone = empUser.DeskPhone
-	request.ApprovedRequestMobilePhone = empUser.MobilePhone
+	request.ApprovedRequestDeskPhone = empUser.TelInternal
+	request.ApprovedRequestMobilePhone = empUser.TelMobile
 	request.ApprovedRequestPosition = empUser.Position
 	request.ApprovedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -510,8 +510,8 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 

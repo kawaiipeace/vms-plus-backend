@@ -458,13 +458,13 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
 		Joins("INNER JOIN vms_mas_carpool_driver cd ON cd.mas_driver_uid = d.mas_driver_uid AND cd.mas_carpool_uid = ? AND cd.is_deleted = ?", masCarpoolUID, "0").
-		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
+		Where(`exists (select 1 from vms_trn_request r 
+		   where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
 		   AND r.is_pea_employee_driver = ? 
 		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
 		   OR r.reserve_end_datetime BETWEEN ? AND ? 
 		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
+		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
 			"0", startDate, endDate, startDate, endDate, startDate, endDate)
 
 	name := strings.ToUpper(c.Query("name"))

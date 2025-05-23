@@ -871,13 +871,13 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		Table("public.vms_mas_driver AS d").
 		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
-		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
-		   AND r.is_pea_employee_driver = ? 
-		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
-		   OR r.reserve_end_datetime BETWEEN ? AND ? 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
+		Where(`exists (select 1 from vms_trn_request r 
+			where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
+			AND r.is_pea_employee_driver = ? 
+			AND (r.reserve_start_datetime BETWEEN ? AND ? 
+			OR r.reserve_end_datetime BETWEEN ? AND ? 
+			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
+			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
 			"0", startDate, endDate, startDate, endDate, startDate, endDate)
 
 	name := strings.ToUpper(c.Query("name"))
@@ -926,7 +926,7 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		// Preload the driver requests for each driver
 		if err := config.DB.Table("vms_trn_request").
 			Preload("TripDetails").
-			Where("mas_carpool_driver_uid = ? AND is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
+			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
 			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
