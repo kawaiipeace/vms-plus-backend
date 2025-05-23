@@ -2,25 +2,6 @@ package models
 
 import "time"
 
-// AuthenUserEmp
-type MasUser struct {
-	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
-	FirstName    string `gorm:"column:first_name" json:"first_name"`
-	LastName     string `gorm:"column:last_name" json:"last_name"`
-	FullName     string `gorm:"column:full_name" json:"full_name"`
-	Position     string `gorm:"column:posi_text" json:"posi_text"`
-	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
-	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
-	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
-	MobilePhone  string `gorm:"column:mobile_number" json:"mobile_number"`
-	DeskPhone    string `gorm:"column:internal_number" json:"internal_number"`
-	BusinessArea string `gorm:"column:business_area" json:"business_area"`
-}
-
-func (MasUser) TableName() string {
-	return "mas_employee"
-}
-
 //MasUserEmp
 type MasUserEmp struct {
 	EmpID        string `gorm:"column:emp_id" json:"emp_id"`

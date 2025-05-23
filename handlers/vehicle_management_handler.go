@@ -255,11 +255,11 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
-		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
+		Where("exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
-			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))",
 			startDate, endDate, startDate, endDate, startDate, endDate).
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 

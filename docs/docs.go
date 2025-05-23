@@ -5745,6 +5745,22 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/notification": {
+            "get": {
+                "description": "Get Notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get Notification",
+                "responses": {}
+            }
+        },
         "/api/received-key-admin/request/{trn_request_uid}": {
             "get": {
                 "security": [
@@ -7446,6 +7462,36 @@ const docTemplate = `{
                     "Service"
                 ],
                 "summary": "Get request booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RequestNo",
+                        "name": "request_no",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/service/vms-to-eems/{request_no}": {
+            "get": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Get VMS to EEMS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Get VMS to EEMS",
                 "parameters": [
                     {
                         "type": "string",
@@ -11358,6 +11404,12 @@ const docTemplate = `{
         "models.VmsRefCostType": {
             "type": "object",
             "properties": {
+                "cost_center_code": {
+                    "type": "string"
+                },
+                "cost_center_name": {
+                    "type": "string"
+                },
                 "ref_cost_no": {
                     "type": "string"
                 },
