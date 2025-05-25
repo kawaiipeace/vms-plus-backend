@@ -151,7 +151,8 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			return &empUser
 		}
 		empUser = user
-		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"}
+		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
+			"license-approval", "driver", "admin-super"}
 		empUser.LoginBy = "keycloak"
 		if roles == "*" {
 			return &empUser
@@ -188,7 +189,8 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		Roles:         jwt.Roles,
 		LoginBy:       jwt.LoginBy,
 	}
-
+	empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
+		"license-approval", "driver", "admin-super"}
 	if roles == "*" {
 		return &empUser
 	}

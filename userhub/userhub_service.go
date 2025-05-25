@@ -149,9 +149,10 @@ func GetUserList(request ServiceListUserRequest) ([]models.MasUserEmp, error) {
 		BureauDeptSap: request.BureauDeptSap,
 		BusinessArea:  request.BusinessArea,
 		LevelCodes:    request.LevelCodes,
+		Role:          request.Role,
 		Limit:         request.Limit,
 	}
-
+	fmt.Println("userhub list user", reqBody)
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return []models.MasUserEmp{}, err

@@ -106,6 +106,7 @@ type VmsTrnRequestRequest struct {
 	WbsNo           string `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string `gorm:"column:network_no" json:"network_no" example:"NET12345"`
 	ActivityNo      string `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
+	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	//Step 2
 	MasCarpoolUID        string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
@@ -196,6 +197,7 @@ type VmsTrnRequestResponse struct {
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
 	ActivityNo      string         `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
+	PmOrderNo       string         `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
 	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`

@@ -53,6 +53,9 @@ func (h *BookingUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gor
 func (h *BookingUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('21','31','41') and is_deleted = '0'")
 }
+func (h *BookingUserHandler) SetQueryStatusCanCancel(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('20','21','31','41') and is_deleted = '0'")
+}
 
 // CreateRequest godoc
 // @Summary Create a new booking request
@@ -927,7 +930,7 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	}
 
 	query := h.SetQueryRole(user, config.DB)
-	query = h.SetQueryStatusCanUpdate(query)
+	query = h.SetQueryStatusCanCancel(query)
 	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return

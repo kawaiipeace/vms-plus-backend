@@ -66,6 +66,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 
 	if err := query.
 		Preload("DriverStatus").
+		Preload("DriverVendor").
 		Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
@@ -211,6 +212,7 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 		}).
 		Preload("DriverLicense.DriverLicenseType").
 		Preload("DriverStatus").
+		Preload("DriverVendor").
 		First(&driver, "mas_driver_uid = ?", parsedID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
 		return

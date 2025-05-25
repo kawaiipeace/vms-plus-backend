@@ -36,6 +36,7 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
 		Limit:         100,
 	}
 	lists, err := userhub.GetUserList(request)
@@ -77,6 +78,7 @@ func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
 		Limit:         100,
 	}
 
@@ -140,6 +142,7 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
 		Limit:         100,
 	}
 	users, err := userhub.GetUserList(request)
@@ -203,8 +206,9 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		LevelCodes:    "M1,M2,M3",
-		Limit:         100,
+		//LevelCodes:    "M1,M2,M3",
+		Role:  "level1-approval",
+		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {
@@ -568,8 +572,9 @@ func (h *MasHandler) ListConfirmerLicenseUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		LevelCodes:    "M1,M2,M3",
-		Limit:         100,
+		//LevelCodes:    "M1,M2,M3",
+		Role:  "level1-approval",
+		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {
@@ -599,8 +604,9 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		LevelCodes:    "M4,S1",
-		Limit:         100,
+		//LevelCodes:    "M4,S1",
+		Role:  "final-license-approval",
+		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {

@@ -91,7 +91,7 @@ func (VmsMasDepartmentTree) TableName() string {
 
 //VmsMasDriverVendor
 type VmsMasDriverVendor struct {
-	MasVendorCode string `gorm:"column:mas_vendor_code" json:"mas_vendor_code"`
+	MasVendorCode string `gorm:"column:mas_vendor_code;primaryKey" json:"mas_vendor_code"`
 	MasVendorName string `gorm:"column:mas_vendor_name" json:"mas_vendor_name"`
 }
 

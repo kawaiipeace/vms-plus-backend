@@ -240,7 +240,7 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": result})
 }
@@ -326,7 +326,7 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	// Return success response
 	c.JSON(http.StatusOK, gin.H{"message": "Driver license annual record resend successfully", "result": result})
 }
@@ -556,6 +556,6 @@ func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Cont
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

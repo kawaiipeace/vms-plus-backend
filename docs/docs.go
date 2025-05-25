@@ -2924,6 +2924,62 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export carpool management by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Export carpool management",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query for carpool_name or emp_name",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by dept_sap",
+                        "name": "dept_sap",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by fields: carpool_name, number_of_drivers, number_of_vehicles",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/mas-department/{carpool_type}": {
             "get": {
                 "security": [
@@ -7123,6 +7179,30 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/ref/cost-center": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all cost centers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all cost centers",
+                "responses": {}
+            }
+        },
         "/api/ref/cost-type": {
             "get": {
                 "security": [
@@ -7441,6 +7521,30 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve all vehicle key types",
+                "responses": {}
+            }
+        },
+        "/api/ref/vehicle-status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all vehicle statuses.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all vehicle statuses",
                 "responses": {}
             }
         },
@@ -10269,6 +10373,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Filter by is_tax_credit",
+                        "name": "is_tax_credit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Order by vehicle_license_plate, vehicle_mileage, age,is_active",
                         "name": "order_by",
                         "in": "query"
@@ -11404,13 +11514,13 @@ const docTemplate = `{
         "models.VmsRefCostType": {
             "type": "object",
             "properties": {
+                "cost_center": {
+                    "type": "string"
+                },
                 "cost_center_code": {
                     "type": "string"
                 },
                 "cost_center_name": {
-                    "type": "string"
-                },
-                "ref_cost_no": {
                     "type": "string"
                 },
                 "ref_cost_type_code": {
@@ -12016,6 +12126,10 @@ const docTemplate = `{
                 "pickup_place": {
                     "type": "string",
                     "example": "Main Office"
+                },
+                "pm_order_no": {
+                    "type": "string",
+                    "example": "PM123456"
                 },
                 "ref_cost_type_code": {
                     "type": "integer",
