@@ -32,7 +32,8 @@ func (h *VehicleInUseUserHandler) SetQueryRole(user *models.AuthenUserEmp, query
 	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
 }
 func (h *VehicleInUseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
+	return query
+	//return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
 }
 
 // SearchRequests godoc

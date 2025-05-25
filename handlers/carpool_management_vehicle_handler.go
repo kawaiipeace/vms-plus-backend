@@ -349,7 +349,13 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.vehicle_get_date,
 			d.ref_vehicle_status_code,
 			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) vehicle_status_name,
-			d.is_active
+			d.is_active,
+			v.seat,
+			v.vehicle_gear,
+			v.ref_fuel_type_id,
+			(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name,
+			d.vehicle_pea_id,
+			d.parking_place
 		`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = ?", masVehicleUIDs, "0")
@@ -362,6 +368,11 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
 		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].VehicleImgs = []string{
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+		}
 	}
 
 	c.JSON(http.StatusOK, vehicles)

@@ -341,25 +341,38 @@ func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
 	}
 
 	query := config.DB.Table("vms_mas_driver d").
+		Model(&models.VmsMasCarpoolDriverDetail{}).
 		Select(
 			`d.mas_driver_uid,
 			d.driver_image,
 			d.driver_name,
 			d.driver_nickname,
+			d.driver_birthdate,
 			d.driver_dept_sap_short_name_hire,
 			d.driver_contact_number,
-			(select driver_license_end_date from vms_mas_driver_license s where s.mas_driver_uid=d.mas_driver_uid) driver_license_end_date,
 			d.approved_job_driver_end_date,
 			d.driver_average_satisfaction_score,
 			d.ref_driver_status_code,
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
-			d.is_active
+			d.is_active,
+			d.contract_no,
+			d.end_date,
+			d.mas_vendor_code,
+			v.mas_vendor_name,
+			l.driver_license_end_date,
+			l.driver_license_no
 	`).
+		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
+		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.mas_driver_uid in (?) AND d.is_deleted = ?", masDriverUIDs, "0")
 
-	if err := query.Find(&drivers).Error; err != nil {
+	if err := query.Find(&drivers).
+		Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
+	}
+	for i := range drivers {
+		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 	}
 
 	c.JSON(http.StatusOK, drivers)

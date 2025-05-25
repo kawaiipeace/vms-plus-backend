@@ -32,6 +32,25 @@ func (h *RefHandler) ListRequestStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, lists)
 }
 
+// ListVehicleStatus godoc
+// @Summary Retrieve all vehicle statuses
+// @Description This endpoint retrieves all vehicle statuses.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/vehicle-status [get]
+func (h *RefHandler) ListVehicleStatus(c *gin.Context) {
+	var lists []models.VmsRefVehicleStatus
+	if err := config.DB.
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
 // ListCostType godoc
 // @Summary Retrieve available cost types
 // @Description This endpoint allows a user to retrieve a list of available cost types for booking requests.
@@ -55,12 +74,34 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 			if err := config.DB.
 				Where("dept_sap = ?", user.DeptSAP).
 				First(&department).Error; err == nil {
-				lists[i].RefCostNo = department.CostCenterCode + "  " + department.CostCenterName
+				lists[i].CostCenter = department.CostCenterCode + "  " + department.CostCenterName
 			} else {
-				lists[i].RefCostNo = ""
+				lists[i].CostCenter = ""
 			}
 		}
 
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+// ListCostCenter godoc
+// @Summary Retrieve all cost centers
+// @Description This endpoint retrieves all cost centers.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/cost-center [get]
+func (h *RefHandler) ListCostCenter(c *gin.Context) {
+	var lists []models.VmsRefCostCenter
+	if err := config.DB.
+		Select("DISTINCT cost_center_code || ' ' || cost_center_name as cost_center").
+		Where("cost_center_code IS NOT NULL AND cost_center_code != ''").
+		Order("cost_center").
+		Find(&lists).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, lists)
 }
@@ -93,9 +134,9 @@ func (h *RefHandler) GetCostType(c *gin.Context) {
 		if err := config.DB.
 			Where("dept_sap = ?", user.DeptSAP).
 			First(&department).Error; err == nil {
-			costType.RefCostNo = department.CostCenterCode + "  " + department.CostCenterName
+			costType.CostCenter = department.CostCenterCode + "  " + department.CostCenterName
 		} else {
-			costType.RefCostNo = ""
+			costType.CostCenter = ""
 		}
 	}
 	c.JSON(http.StatusOK, costType)

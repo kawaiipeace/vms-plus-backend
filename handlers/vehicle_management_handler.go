@@ -47,6 +47,7 @@ func (h *VehicleManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 // @Param ref_vehicle_category_code query string false "Filter by Car type"
 // @Param ref_vehicle_status_code query string false "Filter by vehicle status code (comma-separated, e.g., '1,2')"
 // @Param ref_fuel_type_id query string false "Filter by ref_fuel_type_id"
+// @Param is_tax_credit query string false "Filter by is_tax_credit"
 // @Param order_by query string false "Order by vehicle_license_plate, vehicle_mileage, age,is_active"
 // @Param order_dir query string false "Order direction: asc or desc"
 // @Param page query int false "Page number (default: 1)"
@@ -88,7 +89,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if categoryCode := c.Query("ref_vehicle_category_code"); categoryCode != "" {
-		query = query.Where("v.ref_vehicle_type_code = ?", categoryCode)
+		query = query.Where("v.\"CarTypeDetail\" = ?", categoryCode)
 	}
 
 	if statusCodes := c.Query("ref_vehicle_status_code"); statusCodes != "" {
@@ -98,6 +99,10 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 
 	if fuelTypeID := c.Query("ref_fuel_type_id"); fuelTypeID != "" {
 		query = query.Where("ref_fuel_type_id = ?", fuelTypeID)
+	}
+
+	if isTaxCredit := c.Query("is_tax_credit"); isTaxCredit != "" {
+		query = query.Where("is_tax_credit = ?", isTaxCredit)
 	}
 
 	var total int64

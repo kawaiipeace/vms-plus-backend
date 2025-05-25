@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tealeg/xlsx"
 	"gorm.io/gorm"
 )
 
@@ -36,6 +37,19 @@ func (h *CarpoolManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 	return query
 }
 
+func GetCarpoolTypeName(carpoolType string) string {
+	switch carpoolType {
+	case "01":
+		return "Car Pool สำนักงานใหญ่"
+	case "02":
+		return "Car Pool เขต"
+	case "03":
+		return "Car Pool หน่วยงาน"
+	default:
+		return ""
+	}
+}
+
 func GetCarpoolName(MasCarpoolUID string) string {
 	var carpool models.VmsMasCarpoolList
 	if err := config.DB.Where("mas_carpool_uid = ?", MasCarpoolUID).First(&carpool).Error; err != nil {
@@ -45,38 +59,35 @@ func GetCarpoolName(MasCarpoolUID string) string {
 	return carpool.CarpoolName
 }
 
-// SearchCarpools godoc
-// @Summary Search carpool management
-// @Description Search carpool management by criteria
-// @Tags Carpool-management
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Security AuthorizationAuth
-// @Param search query string false "Search query for carpool_name or emp_name"
-// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด"
-// @Param dept_sap query string false "Filter by dept_sap"
-// @Param order_by query string false "Order by fields: carpool_name, number_of_drivers, number_of_vehicles"
-// @Param order_dir query string false "Order direction: asc or desc"
-// @Param page query int false "Page number (default: 1)"
-// @Param limit query int false "Number of records per page (default: 10)"
-// @Router /api/carpool-management/search [get]
-func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
+func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool) ([]models.VmsMasCarpoolList, int64, error) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
-		return
+		return nil, 0, nil
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
-
+	if !isLimit {
+		limit = 1000000
+	}
 	var carpools []models.VmsMasCarpoolList
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Model(&models.VmsMasCarpoolList{})
 	query = query.Table("vms_mas_carpool cp").Select(`cp.*,
 		(select count(*) from vms_mas_carpool_driver cpd where is_deleted='0' and cpd.mas_carpool_uid=cp.mas_carpool_uid) number_of_drivers,
 		(select count(*) from vms_mas_carpool_vehicle cpv where is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) number_of_vehicles,
-		(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) number_of_approvers
+		(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) number_of_approvers,
+		(select admin_emp_name from vms_mas_carpool_admin cpa where is_deleted='0' and is_main_admin='1' and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_emp_name,
+		(select dept_short from vms_mas_carpool_admin cpa,vms_mas_department md where cpa.is_deleted='0' and is_main_admin='1' and md.dept_sap=cpa.admin_dept_sap and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_dept_sap,
+		case carpool_type when '01' then 'สำนักงานใหญ่'
+			when '02' then (select dept_short from vms_mas_department md where md.dept_sap=cp.carpool_dept_sap)
+			when '03' then 
+				case when (select count(*) from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0') > 1 
+					then cast((select count(*) from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0') as text)||' หน่วยงาน'
+					else (select md.dept_short from vms_mas_department md,vms_mas_carpool_authorized_dept cad where md.dept_sap=cad.dept_sap and cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0')
+				end
+		end as carpool_authorized_depts
+
 	`)
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -121,17 +132,18 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
-		return
+		return nil, 0, err
 	}
 	query = query.Limit(limit).
 		Offset(offset)
 
 	if err := query.Find(&carpools).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
-		return
+		return nil, 0, err
 	}
 
 	for i := range carpools {
+		carpools[i].CarpoolTypeName = GetCarpoolTypeName(carpools[i].CarpoolType)
 		if carpools[i].NumberOfVehicles == 0 || carpools[i].NumberOfApprovers == 0 {
 			carpools[i].CarpoolStatus = "ไม่พร้อมใช้งาน"
 		} else if carpools[i].IsActive == "1" {
@@ -140,6 +152,35 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 			carpools[i].CarpoolStatus = "ปิด"
 		}
 	}
+	return carpools, total, nil
+}
+
+// SearchCarpools godoc
+// @Summary Search carpool management
+// @Description Search carpool management by criteria
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search query for carpool_name or emp_name"
+// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด"
+// @Param dept_sap query string false "Filter by dept_sap"
+// @Param order_by query string false "Order by fields: carpool_name, number_of_drivers, number_of_vehicles"
+// @Param order_dir query string false "Order direction: asc or desc"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/carpool-management/search [get]
+func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
+
+	carpools, total, err := DoSearchCarpools(c, h, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 	if len(carpools) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "No carpools found",
@@ -160,6 +201,76 @@ func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
 			},
 			"carpools": carpools,
 		})
+	}
+}
+
+// ExportCarpools godoc
+// @Summary Export carpool management
+// @Description Export carpool management by criteria
+// @Tags Carpool-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search query for carpool_name or emp_name"
+// @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด"
+// @Param dept_sap query string false "Filter by dept_sap"
+// @Param order_by query string false "Order by fields: carpool_name, number_of_drivers, number_of_vehicles"
+// @Param order_dir query string false "Order direction: asc or desc"
+// @Router /api/carpool-management/export [get]
+func (h *CarpoolManagementHandler) ExportCarpools(c *gin.Context) {
+	carpools, _, err := DoSearchCarpools(c, h, false)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	// Create Excel file
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Carpools")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Excel sheet", "message": err.Error()})
+		return
+	}
+
+	// Set headers
+	headers := []string{
+		"ชื่อ Car Pool",
+		"ประเภท Car Pool",
+		"หน่วยงานที่รับผิดชอบ",
+		"ผู้ดูแล Car Pool",
+		"สังกัดผู้ดูแล",
+		"จำนวนยานพาหนะ",
+		"จำนวนพนักงานขับรถ",
+		"จำนวนผู้อนุมัติ",
+		"สถานะ",
+	}
+
+	row := sheet.AddRow()
+	for _, header := range headers {
+		cell := row.AddCell()
+		cell.Value = header
+	}
+
+	for _, carpool := range carpools {
+		row := sheet.AddRow()
+		row.AddCell().Value = carpool.CarpoolName
+		row.AddCell().Value = carpool.CarpoolTypeName
+		row.AddCell().Value = carpool.CarpoolAuthorizedDepts
+		row.AddCell().Value = carpool.CarpoolAdminEmpName
+		row.AddCell().Value = carpool.CarpoolAdminDeptSap
+		row.AddCell().Value = strconv.Itoa(carpool.NumberOfVehicles) + " คัน"
+		row.AddCell().Value = strconv.Itoa(carpool.NumberOfDrivers) + " คน"
+		row.AddCell().Value = strconv.Itoa(carpool.NumberOfApprovers) + " คน"
+		row.AddCell().Value = carpool.CarpoolStatus
+	}
+
+	c.Header("Content-Disposition", "attachment; filename=carpools.xlsx")
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("File-Name", fmt.Sprintf("carpools_%s.xlsx", time.Now().Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+	if err := file.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
+		return
 	}
 }
 
@@ -241,6 +352,8 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		carpool.CarpoolAuthorizedDepts[i].MasCarpoolUID = carpool.MasCarpoolUID
 		carpool.CarpoolAuthorizedDepts[i].CreatedAt = time.Now()
 		carpool.CarpoolAuthorizedDepts[i].CreatedBy = user.EmpID
+		carpool.CarpoolAuthorizedDepts[i].UpdatedAt = time.Now()
+		carpool.CarpoolAuthorizedDepts[i].UpdatedBy = user.EmpID
 		carpool.CarpoolAuthorizedDepts[i].IsDeleted = "0"
 	}
 
@@ -291,6 +404,7 @@ func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
 	if len(carpool.CarpoolDrivers) > 0 {
 		carpool.IsCarpoolChooseDriver = true
 	}
+	carpool.CarpoolTypeName = GetCarpoolTypeName(carpool.CarpoolType)
 
 	c.JSON(http.StatusOK, carpool)
 }
@@ -655,6 +769,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 
 		empUser := funcs.GetUserEmpInfo(requests[i].AdminEmpNo)
 		requests[i].AdminDeptSap = empUser.DeptSAP
+		requests[i].AdminEmpName = empUser.FullName
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -1115,6 +1230,7 @@ func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 	request.IsActive = existingApprover.IsActive
 	empUser := funcs.GetUserEmpInfo(request.ApproverEmpNo)
 	request.ApproverDeptSap = empUser.DeptSAP
+	request.ApproverEmpName = empUser.FullName
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})

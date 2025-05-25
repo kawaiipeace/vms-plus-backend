@@ -560,11 +560,11 @@ definitions:
     type: object
   models.VmsRefCostType:
     properties:
+      cost_center:
+        type: string
       cost_center_code:
         type: string
       cost_center_name:
-        type: string
-      ref_cost_no:
         type: string
       ref_cost_type_code:
         type: string
@@ -994,6 +994,9 @@ definitions:
         type: string
       pickup_place:
         example: Main Office
+        type: string
+      pm_order_no:
+        example: PM123456
         type: string
       ref_cost_type_code:
         example: 1
@@ -3065,6 +3068,42 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Get driver timeline
+      tags:
+      - Carpool-management
+  /api/carpool-management/export:
+    get:
+      consumes:
+      - application/json
+      description: Export carpool management by criteria
+      parameters:
+      - description: Search query for carpool_name or emp_name
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน
+          1=เปิด 0=ปิด
+        in: query
+        name: is_active
+        type: string
+      - description: Filter by dept_sap
+        in: query
+        name: dept_sap
+        type: string
+      - description: 'Order by fields: carpool_name, number_of_drivers, number_of_vehicles'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export carpool management
       tags:
       - Carpool-management
   /api/carpool-management/mas-department/{carpool_type}:
@@ -5720,6 +5759,20 @@ paths:
       summary: Retrieve all carpool choose driver options
       tags:
       - REF
+  /api/ref/cost-center:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all cost centers.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all cost centers
+      tags:
+      - REF
   /api/ref/cost-type:
     get:
       consumes:
@@ -5908,6 +5961,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve all vehicle key types
+      tags:
+      - REF
+  /api/ref/vehicle-status:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all vehicle statuses.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all vehicle statuses
       tags:
       - REF
   /api/service/request-booking/{request_no}:
@@ -7666,6 +7733,10 @@ paths:
       - description: Filter by ref_fuel_type_id
         in: query
         name: ref_fuel_type_id
+        type: string
+      - description: Filter by is_tax_credit
+        in: query
+        name: is_tax_credit
         type: string
       - description: Order by vehicle_license_plate, vehicle_mileage, age,is_active
         in: query
