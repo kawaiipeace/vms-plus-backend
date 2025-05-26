@@ -87,6 +87,9 @@ func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
 	}
 	var request models.VmsToEEMS
 	if err := config.DB.
+		Preload("MasVehicle.RefFuelType").
+		Preload("MasVehicle.VehicleDepartment").
+		Preload("MasDriver").
 		Where("request_no = ?", requestNo).First(&request).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrBookingNotFound.Error()})
 		return
