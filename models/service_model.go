@@ -144,6 +144,8 @@ type VmsToEEMS struct {
 	WorkPlace          		string 			`gorm:"column:work_place" json:"work_place" example:"Head Office"`
 	WorkDescription    		string 			`gorm:"column:work_description" json:"objective" example:"Business Meeting"`
 	DocNo              		string 			`gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
+	MasDriver            	VmsMasDriver    `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
+	MasVehicle              VmsMasVehicle	`gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
 }
 
 func (VmsToEEMS) TableName() string {
