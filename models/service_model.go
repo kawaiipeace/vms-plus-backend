@@ -144,8 +144,9 @@ type VmsToEEMS struct {
 	WorkPlace          		string 			`gorm:"column:work_place" json:"work_place" example:"Head Office"`
 	WorkDescription    		string 			`gorm:"column:work_description" json:"objective" example:"Business Meeting"`
 	DocNo              		string 			`gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	MasDriver            	VmsMasDriver    `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
-	
+	MasCarpoolDriverUID  	string           `gorm:"column:mas_carpool_driver_uid;type:uuid" json:"mas_carpool_driver_uid"`
+	MasDriver            	VmsMasDriver     `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
+
 	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
 	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
 	VehicleDepartmentDeptSapShort string        `gorm:"column:vehicle_department_dept_sap_short" json:"mas_vehicle_department_dept_sap_short"`
