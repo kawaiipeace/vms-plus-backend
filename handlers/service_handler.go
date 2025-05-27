@@ -93,18 +93,6 @@ func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
 		Preload("MasDriver").
 		Preload("RefRequestStatus").
 		Preload("RequestVehicleType").
-		Preload("RefTripType").
-		Preload("TripDetails").
-		Preload("AddFuels").
-		Preload("AddFuels.RefCostType").
-		Preload("AddFuels.RefOilStationBrand").
-		Preload("AddFuels.RefFuelType").
-		Preload("AddFuels.RefPaymentType").
-		Preload("VehicleImagesReceived").
-		Preload("VehicleImagesReturned").
-		Preload("VehicleImagesReturned").
-		Preload("VehicleImageInspect").
-		Preload("ReceiverKeyTypeDetail").
 		Where("request_no = ?", requestNo).First(&request).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrBookingNotFound.Error()})
 		return
