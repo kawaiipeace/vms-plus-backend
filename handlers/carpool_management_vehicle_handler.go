@@ -65,9 +65,16 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			v.is_tax_credit,
 			d.vehicle_mileage,
 			d.vehicle_get_date,
+			v.seat,
+			v.vehicle_color,
+			v.vehicle_gear,
+			d.vehicle_pea_id,
 			d.ref_vehicle_status_code,
-			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) vehicle_status_name,
-			cpv.is_active
+			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name,
+			v.ref_fuel_type_id,
+			(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name,
+			cpv.is_active,
+			d.parking_place
 		`).
 		Joins("LEFT JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = cpv.mas_vehicle_uid").
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
@@ -111,6 +118,11 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
 		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].VehicleImgs = []string{
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+		}
 	}
 	if len(vehicles) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -267,9 +279,12 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	searchText := c.Query("search") // Text search for brand name & license plate
 
 	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default page = 1
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
-	offset := (page - 1) * limit                            // Calculate offset
+	//page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default page = 1
+	//limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
+	limit := 100
+	page := 1
+
+	offset := (page - 1) * limit // Calculate offset
 
 	var vehicles []models.VmsMasVehicleList
 	var total int64
@@ -282,7 +297,7 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN vms_mas_department AS md ON d.vehicle_owner_dept_sap = md.dept_sap")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("v.vehicle_brand_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Count total records
@@ -296,6 +311,18 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 		funcs.TrimStringFields(&vehicles[i])
 	}
 	// Respond with JSON
+	if len(vehicles) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"pagination": gin.H{
+				"total":      total,
+				"page":       page,
+				"limit":      limit,
+				"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+			},
+			"vehicles": []models.VmsMasVehicleList{},
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"pagination": gin.H{
 			"total":      total,
@@ -348,8 +375,15 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.vehicle_mileage,
 			d.vehicle_get_date,
 			d.ref_vehicle_status_code,
-			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) vehicle_status_name,
-			d.is_active
+			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name,
+			d.is_active,
+			v.seat,
+			v.vehicle_color,
+			v.vehicle_gear,
+			v.ref_fuel_type_id,
+			(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name,
+			d.vehicle_pea_id,
+			d.parking_place
 		`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = ?", masVehicleUIDs, "0")
@@ -362,6 +396,11 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
 		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].VehicleImgs = []string{
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+		}
 	}
 
 	c.JSON(http.StatusOK, vehicles)
@@ -425,6 +464,7 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 // @Param mas_carpool_uid path string true "MasCarpoolUID (mas_carpool_uid)"
 // @Param start_date query string true "Start date (YYYY-MM-DD)"
 // @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param search query string false "Search by vehicle license plate, brand, or model"
 // @Param vehicel_car_type_detail query string false "Filter by Car type"
 // @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
 // @Param ref_vehicle_status_code query string false "Filter by vehicle status code (comma-separated, e.g., '1,2')"
@@ -465,7 +505,7 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
 		Joins("INNER JOIN vms_mas_carpool_vehicle cv ON cv.mas_vehicle_uid = v.mas_vehicle_uid AND cv.mas_carpool_uid = ? AND cv.is_deleted = ?", masCarpoolUID, "0").
 		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_vehicle_uid = v.mas_vehicle_uid 
+		   ON r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90'
 		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
 		   OR r.reserve_end_datetime BETWEEN ? AND ? 
 		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
@@ -473,6 +513,9 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 			startDate, endDate, startDate, endDate, startDate, endDate).
 		Where("v.is_deleted= ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
+	if search := c.Query("search"); search != "" {
+		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
 		query = query.Where("d.vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
 	}
@@ -503,6 +546,7 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 	if pageSizeInt < 1 {
 		pageSizeInt = 10
 	}
+
 	offset := (pageInt - 1) * pageSizeInt
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -528,11 +572,25 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		}
 
 		for j := range vehicles[i].VehicleTrnRequests {
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 1 {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
-		"vehicles": vehicles,
+		"vehicles":   vehicles,
+		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
 			"page":       pageInt,

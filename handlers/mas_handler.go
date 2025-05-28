@@ -9,9 +9,9 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type MasHandler struct {
@@ -32,21 +32,27 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := config.DBu
-
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
+		Limit:         100,
 	}
-	query = query.Where("bureau_dept_sap = ?", user.BureauDeptSap)
-	query = query.Limit(100)
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	lists, err := userhub.GetUserList(request)
+	// Sort lists to put the current user's emp_id first
+	sort.SliceStable(lists, func(i, j int) bool {
+		if lists[i].EmpID == user.EmpID {
+			return true
+		}
+		if lists[j].EmpID == user.EmpID {
+			return false
+		}
+		return false
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -65,48 +71,58 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 // @Router /api/mas/user-received-key-users [get]
 func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, "*")
-	var lists []models.MasUserDriver
 	search := c.Query("search")
 	trnRequestUID := c.Query("trn_request_uid")
-	var request struct {
+	var trnRequest struct {
 		DriverEmpID         string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 		VehicleUserEmpID    string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 		CreatedRequestEmpID string `gorm:"column:created_request_emp_id" json:"created_request_emp_id" example:"700001"`
 	}
 	if err := config.DB.Table("vms_trn_request").
-		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	query := config.DBu
-	query = query.Where("bureau_dept_sap = ?", user.BureauDeptSap)
-	// Apply search filter if provided
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
-	}
-	query = query.Limit(100)
-	query = query.Order(gorm.Expr(
-		"CASE emp_id WHEN ? THEN 1 WHEN ? THEN 2 WHEN ? THEN 3 ELSE 4 END",
-		request.DriverEmpID, request.VehicleUserEmpID, request.CreatedRequestEmpID))
 
-	query = query.Order("CASE emp_id WHEN '" + request.VehicleUserEmpID + "' THEN 1 WHEN '" + request.DriverEmpID + "' THEN 2 WHEN '" + request.CreatedRequestEmpID + "' THEN 3 ELSE 4 END")
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
+		Limit:         100,
+	}
+
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Sort lists based on role priority
+	sort.Slice(lists, func(i, j int) bool {
+		getPriority := func(empID string) int {
+			switch empID {
+			case trnRequest.VehicleUserEmpID:
+				return 1
+			case trnRequest.DriverEmpID:
+				return 2
+			case trnRequest.CreatedRequestEmpID:
+				return 3
+			default:
+				return 4
+			}
+		}
+		return getPriority(lists[i].EmpID) < getPriority(lists[j].EmpID)
+	})
 	// Loop to modify or set AnnualDriver
 	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 		var roles []string
-		if lists[i].EmpID == request.DriverEmpID {
+		if lists[i].EmpID == trnRequest.DriverEmpID {
 			roles = append(roles, "ผู้ขับขี่")
 		}
-		if lists[i].EmpID == request.VehicleUserEmpID {
+		if lists[i].EmpID == trnRequest.VehicleUserEmpID {
 			roles = append(roles, "ผู้ใช้ยานพาหนะ")
 		}
-		if lists[i].EmpID == request.CreatedRequestEmpID {
+		if lists[i].EmpID == trnRequest.CreatedRequestEmpID {
 			roles = append(roles, "ผู้ใช้สร้างคำขอ")
 		}
 		if len(roles) > 0 {
@@ -132,33 +148,61 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 	var lists []models.MasUserDriver
 	search := c.Query("search")
 
-	query := config.DB
-
-	// Apply search filter if provided
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		Role:          "vehicle-user",
+		Limit:         100,
 	}
-	query = query.Where("bureau_dept_sap = ?", user.BureauDeptSap)
-	query = query.Limit(100)
-
-	// Execute query
-	if err := query.Preload("AnnualDriver").
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	users, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Convert users to MasUserDriver format and add to lists
 
-	// Loop to modify or set AnnualDriver
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-		lists[i].AnnualDriver.AnnualYYYY = 2568
-		lists[i].AnnualDriver.DriverLicenseNo = "A123456"
-		lists[i].AnnualDriver.RequestAnnualDriverNo = "B00001"
-		lists[i].AnnualDriver.DriverLicenseExpireDate = time.Now().AddDate(1, 0, 0)
-		lists[i].AnnualDriver.RequestIssueDate = time.Now().AddDate(0, -6, 0)
-		lists[i].AnnualDriver.RequestExpireDate = time.Now().AddDate(0, 6, 0)
+	annual_yyyy := time.Now().Year() + 543
+	empIDs := make([]string, len(users))
+	for i, user := range users {
+		empIDs[i] = user.EmpID
 	}
 
+	var annualDrivers []models.VmsTrnAnnualDriver
+	config.DB.Where("created_request_emp_id IN (?) AND is_deleted = ? AND annual_yyyy = ? AND ref_request_annual_driver_status_code = ?",
+		empIDs, "0", annual_yyyy, "30").
+		Select("created_request_emp_id", "annual_yyyy", "driver_license_no", "request_annual_driver_no", "driver_license_expire_date", "request_issue_date", "request_expire_date").
+		Find(&annualDrivers)
+
+	annualDriverMap := make(map[string]models.VmsTrnAnnualDriver)
+	for _, ad := range annualDrivers {
+		annualDriverMap[ad.CreatedRequestEmpId] = ad
+	}
+
+	lists = make([]models.MasUserDriver, len(users))
+	for i, user := range users {
+		lists[i] = models.MasUserDriver{
+			EmpID:        user.EmpID,
+			FullName:     user.FullName,
+			DeptSAP:      user.DeptSAP,
+			DeptSAPShort: user.DeptSAPShort,
+			DeptSAPFull:  user.DeptSAPFull,
+			TelMobile:    user.TelMobile,
+			TelInternal:  user.TelInternal,
+			ImageUrl:     user.ImageUrl,
+			AnnualDriver: annualDriverMap[user.EmpID],
+		}
+	}
+	// Sort lists to put the current user's emp_id first
+	sort.SliceStable(lists, func(i, j int) bool {
+		if lists[i].EmpID == user.EmpID {
+			return true
+		}
+		if lists[j].EmpID == user.EmpID {
+			return false
+		}
+		return false
+	})
 	c.JSON(http.StatusOK, lists)
 }
 
@@ -177,24 +221,18 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := config.DBu
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		//LevelCodes:    "M1,M2,M3",
+		Role:  "level1-approval",
+		Limit: 100,
 	}
-	query = query.Where("bureau_dept_sap = ? AND level_code in ('M1','M2','M3')", user.BureauDeptSap)
-	query = query.Limit(100)
-	query = query.Order("level_code")
-
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -212,7 +250,6 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/mas/user-admin-approval-users [get]
 func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
-	var lists []models.MasUserEmp
 	trnRequestUID := c.Query("trn_request_uid")
 	if trnRequestUID == "" {
 		h.ListConfirmerLicenseUser(c)
@@ -230,41 +267,46 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	query := config.DB
 
-	if result.MasCarpoolUID != "" {
-		query = query.Where("emp_id in (select emp_uid from vms_mas_carpool_admin ca where ca.mas_carpool_uid = ? AND ca.is_deleted='0' AND ca.is_active='1')", result.MasCarpoolUID)
-	} else {
-		var bureauDeptSap string
-		if err := config.DB.Table("vms_mas_vehicle_department").
-			Select("bureau_dept_sap").
-			Where("mas_vehicle_uid = ?", result.MasVehicleUID).
-			Scan(&bureauDeptSap).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
+	var empIDs []string
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+		if err := config.DB.Table("vms_mas_carpool_admin").
+			Select("emp_uid").
+			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Pluck("emp_uid", &empIDs).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
-		query = query.Where("emp_id in (select da.emp_id from vms_mas_department_admin da where da.bureau_dept_sap = ?)", bureauDeptSap)
+		request := userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Search:      search,
+			EmpIDs:      empIDs,
+			Limit:       100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, lists)
+	} else {
+		var bureauDeptSap string
+		request := userhub.ServiceListUserRequest{
+			ServiceCode:   "vms",
+			Search:        search,
+			Role:          "admin_approval",
+			BureauDeptSap: bureauDeptSap,
+			Limit:         100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, lists)
 	}
+	c.JSON(http.StatusOK, []interface{}{})
 
-	// Apply search filter if provided
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
-	}
-	query = query.Limit(100)
-
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
-		return
-	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-	}
-
-	c.JSON(http.StatusOK, lists)
 }
 
 // ListFinalApprovalUser godoc
@@ -279,7 +321,6 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/mas/user-final-approval-users [get]
 func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
-	var lists []models.MasUserEmp
 	trnRequestUID := c.Query("trn_request_uid")
 	if trnRequestUID == "" {
 		h.ListConfirmerLicenseUser(c)
@@ -297,40 +338,45 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	query := config.DB
 
-	if result.MasCarpoolUID != "" {
-		query = query.Where("emp_id in (select emp_uid from vms_mas_carpool_approver ca where ca.mas_carpool_uid = ? AND ca.is_deleted='0' AND ca.is_active='1')", result.MasCarpoolUID)
-	} else {
-		var bureauDeptSap string
-		if err := config.DB.Table("vms_mas_vehicle_department").
-			Select("bureau_dept_sap").
-			Where("mas_vehicle_uid = ?", result.MasVehicleUID).
-			Scan(&bureauDeptSap).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
+	var empIDs []string
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+		if err := config.DB.Table("vms_mas_carpool_approver").
+			Select("emp_uid").
+			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Pluck("emp_uid", &empIDs).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
-		query = query.Where("emp_id in (select da.emp_id from vms_mas_department_approver da where da.bureau_dept_sap = ?)", bureauDeptSap)
+		request := userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Search:      search,
+			EmpIDs:      empIDs,
+			Limit:       100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, lists)
+	} else {
+		var bureauDeptSap string
+		request := userhub.ServiceListUserRequest{
+			ServiceCode:   "vms",
+			Search:        search,
+			Role:          "final_approval",
+			BureauDeptSap: bureauDeptSap,
+			Limit:         100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, lists)
 	}
-
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
-	}
-	query = query.Limit(100)
-
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
-		return
-	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
-	}
-
-	c.JSON(http.StatusOK, lists)
+	c.JSON(http.StatusOK, []interface{}{})
 }
 
 // GetUserEmp godoc
@@ -350,13 +396,11 @@ func (h *MasHandler) GetUserEmp(c *gin.Context) {
 	}
 	EmpID := c.Param("emp_id")
 
-	var userEmp models.MasUserEmp
-	if err := config.DBu.
-		First(&userEmp, "emp_id = ?", EmpID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+	userEmp, err := userhub.GetUserInfo(EmpID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	userEmp.ImageUrl = funcs.GetEmpImage(userEmp.EmpID)
 	c.JSON(http.StatusOK, userEmp)
 }
 
@@ -543,24 +587,18 @@ func (h *MasHandler) ListConfirmerLicenseUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := config.DBu
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		//LevelCodes:    "M1,M2,M3",
+		Role:  "level1-approval",
+		Limit: 100,
 	}
-	query = query.Where("bureau_dept_sap = ? AND level_code in ('M1','M2','M3')", user.BureauDeptSap)
-	query = query.Limit(100)
-	query = query.Order("level_code")
-
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)
@@ -581,24 +619,17 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
-	query := config.DBu
-	if search != "" {
-		query = query.Where("emp_id ILIKE ? OR full_name ILIKE ?", "%"+search+"%", "%"+search+"%")
+	request := userhub.ServiceListUserRequest{
+		ServiceCode:  "vms",
+		Search:       search,
+		UpperDeptSap: user.DeptSAP,
+		Role:         "license-approval",
+		Limit:        100,
 	}
-	query = query.Where("bureau_dept_sap = ? AND level_code in ('M4','S1')", user.BureauDeptSap)
-	query = query.Limit(100)
-	query = query.Order("level_code")
-
-	// Execute query
-	if err := query.
-		Find(&lists).Error; err != nil {
-		c.JSON(http.StatusOK, []interface{}{})
+	lists, err := userhub.GetUserList(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	// For loop to set Image_url for each element in the slice
-	for i := range lists {
-		lists[i].ImageUrl = funcs.GetEmpImage(lists[i].EmpID)
 	}
 
 	c.JSON(http.StatusOK, lists)

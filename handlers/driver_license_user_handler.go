@@ -143,6 +143,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		First(&licenseNext).Error
 
 	if errNext == nil {
+		driver.NextTrnRequestAnnualDriverUID = licenseNext.TrnRequestAnnualDriverUID
 		driver.NextAnnualYYYY = licenseNext.AnnualYYYY
 		driver.NextLicenseStatusCode = licenseNext.RefRequestAnnualDriverStatusCode
 		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]
@@ -188,8 +189,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.CreatedRequestDeptSap = empUser.DeptSAP
 	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
 	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
-	request.CreatedRequestMobileNumber = empUser.MobilePhone
-	request.CreatedRequestPhoneNumber = empUser.DeskPhone
+	request.CreatedRequestMobileNumber = empUser.TelMobile
+	request.CreatedRequestPhoneNumber = empUser.TelInternal
 	request.CreatedRequestDatetime = time.Now()
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -198,8 +199,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
-	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
+	request.ConfirmedRequestMobileNumber = confirmUser.TelMobile
+	request.ConfirmedRequestPhoneNumber = confirmUser.TelInternal
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -207,8 +208,8 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
-	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
+	request.ApprovedRequestMobileNumber = approveUser.TelMobile
+	request.ApprovedRequestPhoneNumber = approveUser.TelInternal
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = ""
@@ -239,7 +240,7 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver license annual record created successfully", "result": result})
 }
@@ -287,8 +288,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.CreatedRequestDeptSap = empUser.DeptSAP
 	request.CreatedRequestDeptSapNameShort = empUser.DeptSAPShort
 	request.CreatedRequestDeptSapNameFull = empUser.DeptSAPFull
-	request.CreatedRequestMobileNumber = empUser.MobilePhone
-	request.CreatedRequestPhoneNumber = empUser.DeskPhone
+	request.CreatedRequestMobileNumber = empUser.TelMobile
+	request.CreatedRequestPhoneNumber = empUser.TelInternal
 	request.CreatedRequestDatetime = existsRequest.CreatedRequestDatetime
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -297,8 +298,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.ConfirmedRequestDeptSap = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptSapShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptSapFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestMobileNumber = confirmUser.MobilePhone
-	request.ConfirmedRequestPhoneNumber = confirmUser.DeskPhone
+	request.ConfirmedRequestMobileNumber = confirmUser.TelMobile
+	request.ConfirmedRequestPhoneNumber = confirmUser.TelInternal
 
 	approveUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	request.ApprovedRequestEmpName = approveUser.FullName
@@ -306,8 +307,8 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestDeptSap = approveUser.DeptSAP
 	request.ApprovedRequestDeptSapShort = approveUser.DeptSAPShort
 	request.ApprovedRequestDeptSapFull = approveUser.DeptSAPFull
-	request.ApprovedRequestMobileNumber = approveUser.MobilePhone
-	request.ApprovedRequestPhoneNumber = approveUser.DeskPhone
+	request.ApprovedRequestMobileNumber = approveUser.TelMobile
+	request.ApprovedRequestPhoneNumber = approveUser.TelInternal
 
 	request.RefRequestAnnualDriverStatusCode = "10"
 	request.RejectedRequestEmpPosition = existsRequest.RejectedRequestEmpPosition
@@ -325,7 +326,7 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "annual not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	// Return success response
 	c.JSON(http.StatusOK, gin.H{"message": "Driver license annual record resend successfully", "result": result})
 }
@@ -555,6 +556,6 @@ func (h *DriverLicenseUserHandler) UpdateDriverLicenseAnnualCanceled(c *gin.Cont
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

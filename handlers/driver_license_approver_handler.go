@@ -428,7 +428,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualCanceled(c *gin.
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -483,7 +483,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualRejected(c *gin.
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -548,6 +548,6 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver license annual record not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	funcs.CreateRequestAnnualLicenseNotification(request.TrnRequestAnnualDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

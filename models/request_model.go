@@ -106,6 +106,7 @@ type VmsTrnRequestRequest struct {
 	WbsNo           string `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string `gorm:"column:network_no" json:"network_no" example:"NET12345"`
 	ActivityNo      string `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
+	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	//Step 2
 	MasCarpoolUID        string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
@@ -196,6 +197,7 @@ type VmsTrnRequestResponse struct {
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
 	ActivityNo      string         `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
+	PmOrderNo       string         `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
 	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
@@ -491,10 +493,13 @@ func (VmsTrnRequestVehicle) TableName() string {
 // VmsTrnRequestApprovedWithRecieiveKey
 type VmsTrnRequestApprovedWithRecieiveKey struct {
 	HandoverUID              string    `gorm:"column:handover_uid;primaryKey" json:"-"`
-	TrnRequestUID            string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	TrnRequestUID            string    `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	ReceivedKeyPlace         string    `gorm:"column:appointment_location" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime time.Time `gorm:"column:appointment_start" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime   time.Time `gorm:"column:appointment_end" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
+	ReceiverType             int       `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
+	CreatedBy                string    `gorm:"column:created_by" json:"-"`
+	CreatedAt                time.Time `gorm:"column:created_at" json:"-"`
 	UpdatedBy                string    `gorm:"column:updated_by" json:"-"`
 	UpdatedAt                time.Time `gorm:"column:updated_at" json:"-"`
 }

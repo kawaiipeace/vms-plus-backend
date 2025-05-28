@@ -855,6 +855,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/booking-admin/update-rejected": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows users to update the rejected status of an item.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-admin"
+                ],
+                "summary": "Update rejected status for an item",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestRejected data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/booking-admin/update-trip": {
             "put": {
                 "security": [
@@ -2924,6 +2959,62 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/carpool-management/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export carpool management by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Export carpool management",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query for carpool_name or emp_name",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by dept_sap",
+                        "name": "dept_sap",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by fields: carpool_name, number_of_drivers, number_of_vehicles",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/mas-department/{carpool_type}": {
             "get": {
                 "security": [
@@ -3407,6 +3498,12 @@ const docTemplate = `{
                         "name": "end_date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -5739,6 +5836,22 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/notification": {
+            "get": {
+                "description": "Get Notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get Notification",
+                "responses": {}
+            }
+        },
         "/api/received-key-admin/request/{trn_request_uid}": {
             "get": {
                 "security": [
@@ -7101,6 +7214,38 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/ref/cost-center": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all cost centers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all cost centers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search cost_center_code,cost_center_name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/ref/cost-type": {
             "get": {
                 "security": [
@@ -7422,6 +7567,30 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/ref/vehicle-status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all vehicle statuses.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all vehicle statuses",
+                "responses": {}
+            }
+        },
         "/api/service/request-booking/{request_no}": {
             "get": {
                 "security": [
@@ -7440,6 +7609,36 @@ const docTemplate = `{
                     "Service"
                 ],
                 "summary": "Get request booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RequestNo",
+                        "name": "request_no",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/service/vms-to-eems/{request_no}": {
+            "get": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Get VMS to EEMS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Get VMS to EEMS",
                 "parameters": [
                     {
                         "type": "string",
@@ -10217,6 +10416,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Filter by is_tax_credit",
+                        "name": "is_tax_credit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Order by vehicle_license_plate, vehicle_mileage, age,is_active",
                         "name": "order_by",
                         "in": "query"
@@ -10278,6 +10483,12 @@ const docTemplate = `{
                         "name": "end_date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -11003,6 +11214,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "10001"
                 },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
                 "mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
@@ -11014,6 +11229,10 @@ const docTemplate = `{
                 "ref_other_use_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
                 }
             }
         },
@@ -11319,7 +11538,13 @@ const docTemplate = `{
         "models.VmsRefCostType": {
             "type": "object",
             "properties": {
-                "ref_cost_no": {
+                "cost_center": {
+                    "type": "string"
+                },
+                "cost_center_code": {
+                    "type": "string"
+                },
+                "cost_center_name": {
                     "type": "string"
                 },
                 "ref_cost_type_code": {
@@ -11702,6 +11927,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-02-16T08:00:00Z"
                 },
+                "receiver_type": {
+                    "type": "integer",
+                    "example": 0
+                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
@@ -11925,6 +12154,10 @@ const docTemplate = `{
                 "pickup_place": {
                     "type": "string",
                     "example": "Main Office"
+                },
+                "pm_order_no": {
+                    "type": "string",
+                    "example": "PM123456"
                 },
                 "ref_cost_type_code": {
                     "type": "integer",

@@ -49,20 +49,36 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 	}
 
 	var drivers []models.VmsMasCarpoolDriverList
-	query := config.DB.Table("vms_mas_carpool_driver cpd").
+
+	query := config.DB.Table("vms_mas_driver d").
+		Model(&models.VmsMasCarpoolDriverDetail{}).
 		Select(
-			`cpd.mas_carpool_driver_uid, cpd.mas_carpool_uid, d.mas_driver_uid,
-			d.driver_image, d.driver_name, d.driver_nickname,
-			d.driver_dept_sap_short_name_hire, d.driver_contact_number,
-			dl.driver_license_end_date,
-			d.approved_job_driver_end_date, d.driver_average_satisfaction_score,
-			d.ref_driver_status_code, rds.ref_driver_status_desc AS driver_status_name,
-			d.is_active`).
-		Joins("LEFT JOIN vms_mas_driver d ON d.mas_driver_uid = cpd.mas_driver_uid").
-		Joins("LEFT JOIN vms_mas_driver_license dl ON dl.mas_driver_uid = d.mas_driver_uid").
-		Joins("LEFT JOIN vms_ref_driver_status rds ON rds.ref_driver_status_code = d.ref_driver_status_code").
-		Where("cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?", masCarpoolUID, "0").
-		Group("cpd.mas_carpool_driver_uid, cpd.mas_carpool_uid, d.mas_driver_uid, dl.driver_license_end_date, rds.ref_driver_status_desc")
+			`d.mas_driver_uid,
+			d.driver_image,
+			d.driver_name,
+			d.driver_nickname,
+			d.driver_birthdate,
+			d.driver_dept_sap_hire,
+			d.driver_dept_sap_short_name_hire,
+			d.driver_dept_sap_work,
+			d.driver_dept_sap_short_work,
+			d.driver_contact_number,
+			d.approved_job_driver_end_date,
+			d.driver_average_satisfaction_score,
+			200 driver_total_satisfaction_review,
+			d.ref_driver_status_code,
+			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
+			d.is_active,
+			d.contract_no,
+			d.end_date,
+			d.mas_vendor_code,
+			v.mas_vendor_name,
+			l.driver_license_end_date,
+			l.driver_license_no
+	`).
+		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
+		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
+		Where("d.is_deleted = ? AND exists(select 1 from vms_mas_carpool_driver cpd where cpd.mas_driver_uid = d.mas_driver_uid AND cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?)", "0", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -341,25 +357,42 @@ func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
 	}
 
 	query := config.DB.Table("vms_mas_driver d").
+		Model(&models.VmsMasCarpoolDriverDetail{}).
 		Select(
 			`d.mas_driver_uid,
 			d.driver_image,
 			d.driver_name,
 			d.driver_nickname,
+			d.driver_birthdate,
+			d.driver_dept_sap_hire,
 			d.driver_dept_sap_short_name_hire,
+			d.driver_dept_sap_work,
+			d.driver_dept_sap_short_work,
 			d.driver_contact_number,
-			(select driver_license_end_date from vms_mas_driver_license s where s.mas_driver_uid=d.mas_driver_uid) driver_license_end_date,
 			d.approved_job_driver_end_date,
 			d.driver_average_satisfaction_score,
+			200 driver_satisfaction_score_count,
 			d.ref_driver_status_code,
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
-			d.is_active
+			d.is_active,
+			d.contract_no,
+			d.end_date,
+			d.mas_vendor_code,
+			v.mas_vendor_name,
+			l.driver_license_end_date,
+			l.driver_license_no
 	`).
+		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
+		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.mas_driver_uid in (?) AND d.is_deleted = ?", masDriverUIDs, "0")
 
-	if err := query.Find(&drivers).Error; err != nil {
+	if err := query.Find(&drivers).
+		Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
+	}
+	for i := range drivers {
+		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 	}
 
 	c.JSON(http.StatusOK, drivers)
@@ -455,16 +488,16 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select("d.*").
+		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
 		Joins("INNER JOIN vms_mas_carpool_driver cd ON cd.mas_driver_uid = d.mas_driver_uid AND cd.mas_carpool_uid = ? AND cd.is_deleted = ?", masCarpoolUID, "0").
-		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_carpool_driver_uid = d.mas_driver_uid 
+		Where(`exists (select 1 from vms_trn_request r 
+		   where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
 		   AND r.is_pea_employee_driver = ? 
 		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
 		   OR r.reserve_end_datetime BETWEEN ? AND ? 
 		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
+		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
 			"0", startDate, endDate, startDate, endDate, startDate, endDate)
 
 	name := strings.ToUpper(c.Query("name"))
@@ -522,11 +555,25 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if drivers[i].DriverTrnRequests[j].RefTripTypeCode == 1 {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
-		"drivers": drivers,
+		"drivers":    drivers,
+		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
 			"page":       pageInt,

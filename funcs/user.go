@@ -7,6 +7,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -14,11 +15,23 @@ import (
 
 // Claims for JWT
 type Claims struct {
-	EmpID     string   `json:"emp_id"`
-	FullName  string   `json:"full_name"`
-	TokenType string   `json:"token_type"`
-	Roles     []string `json:"roles"`
-	LoginBy   string   `json:"login_by"`
+	EmpID         string   `json:"emp_id"`
+	TokenType     string   `json:"token_type"`
+	FirstName     string   `json:"first_name"`
+	LastName      string   `json:"last_name"`
+	FullName      string   `json:"full_name"`
+	Position      string   `json:"position"`
+	DeptSAP       string   `json:"dept_sap"`
+	DeptSAPShort  string   `json:"dept_sap_short"`
+	DeptSAPFull   string   `json:"dept_sap_full"`
+	BureauDeptSap string   `json:"bureau_dept_sap"`
+	MobilePhone   string   `json:"mobile_number"`
+	DeskPhone     string   `json:"internal_number"`
+	BusinessArea  string   `json:"business_area"`
+	ImageUrl      string   `json:"image_url"`
+	Roles         []string `json:"roles"`
+
+	LoginBy string `json:"login_by"`
 	jwt.RegisteredClaims
 }
 
@@ -26,14 +39,40 @@ var (
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 )
 
-func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration, accessToken string, refreshToken string) (string, error) {
+func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
+	jwtSecret = []byte(config.AppConfig.JWTSecret)
+	claims := Claims{
+		EmpID:         user.EmpID,
+		FullName:      user.FullName,
+		TokenType:     tokenType,
+		LoginBy:       user.LoginBy,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Position:      user.Position,
+		DeptSAP:       user.DeptSAP,
+		DeptSAPShort:  user.DeptSAPShort,
+		DeptSAPFull:   user.DeptSAPFull,
+		BureauDeptSap: user.BureauDeptSap,
+		MobilePhone:   user.MobilePhone,
+		DeskPhone:     user.DeskPhone,
+		BusinessArea:  user.BusinessArea,
+		ImageUrl:      user.ImageUrl,
+		Roles:         user.Roles,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
+func GenerateRefreshJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:     user.EmpID,
-		FullName:  user.FirstName + " " + user.LastName,
+		FullName:  user.FullName,
 		TokenType: tokenType,
 		LoginBy:   user.LoginBy,
-		Roles:     []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"},
+
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
 		},
@@ -42,7 +81,7 @@ func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Du
 	return token.SignedString(jwtSecret)
 }
 
-func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
+func ExtractUserFromJWT(c *gin.Context) (*models.AuthenUserEmp, error) {
 	// Extract JWT token from Authorization header
 	authHeader := c.GetHeader("Authorization")
 	secretKey := config.AppConfig.JWTSecret
@@ -79,10 +118,22 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 	}
 
 	// Map claims to UserEmp struct
-	user := &models.AuthenJwtUsr{
-		EmpID:    claims["emp_id"].(string),
-		FullName: claims["full_name"].(string),
-		Roles:    roles,
+	user := &models.AuthenUserEmp{
+		EmpID:         claims["emp_id"].(string),
+		FullName:      claims["full_name"].(string),
+		LoginBy:       claims["login_by"].(string),
+		FirstName:     claims["first_name"].(string),
+		LastName:      claims["last_name"].(string),
+		Position:      claims["position"].(string),
+		DeptSAP:       claims["dept_sap"].(string),
+		DeptSAPShort:  claims["dept_sap_short"].(string),
+		DeptSAPFull:   claims["dept_sap_full"].(string),
+		BureauDeptSap: claims["bureau_dept_sap"].(string),
+		MobilePhone:   claims["mobile_number"].(string),
+		DeskPhone:     claims["internal_number"].(string),
+		BusinessArea:  claims["business_area"].(string),
+		ImageUrl:      claims["image_url"].(string),
+		Roles:         roles,
 	}
 
 	return user, nil
@@ -91,17 +142,18 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenJwtUsr, error) {
 func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	// Extract user from JWT
 	var empUser models.AuthenUserEmp
-	//501621
-	if config.AppConfig.IsDev {
-		if err := config.DBu.First(&empUser, "emp_id = ?", "700001").Error; err != nil {
+	//501621 //510683
+	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
+		user, err := userhub.GetUserInfo("700001")
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return &empUser
 		}
-		empUser.BusinessArea = "Z000"
-		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "driver", "admin-super"}
+		empUser = user
+		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
+			"license-approval", "driver", "admin-super"}
 		empUser.LoginBy = "keycloak"
-		empUser.ImageUrl = config.DefaultAvatarURL
 		if roles == "*" {
 			return &empUser
 		}
@@ -120,15 +172,25 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "message": "Please login again"})
 		c.Abort()
 	}
-
-	if err := config.DBu.First(&empUser, "emp_id = ?", jwt.EmpID).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		c.Abort()
-		return &empUser
+	empUser = models.AuthenUserEmp{
+		EmpID:         jwt.EmpID,
+		FirstName:     jwt.FirstName,
+		LastName:      jwt.LastName,
+		FullName:      jwt.FullName,
+		Position:      jwt.Position,
+		DeptSAP:       jwt.DeptSAP,
+		DeptSAPShort:  jwt.DeptSAPShort,
+		DeptSAPFull:   jwt.DeptSAPFull,
+		BureauDeptSap: jwt.BureauDeptSap,
+		MobilePhone:   jwt.MobilePhone,
+		DeskPhone:     jwt.DeskPhone,
+		BusinessArea:  jwt.BusinessArea,
+		ImageUrl:      jwt.ImageUrl,
+		Roles:         jwt.Roles,
+		LoginBy:       jwt.LoginBy,
 	}
-	empUser.Roles = jwt.Roles
-	empUser.LoginBy = jwt.LoginBy
-	empUser.ImageUrl = GetEmpImage(empUser.EmpID)
+	empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
+		"license-approval", "driver", "admin-super"}
 	if roles == "*" {
 		return &empUser
 	}
@@ -143,10 +205,21 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	return &empUser
 }
 
-func GetUserEmpInfo(empID string) models.MasUser {
-	var empUser models.MasUser
-	if err := config.DBu.First(&empUser, "emp_id = ?", empID).Error; err != nil {
-		return models.MasUser{}
+func GetUserEmpInfo(empID string) models.MasUserEmp {
+	user, err := userhub.GetUserInfo(empID)
+	if err != nil {
+		return models.MasUserEmp{}
+	}
+	empUser := models.MasUserEmp{
+		EmpID:        user.EmpID,
+		FullName:     user.FullName,
+		Position:     user.Position,
+		DeptSAP:      user.DeptSAP,
+		DeptSAPShort: user.DeptSAPShort,
+		DeptSAPFull:  user.DeptSAPFull,
+		TelMobile:    user.MobilePhone,
+		TelInternal:  user.DeskPhone,
+		BusinessArea: user.BusinessArea,
 	}
 	return empUser
 }

@@ -71,6 +71,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
 	ProjectNo       string         `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
+	PmOrderNo       string         `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	MasCarpoolDriverUID  string            `gorm:"column:mas_carpool_driver_uid;type:uuid" json:"mas_carpool_driver_uid"`
 	MasDriver            VmsMasDriver      `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
@@ -203,7 +204,7 @@ type VmsTrnTripDetail struct {
 	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full" example:"Singapore"`
 	MasVehicleDepartmentUID          string    `gorm:"column:mas_vehicle_department_uid" json:"mas_vehicle_department_uid" example:"abc12345-6789-1234-5678-abcdef012345"`
 	MasCarpoolUID                    string    `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"xyz12345-6789-1234-5678-abcdef012345"`
-	EmployeeOrDriverID               string    `gorm:"column:employee_or_driver_id" json:"employee_or_driver_id" example:"driver001"`
+	EmployeeOrDriverID               string    `gorm:"column:driver_emp_id" json:"employee_or_driver_id" example:"driver001"`
 	CreatedAt                        time.Time `gorm:"column:created_at" json:"-"`
 	CreatedBy                        string    `gorm:"column:created_by" json:"-"`
 	UpdatedAt                        time.Time `gorm:"column:updated_at" json:"-"`

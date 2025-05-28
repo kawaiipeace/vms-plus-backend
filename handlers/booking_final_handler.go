@@ -35,10 +35,20 @@ var StatusNameMapFinal = map[string]string{
 }
 
 func (h *BookingFinalHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query.Where("created_request_emp_id = ?", user.EmpID)
+	query = query.Where(
+		`exists (
+			select 1 from vms_mas_carpool_approver ca 
+			where ca.mas_carpool_uid = req.mas_carpool_uid 
+			and ca.approver_emp_no = ? and ca.is_deleted = '0' and ca.is_active = '1' 
+		) or exists (
+			select 1 from vms_mas_vehicle_department vd 
+			where vd.mas_vehicle_uid = req.mas_vehicle_uid 
+			and vd.bureau_dept_sap in (?)	
+		)`,
+		user.EmpID,
+		user.BureauDeptSap,
+	)
+	return query
 }
 func (h *BookingFinalHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('40') and is_deleted = '0'")
@@ -109,14 +119,15 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 			case req.is_pea_employee_driver when '1' then req.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_name,
 			case req.is_pea_employee_driver when '1' then req.driver_emp_dept_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid=req.mas_carpool_driver_uid) end driver_dept_name,
 			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_dept_name,       
-			(select mc.carpool_name from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_carpool_name
+			(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=req.mas_vehicle_uid) vehicle_carpool_name
 		`).
+		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON req.ref_request_status_code = status.ref_request_status_code").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.reserve_end_datetime >= ?", startDate)
@@ -345,8 +356,8 @@ func (h *BookingFinalHandler) UpdateRejected(c *gin.Context) {
 	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
 	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
 	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
-	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
-	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestDeskPhone = rejectUser.TelInternal
+	request.RejectedRequestMobilePhone = rejectUser.TelMobile
 	request.RejectedRequestPosition = rejectUser.Position
 	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -410,8 +421,8 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	request.ApprovedRequestDeptSAP = empUser.DeptSAP
 	request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
 	request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
-	request.ApprovedRequestDeskPhone = empUser.DeskPhone
-	request.ApprovedRequestMobilePhone = empUser.MobilePhone
+	request.ApprovedRequestDeskPhone = empUser.TelInternal
+	request.ApprovedRequestMobilePhone = empUser.TelMobile
 	request.ApprovedRequestPosition = empUser.Position
 	request.ApprovedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -510,8 +521,8 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 

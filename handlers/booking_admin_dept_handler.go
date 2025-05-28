@@ -111,7 +111,7 @@ func (h *BookingAdminDeptHandler) SearchRequests(c *gin.Context) {
 	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.reserve_end_datetime >= ?", startDate)
@@ -352,8 +352,8 @@ func (h *BookingAdminDeptHandler) UpdateRejected(c *gin.Context) {
 	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
 	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
 	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
-	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
-	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestDeskPhone = rejectUser.TelInternal
+	request.RejectedRequestMobilePhone = rejectUser.TelMobile
 	request.RejectedRequestPosition = rejectUser.Position
 	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -480,8 +480,8 @@ func (h *BookingAdminDeptHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 
@@ -546,8 +546,8 @@ func (h *BookingAdminDeptHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()

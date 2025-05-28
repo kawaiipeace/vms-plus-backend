@@ -70,5 +70,5 @@ type OTP_Request_Create struct {
 }
 
 func (OTP_Request_Create) TableName() string {
-	return "vms_user.trn_otp_request"
+	return "trn_otp_request"
 }

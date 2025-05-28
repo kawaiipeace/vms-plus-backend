@@ -75,6 +75,15 @@ func (h *ServiceHandler) GetRequestBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, request)
 }
 
+// GetVMSToEEMS
+// @Summary Get VMS to EEMS
+// @Description Get VMS to EEMS
+// @Tags Service
+// @Accept json
+// @Produce json
+// @Security ServiceKey
+// @Param request_no path string true "RequestNo"
+// @router /api/service/vms-to-eems/{request_no} [get]
 func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
 	h.checkServiceKey(c)
 	if c.IsAborted() {
