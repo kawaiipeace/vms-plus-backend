@@ -493,10 +493,13 @@ func (VmsTrnRequestVehicle) TableName() string {
 // VmsTrnRequestApprovedWithRecieiveKey
 type VmsTrnRequestApprovedWithRecieiveKey struct {
 	HandoverUID              string    `gorm:"column:handover_uid;primaryKey" json:"-"`
-	TrnRequestUID            string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	TrnRequestUID            string    `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	ReceivedKeyPlace         string    `gorm:"column:appointment_location" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime time.Time `gorm:"column:appointment_start" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime   time.Time `gorm:"column:appointment_end" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
+	ReceiverType             int       `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
+	CreatedBy                string    `gorm:"column:created_by" json:"-"`
+	CreatedAt                time.Time `gorm:"column:created_at" json:"-"`
 	UpdatedBy                string    `gorm:"column:updated_by" json:"-"`
 	UpdatedAt                time.Time `gorm:"column:updated_at" json:"-"`
 }

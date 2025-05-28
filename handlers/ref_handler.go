@@ -92,12 +92,18 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
+// @Param search query string false "Search cost_center_code,cost_center_name"
 // @Router /api/ref/cost-center [get]
 func (h *RefHandler) ListCostCenter(c *gin.Context) {
 	var lists []models.VmsRefCostCenter
-	if err := config.DB.
+	search := c.Query("search")
+	query := config.DB.
 		Select("DISTINCT cost_center_code || ' ' || cost_center_name as cost_center").
-		Where("cost_center_code IS NOT NULL AND cost_center_code != ''").
+		Where("cost_center_code IS NOT NULL AND cost_center_code != ''")
+	if search != "" {
+		query = query.Where("cost_center_code || ' ' || cost_center_name LIKE ?", "%"+search+"%")
+	}
+	if err := query.
 		Order("cost_center").
 		Find(&lists).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Not found", "message": messages.ErrNotfound.Error()})

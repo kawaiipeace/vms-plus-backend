@@ -126,6 +126,7 @@ type VmsMasCarpoolAdminList struct {
 	MobileContactNumber   string `gorm:"column:mobile_contact_number" json:"mobile_contact_number" example:"9876543210"`
 	IsMainAdmin           string `gorm:"column:is_main_admin" json:"is_main_admin"`
 	IsActive              string `gorm:"column:is_active" json:"is_active"`
+	ImageUrl              string `gorm:"-" json:"image_url"`
 }
 
 // TableName sets the table name for the VmsMasCarpoolAdmin model
@@ -168,6 +169,7 @@ type VmsMasCarpoolApproverList struct {
 	MobileContactNumber   string `gorm:"column:mobile_contact_number" json:"mobile_contact_number" example:"9876543211"`
 	IsMainApprover        string `gorm:"column:is_main_approver" json:"is_main_approver"`
 	IsActive              string `gorm:"column:is_active" json:"is_active"`
+	ImageUrl              string `gorm:"-" json:"image_url"`
 }
 
 func (VmsMasCarpoolApproverList) TableName() string {
@@ -225,6 +227,7 @@ type VmsMasCarpoolVehicleDetail struct {
 	RefVehicleStatusName string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
 	Age                  string    `json:"age"`
 	Seat                 int       `gorm:"column:Seat" json:"seat"`
+	VehicleColor         string    `gorm:"column:vehicle_color" json:"vehicle_color"`
 	VehicleGear          string    `gorm:"column:vehicle_gear" json:"vehicle_gear"`
 	RefFuelTypeID        int       `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
 	FuelTypeName         string    `gorm:"column:fuel_type_name" json:"fuel_type_name"`
@@ -284,12 +287,15 @@ type VmsMasCarpoolDriverDetail struct {
 	DriverName                     string    `gorm:"column:driver_name" json:"driver_name"`
 	DriverNickname                 string    `gorm:"column:driver_nickname" json:"driver_nickname"`
 	DriverBirthdate                time.Time `gorm:"column:driver_birthdate" json:"driver_birthdate"`
-	Age                            string    `json:"age"`
+	Age                            string    `gorm:"-" json:"age"`
+	DriverDeptSapHire              string    `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire"`
 	DriverDeptSapShortNameHire     string    `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire"`
+	DriverDeptSapWork              string    `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
+	DriverDeptSapShortNameWork     string    `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_work"`
 	DriverContactNumber            string    `gorm:"column:driver_contact_number" json:"driver_contact_number"`
 	ApprovedJobDriverEndDate       time.Time `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date"`
 	DriverAverageSatisfactionScore float64   `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
-	RefDriverStatusCode            string    `gorm:"column:ref_driver_status_code" json:"ref_driver_status_code"`
+	DriverTotalSatisfactionReview  int       `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	RefDriverStatusName            string    `gorm:"column:driver_status_name" json:"driver_status_name"`
 	ContractNo                     string    `gorm:"column:contract_no" json:"contract_no"`
 	EndDate                        time.Time `gorm:"column:end_date" json:"end_date"`

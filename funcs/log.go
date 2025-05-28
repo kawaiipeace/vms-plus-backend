@@ -25,7 +25,7 @@ func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actio
 		ActionByRole:             actionByRole,
 		ActionByFullname:         user.FullName,
 		ActionByPosition:         user.Position,
-		ActionByDepartment:       user.DeptSAP,
+		ActionByDepartment:       user.DeptSAPShort,
 		ActionDetail:             actionDetail,
 		Remark:                   remark,
 		IsDeleted:                "0",
@@ -44,9 +44,5 @@ func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actio
 
 func CreateTrnRequestAnnualLicenseActionLog(trnAnnualLicenseUID, refStatusCode, actionDetail, actionByPersonalID, actionByRole, remark string) error {
 	CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID)
-	return nil
-}
-
-func CreateTrnLog1(trnRequestUID, refStatusCode, logRemark, createdBy string) error {
 	return nil
 }

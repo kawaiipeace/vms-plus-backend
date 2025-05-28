@@ -40,6 +40,16 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		Limit:         100,
 	}
 	lists, err := userhub.GetUserList(request)
+	// Sort lists to put the current user's emp_id first
+	sort.SliceStable(lists, func(i, j int) bool {
+		if lists[i].EmpID == user.EmpID {
+			return true
+		}
+		if lists[j].EmpID == user.EmpID {
+			return false
+		}
+		return false
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -183,7 +193,16 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 			AnnualDriver: annualDriverMap[user.EmpID],
 		}
 	}
-
+	// Sort lists to put the current user's emp_id first
+	sort.SliceStable(lists, func(i, j int) bool {
+		if lists[i].EmpID == user.EmpID {
+			return true
+		}
+		if lists[j].EmpID == user.EmpID {
+			return false
+		}
+		return false
+	})
 	c.JSON(http.StatusOK, lists)
 }
 
@@ -601,12 +620,11 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 	search := c.Query("search")
 
 	request := userhub.ServiceListUserRequest{
-		ServiceCode:   "vms",
-		Search:        search,
-		BureauDeptSap: user.BureauDeptSap,
-		//LevelCodes:    "M4,S1",
-		Role:  "final-license-approval",
-		Limit: 100,
+		ServiceCode:  "vms",
+		Search:       search,
+		UpperDeptSap: user.DeptSAP,
+		Role:         "license-approval",
+		Limit:        100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {

@@ -855,6 +855,41 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/booking-admin/update-rejected": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows users to update the rejected status of an item.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-admin"
+                ],
+                "summary": "Update rejected status for an item",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestRejected data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/booking-admin/update-trip": {
             "put": {
                 "security": [
@@ -7200,6 +7235,14 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve all cost centers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search cost_center_code,cost_center_name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -11198,6 +11241,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "10001"
                 },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
                 "mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
@@ -11209,6 +11256,10 @@ const docTemplate = `{
                 "ref_other_use_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
                 }
             }
         },
@@ -11902,6 +11953,10 @@ const docTemplate = `{
                 "received_key_start_datetime": {
                     "type": "string",
                     "example": "2025-02-16T08:00:00Z"
+                },
+                "receiver_type": {
+                    "type": "integer",
+                    "example": 0
                 },
                 "trn_request_uid": {
                     "type": "string",

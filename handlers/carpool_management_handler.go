@@ -155,6 +155,30 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 	return carpools, total, nil
 }
 
+func CheckMainCarpoolAdmin(masCarpoolUID string) {
+	// check if no main approver set first to is_main_approver = 1
+	var admin models.VmsMasCarpoolAdmin
+	if err := config.DB.Where("mas_carpool_uid = ? AND is_main_admin = '1' AND is_deleted = '0'", masCarpoolUID).First(&admin).Error; err == nil {
+		return
+	}
+	var admins []models.VmsMasCarpoolAdmin
+	if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0'", masCarpoolUID).Order("created_at ASC").First(&admins).Error; err == nil {
+		config.DB.Model(&models.VmsMasCarpoolAdmin{}).Where("mas_carpool_admin_uid = ?", admins[0].MasCarpoolAdminUID).Update("is_main_admin", "1")
+	}
+}
+
+func CheckMainCarpoolApprover(masCarpoolUID string) {
+	// check if no main approver set first to is_main_approver = 1
+	var approver models.VmsMasCarpoolApprover
+	if err := config.DB.Where("mas_carpool_uid = ? AND is_main_approver = '1' AND is_deleted = '0'", masCarpoolUID).First(&approver).Error; err == nil {
+		return
+	}
+	var approvers []models.VmsMasCarpoolApprover
+	if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0'", masCarpoolUID).Order("created_at ASC").First(&approvers).Error; err == nil {
+		config.DB.Model(&models.VmsMasCarpoolApprover{}).Where("mas_carpool_approver_uid = ?", approvers[0].MasCarpoolApproverUID).Update("is_main_approver", "1")
+	}
+}
+
 // SearchCarpools godoc
 // @Summary Search carpool management
 // @Description Search carpool management by criteria
@@ -307,6 +331,7 @@ func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
+	query = query.Order("DeptShort")
 	if err := query.
 		Find(&lists).Error; err != nil {
 		c.JSON(http.StatusOK, []interface{}{})
@@ -616,8 +641,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 	}
 	var admins []models.VmsMasCarpoolAdminList
 	query = config.DB.Table("vms_mas_carpool_admin cpa").
-		Select("cpa.*,dept.dept_short admin_dept_sap_short").
-		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.admin_dept_sap").
+		Select("cpa.*,public.fn_get_long_short_dept_name_by_dept_sap(cpa.admin_dept_sap) admin_dept_sap_short").
 		Where("mas_carpool_uid = ? AND cpa.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -667,6 +691,9 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 			"admins": []models.VmsMasCarpoolAdminList{},
 		})
 	} else {
+		for i := range admins {
+			admins[i].ImageUrl = funcs.GetEmpImage(admins[i].AdminEmpNo)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"pagination": gin.H{
 				"total":      total,
@@ -777,6 +804,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 		return
 	}
 
+	CheckMainCarpoolAdmin(requests[0].MasCarpoolUID)
 	c.JSON(http.StatusCreated, gin.H{
 		"message":      "Admin carpools created successfully",
 		"data":         requests,
@@ -923,6 +951,7 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 		return
 	}
 
+	CheckMainCarpoolAdmin(adminCarpool.MasCarpoolUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Admin carpool deleted successfully", "carpool_name": GetCarpoolName(adminCarpool.MasCarpoolUID)})
 }
 
@@ -1018,8 +1047,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 
 	var approvers []models.VmsMasCarpoolApproverList
 	query := config.DB.Table("vms_mas_carpool_approver cpa").
-		Select("cpa.*, dept.dept_short approver_dept_sap_short").
-		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.approver_dept_sap").
+		Select("cpa.*,public.fn_get_long_short_dept_name_by_dept_sap(cpa.approver_dept_sap) approver_dept_sap_short").
 		Where("mas_carpool_uid = ? AND cpa.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -1069,6 +1097,9 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 			"approvers": []models.VmsMasCarpoolApproverList{},
 		})
 	} else {
+		for i := range approvers {
+			approvers[i].ImageUrl = funcs.GetEmpImage(approvers[i].ApproverEmpNo)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"pagination": gin.H{
 				"total":      total,
@@ -1169,6 +1200,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 
 		empUser := funcs.GetUserEmpInfo(requests[i].ApproverEmpNo)
 		requests[i].ApproverDeptSap = empUser.DeptSAP
+		requests[i].ApproverEmpName = empUser.FullName
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -1176,6 +1208,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 		return
 	}
 
+	CheckMainCarpoolApprover(requests[0].MasCarpoolUID)
 	c.JSON(http.StatusCreated, gin.H{
 		"message":      "Approver carpools created successfully",
 		"data":         requests,
@@ -1327,6 +1360,6 @@ func (h *CarpoolManagementHandler) DeleteCarpoolApprover(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool approver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	CheckMainCarpoolApprover(approver.MasCarpoolUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Carpool approver deleted successfully", "carpool_name": GetCarpoolName(approver.MasCarpoolUID)})
 }
