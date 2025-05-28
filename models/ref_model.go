@@ -25,7 +25,9 @@ func (VmsRefFuelType) TableName() string {
 type VmsRefCostType struct {
 	RefCostTypeCode string `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code"`
 	RefCostTypeName string `gorm:"column:ref_cost_type_name" json:"ref_cost_type_name"`
-	RefCostNo       string `gorm:"column:ref_cost_no" json:"ref_cost_no"`
+	CostCenterCode  string `gorm:"column:cost_center_code" json:"cost_center_code"`
+	CostCenterName  string `gorm:"column:cost_center_name" json:"cost_center_name"`
+	CostCenter      string `gorm:"-" json:"cost_center"`
 }
 
 func (VmsRefCostType) TableName() string {
@@ -165,4 +167,12 @@ type VmsRefDriverStatus struct {
 
 func (VmsRefDriverStatus) TableName() string {
 	return "vms_ref_driver_status"
+}
+
+type VmsRefCostCenter struct {
+	CostCenter string `gorm:"cost_center" json:"cost_center"`
+}
+
+func (VmsRefCostCenter) TableName() string {
+	return "vms_mas_department"
 }

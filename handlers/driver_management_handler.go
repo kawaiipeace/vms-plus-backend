@@ -68,8 +68,8 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 		Joins("LEFT JOIN LATERAL (SELECT mas_driver_uid, driver_license_end_date FROM vms_mas_driver_license ORDER BY driver_license_end_date DESC LIMIT 1) dl ON vms_mas_driver.mas_driver_uid = dl.mas_driver_uid").
 		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
 
-	if name := strings.ToUpper(c.Query("name")); name != "" {
-		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	if search := strings.ToUpper(c.Query("search")); search != "" {
+		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
@@ -195,26 +195,35 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	BCode := user.BusinessArea[0:1]
 	driver.DriverID = fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
 
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
+	var departmentHire struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
-	var department struct {
-		DeptShort string
-		DeptFull  string
-	}
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Where("dept_sap = ?", driver.DriverDeptSapHire).
 		Select("dept_short, dept_full").
-		Find(&department).Error; err != nil {
+		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	driver.DriverDeptSapShortWork = department.DeptShort
-	driver.DriverDeptSapFullWork = department.DeptFull
+	driver.DriverDeptSapShortNameHire = departmentHire.DeptShort
+
+	var departmentWork struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+	}
+
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&departmentWork).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	driver.DriverDeptSapShortWork = departmentWork.DeptShort
+	driver.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	for i := range driver.DriverDocuments {
 		driver.DriverDocuments[i].MasDriverUID = driver.MasDriverUID
@@ -274,6 +283,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
+		Preload("DriverVendor").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
@@ -286,6 +296,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	//
 	driver.AlertDriverStatus = "ปฏิบัติงานปกติ"
 	driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
+	driver.DriverTotalSatisfactionReview = 200
 
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
@@ -359,26 +370,37 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
+
+	var departmentHire struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
-	var department struct {
-		DeptShort string
-		DeptFull  string
-	}
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Where("dept_sap = ?", request.DriverDeptSapHire).
 		Select("dept_short, dept_full").
-		Find(&department).Error; err != nil {
+		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	driver.DriverDeptSapShortWork = department.DeptShort
-	driver.DriverDeptSapFullWork = department.DeptFull
+	request.DriverDeptSapShortNameHire = departmentHire.DeptShort
+
+	var departmentWork struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+	}
+
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", request.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&departmentWork).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	fmt.Println(departmentWork)
+
+	request.DriverDeptSapShortWork = departmentWork.DeptShort
+	request.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
@@ -869,15 +891,15 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select("d.*").
+		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
-		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_carpool_driver_uid = d.mas_driver_uid 
-		   AND r.is_pea_employee_driver = ? 
-		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
-		   OR r.reserve_end_datetime BETWEEN ? AND ? 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
+		Where(`exists (select 1 from vms_trn_request r 
+			where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
+			AND r.is_pea_employee_driver = ? 
+			AND (r.reserve_start_datetime BETWEEN ? AND ? 
+			OR r.reserve_end_datetime BETWEEN ? AND ? 
+			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
+			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
 			"0", startDate, endDate, startDate, endDate, startDate, endDate)
 
 	name := strings.ToUpper(c.Query("name"))
@@ -926,7 +948,7 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		// Preload the driver requests for each driver
 		if err := config.DB.Table("vms_trn_request").
 			Preload("TripDetails").
-			Where("mas_carpool_driver_uid = ? AND is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
+			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
 			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
@@ -934,11 +956,25 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			}
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
+			} else if drivers[i].DriverTrnRequests[j].RefTripTypeCode == 1 {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ค้างแรม"
+			}
 			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]
 		}
 	}
+	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
+	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
-		"drivers": drivers,
+		"drivers":    drivers,
+		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
 			"page":       pageInt,

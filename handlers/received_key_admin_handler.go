@@ -26,10 +26,8 @@ var StatusNameMapReceivedKeyAdmin = map[string]string{
 }
 
 func (h *ReceivedKeyAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
+	query = funcs.SetQueryAdminRole(user, query)
+	return query
 }
 func (h *ReceivedKeyAdminHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('50') and is_deleted = '0'")
@@ -72,29 +70,29 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
-	query = query.Table("public.vms_trn_request AS req").
-		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
-		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
-		Where("req.ref_request_status_code IN (?)", statusCodes)
-	query = query.Where("req.is_deleted = ?", "0")
+	query = query.Table("public.vms_trn_request").
+		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
+			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid) parking_place ").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+	query = query.Where("vms_trn_request.is_deleted = ?", "0")
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.reserve_end_datetime >= ?", startDate)
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.reserve_start_datetime <= ?", endDate)
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
 	}
 
 	if receivedKeyStartDatetime := c.Query("received_key_start_datetime"); receivedKeyStartDatetime != "" {
-		query = query.Where("req.received_key_start_datetime >= ?", receivedKeyStartDatetime)
+		query = query.Where("vms_trn_request.received_key_start_datetime >= ?", receivedKeyStartDatetime)
 	}
 	if receivedKeyEndDatetime := c.Query("received_key_end_datetime"); receivedKeyEndDatetime != "" {
-		query = query.Where("req.received_key_end_datetime <= ?", receivedKeyEndDatetime)
+		query = query.Where("vms_trn_request.received_key_end_datetime <= ?", receivedKeyEndDatetime)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
@@ -115,7 +113,7 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 			codes = append(codes, key)
 		}
 		fmt.Println("codes", codes)
-		query = query.Where("req.ref_request_status_code IN (?)", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -125,11 +123,11 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	switch orderBy {
 	case "request_no":
-		query = query.Order("req.request_no " + orderDir)
+		query = query.Order("vms_trn_request.request_no " + orderDir)
 	case "start_datetime":
-		query = query.Order("req.start_datetime " + orderDir)
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
-		query = query.Order("req.ref_request_status_code " + orderDir)
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
 	}
 
 	// Pagination
@@ -174,10 +172,10 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
-	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Table("public.vms_trn_request").
+		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
+		Group("vms_trn_request.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -587,8 +585,8 @@ func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()

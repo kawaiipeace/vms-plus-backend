@@ -32,7 +32,8 @@ func (h *VehicleInUseUserHandler) SetQueryRole(user *models.AuthenUserEmp, query
 	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
 }
 func (h *VehicleInUseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
+	return query
+	//return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -77,7 +78,7 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.start_datetime >= ?", startDate)

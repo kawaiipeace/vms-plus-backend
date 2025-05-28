@@ -44,8 +44,7 @@ func MenuRequests(statusMenuMap map[string]string, query *gorm.DB) ([]models.Vms
 	for key := range statusMenuMap {
 		statusCodes := strings.Split(key, ",")
 		var count int64
-		query = query.Debug()
-		if err := query.Table("vms_trn_request").Where("ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
+		if err := query.Table("vms_trn_request").Where("vms_trn_request.ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
 			return nil, err
 		}
 		groupedSummary[key] += int(count)
@@ -84,7 +83,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		Preload("RefTripType").
 		Preload("RefCostType").
 		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+		c.JSON(http.StatusOK, gin.H{})
 		return request, err
 	}
 	if request.MasDriver.DriverBirthdate != (time.Time{}) {
@@ -103,12 +102,11 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		// Check VmsLogRequest
 		var logRequest models.VmsLogRequest
 		if err := config.DB.
-			Where("trn_request_uid = ? AND is_deleted = '0' AND ref_request_status_code = ", request.TrnRequestUID, request.RefRequestStatusCode).
-			First(&logRequest).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "LogRequest not found"})
-			return request, err
+			Where("trn_request_uid = ? AND is_deleted = '0' AND ref_request_status_code = ?", request.TrnRequestUID, request.RefRequestStatusCode).
+			First(&logRequest).Error; err == nil {
+			request.CanceledRequestRole = logRequest.ActionByRole
 		}
-		request.CanceledRequestRole = logRequest.ActionByRole
+
 	}
 
 	return request, nil
@@ -141,7 +139,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		First(&request, "vms_trn_request.trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
+		c.JSON(http.StatusOK, gin.H{})
 		return request, err
 	}
 	if request.MasDriver.DriverBirthdate != (time.Time{}) {

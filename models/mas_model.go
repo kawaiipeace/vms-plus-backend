@@ -2,25 +2,6 @@ package models
 
 import "time"
 
-// AuthenUserEmp
-type MasUser struct {
-	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
-	FirstName    string `gorm:"column:first_name" json:"first_name"`
-	LastName     string `gorm:"column:last_name" json:"last_name"`
-	FullName     string `gorm:"column:full_name" json:"full_name"`
-	Position     string `gorm:"column:posi_text" json:"posi_text"`
-	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
-	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
-	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
-	MobilePhone  string `gorm:"column:mobile_number" json:"mobile_number"`
-	DeskPhone    string `gorm:"column:internal_number" json:"internal_number"`
-	BusinessArea string `gorm:"column:business_area" json:"business_area"`
-}
-
-func (MasUser) TableName() string {
-	return "mas_employee"
-}
-
 //MasUserEmp
 type MasUserEmp struct {
 	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
@@ -43,6 +24,7 @@ func (MasUserEmp) TableName() string {
 type MasUserDriver struct {
 	EmpID        string             `gorm:"column:emp_id" json:"emp_id"`
 	FullName     string             `gorm:"column:full_name" json:"full_name"`
+	Position     string             `gorm:"column:posi_text" json:"posi_text"`
 	DeptSAP      string             `gorm:"column:dept_sap" json:"dept_sap"`
 	DeptSAPShort string             `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSAPFull  string             `gorm:"column:dept_sap_full" json:"dept_sap_full"`
@@ -80,6 +62,7 @@ type VmsMasDepartment struct {
 	DeptShort      string `gorm:"column:dept_short" json:"dept_short"`
 	DeptFull       string `gorm:"column:dept_full" json:"dept_full"`
 	CostCenterCode string `gorm:"column:cost_center_code" json:"cost_center_code"`
+	CostCenterName string `gorm:"column:cost_center_name" json:"cost_center_name"`
 }
 
 func (VmsMasDepartment) TableName() string {
@@ -109,7 +92,7 @@ func (VmsMasDepartmentTree) TableName() string {
 
 //VmsMasDriverVendor
 type VmsMasDriverVendor struct {
-	MasVendorCode string `gorm:"column:mas_vendor_code" json:"mas_vendor_code"`
+	MasVendorCode string `gorm:"column:mas_vendor_code;primaryKey" json:"mas_vendor_code"`
 	MasVendorName string `gorm:"column:mas_vendor_name" json:"mas_vendor_name"`
 }
 

@@ -41,6 +41,8 @@ type VmsMasDriver struct {
 	WorkCount                      int                   `gorm:"-" json:"work_count"`
 	DriverTripDetails              []VmsDriverTripDetail `gorm:"-" json:"trip_Details"`
 	DriverLicense                  VmsMasDriverLicense   `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
+	MasVendorCode                  string                `gorm:"column:mas_vendor_code" json:"mas_vendor_code"`
+	DriverVendor                   VmsMasDriverVendor    `gorm:"foreignKey:MasVendorCode;references:MasVendorCode" json:"driver_vendor"`
 }
 
 func (VmsMasDriver) TableName() string {

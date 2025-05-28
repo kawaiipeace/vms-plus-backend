@@ -53,6 +53,9 @@ func (h *BookingUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gor
 func (h *BookingUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('21','31','41') and is_deleted = '0'")
 }
+func (h *BookingUserHandler) SetQueryStatusCanCancel(query *gorm.DB) *gorm.DB {
+	return query.Where("ref_request_status_code in ('20','21','31','41') and is_deleted = '0'")
+}
 
 // CreateRequest godoc
 // @Summary Create a new booking request
@@ -88,8 +91,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.CreatedRequestDeptSAP = createUser.DeptSAP
 	request.CreatedRequestDeptNameShort = createUser.DeptSAPShort
 	request.CreatedRequestDeptNameFull = createUser.DeptSAPFull
-	request.CreatedRequestDeskPhone = createUser.DeskPhone
-	request.CreatedRequestMobilePhone = createUser.MobilePhone
+	request.CreatedRequestDeskPhone = createUser.TelInternal
+	request.CreatedRequestMobilePhone = createUser.TelMobile
 	request.CreatedRequestPosition = createUser.Position
 	request.CreatedRequestDatetime = time.Now()
 
@@ -99,8 +102,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -109,8 +112,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.ConfirmedRequestDeptSAP = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptNameShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptNameFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestDeskPhone = confirmUser.DeskPhone
-	request.ConfirmedRequestMobilePhone = confirmUser.MobilePhone
+	request.ConfirmedRequestDeskPhone = confirmUser.TelInternal
+	request.ConfirmedRequestMobilePhone = confirmUser.TelMobile
 	request.ConfirmedRequestPosition = confirmUser.Position
 
 	request.IsAdminChooseDriver = "0"
@@ -138,8 +141,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		request.DriverEmpDeptSAP = driverUser.DeptSAP
 		request.DriverEmpDeptNameShort = driverUser.DeptSAPShort
 		request.DriverEmpDeptNameShort = driverUser.DeptSAPFull
-		request.DriverEmpDeskPhone = driverUser.DeskPhone
-		request.DriverEmpMobilePhone = driverUser.MobilePhone
+		request.DriverEmpDeskPhone = driverUser.TelInternal
+		request.DriverEmpMobilePhone = driverUser.TelMobile
 		request.DriverEmpPosition = driverUser.Position
 	}
 
@@ -247,7 +250,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.reserve_end_datetime >= ?", startDate)
@@ -535,8 +538,8 @@ func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()
@@ -825,8 +828,8 @@ func (h *BookingUserHandler) UpdateConfirmer(c *gin.Context) {
 	request.ConfirmedRequestDeptSAP = confirmUser.DeptSAP
 	request.ConfirmedRequestDeptNameShort = confirmUser.DeptSAPShort
 	request.ConfirmedRequestDeptNameFull = confirmUser.DeptSAPFull
-	request.ConfirmedRequestDeskPhone = confirmUser.DeskPhone
-	request.ConfirmedRequestMobilePhone = confirmUser.MobilePhone
+	request.ConfirmedRequestDeskPhone = confirmUser.TelInternal
+	request.ConfirmedRequestMobilePhone = confirmUser.TelMobile
 	request.ConfirmedRequestPosition = confirmUser.Position
 
 	request.UpdatedAt = time.Now()
@@ -927,7 +930,7 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	}
 
 	query := h.SetQueryRole(user, config.DB)
-	query = h.SetQueryStatusCanUpdate(query)
+	query = h.SetQueryStatusCanCancel(query)
 	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
@@ -942,8 +945,8 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 

@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -111,27 +110,40 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		} else {
-			var user models.AuthenUserEmp
-
-			err = config.DBu.Where("emp_id = ?", userInfo.Username).
-				First(&user).Error
-
+			loginUsr, err := userhub.LoginUser("keycloak", userInfo.Username, "", "", c.ClientIP())
 			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-				} else {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
 				return
 			}
+			if loginUsr.EmpID == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+				return
+			}
+			user := models.AuthenUserEmp{
+				EmpID:         loginUsr.EmpID,
+				FirstName:     loginUsr.FirstName,
+				LastName:      loginUsr.LastName,
+				FullName:      loginUsr.FullName,
+				ImageUrl:      loginUsr.ImageUrl,
+				Position:      loginUsr.Position,
+				DeptSAP:       loginUsr.DeptSAP,
+				DeptSAPShort:  loginUsr.DeptSAPShort,
+				DeptSAPFull:   loginUsr.DeptSAPFull,
+				BureauDeptSap: loginUsr.BureauDeptSap,
+				MobilePhone:   loginUsr.MobilePhone,
+				DeskPhone:     loginUsr.DeskPhone,
+				BusinessArea:  loginUsr.BusinessArea,
+				Roles:         loginUsr.Roles,
+				LoginBy:       "otp",
+			}
 			user.LoginBy = "keycloak"
-			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, successResponse.AccessToken, successResponse.RefreshToken)
+			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
 				return
 			}
 
-			newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, successResponse.AccessToken, successResponse.RefreshToken)
+			newRefreshToken, err := funcs.GenerateRefreshJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 				return
@@ -229,26 +241,40 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 
 	var successResponse models.ThaiID_Success_Response
 	if err := json.Unmarshal(body, &successResponse); err == nil && successResponse.AccessToken != "" {
-		var user models.AuthenUserEmp
-		err = config.DBu.Where("identity_no = ?", successResponse.PID).
-			First(&user).Error
-
+		loginUsr, err := userhub.LoginUser("thaiid", "", successResponse.PID, "", c.ClientIP())
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
 			return
 		}
+		if loginUsr.EmpID == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+		user := models.AuthenUserEmp{
+			EmpID:         loginUsr.EmpID,
+			FirstName:     loginUsr.FirstName,
+			LastName:      loginUsr.LastName,
+			FullName:      loginUsr.FullName,
+			ImageUrl:      loginUsr.ImageUrl,
+			Position:      loginUsr.Position,
+			DeptSAP:       loginUsr.DeptSAP,
+			DeptSAPShort:  loginUsr.DeptSAPShort,
+			DeptSAPFull:   loginUsr.DeptSAPFull,
+			BureauDeptSap: loginUsr.BureauDeptSap,
+			MobilePhone:   loginUsr.MobilePhone,
+			DeskPhone:     loginUsr.DeskPhone,
+			BusinessArea:  loginUsr.BusinessArea,
+			Roles:         loginUsr.Roles,
+			LoginBy:       "otp",
+		}
 		user.LoginBy = "thaiid"
-		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
+		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token"})
 			return
 		}
 
-		newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
+		newRefreshToken, err := funcs.GenerateRefreshJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token"})
 			return
@@ -411,7 +437,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 
 	var req models.OTPVerify_Request
 	if err := c.ShouldBindJSON(&req); err != nil || req.OtpId == "" || req.OTP == "" {
-		c.JSON(400, gin.H{"error": "Invalid JSON input", "message": messages.ErrTryAgain.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
@@ -424,7 +450,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 	if otpRequest.ExpiresAt.Before(time.Now()) {
-		c.JSON(403, gin.H{"error": "รหัส OTP หมดอายุแล้ว กรุณากด 'ขอรหัส OTP ใหม่' เพื่อกรอกอีกครั้ง"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "รหัส OTP หมดอายุแล้ว กรุณากด 'ขอรหัส OTP ใหม่' เพื่อกรอกอีกครั้ง"})
 		return
 	}
 
@@ -445,27 +471,41 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	var user models.AuthenUserEmp
-	err = config.DBu.Where("tel_mobile = ?", otpRequest.PhoneNo).
-		First(&user).Error
-
+	loginUsr, err := userhub.LoginUser("otp", "", "", otpRequest.PhoneNo, c.ClientIP())
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrTryAgain.Error()})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
 		return
 	}
-	user.LoginBy = "otp"
+	if loginUsr.EmpID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
+	user := models.AuthenUserEmp{
+		EmpID:         loginUsr.EmpID,
+		FirstName:     loginUsr.FirstName,
+		LastName:      loginUsr.LastName,
+		FullName:      loginUsr.FullName,
+		ImageUrl:      loginUsr.ImageUrl,
+		Position:      loginUsr.Position,
+		DeptSAP:       loginUsr.DeptSAP,
+		DeptSAPShort:  loginUsr.DeptSAPShort,
+		DeptSAPFull:   loginUsr.DeptSAPFull,
+		BureauDeptSap: loginUsr.BureauDeptSap,
+		MobilePhone:   loginUsr.MobilePhone,
+		DeskPhone:     loginUsr.DeskPhone,
+		BusinessArea:  loginUsr.BusinessArea,
+		Roles:         loginUsr.Roles,
+		LoginBy:       "otp",
+	}
+
 	// Generate JWT tokens
-	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
+	accessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
-	refreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
+	refreshToken, err := funcs.GenerateRefreshJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": messages.ErrTryAgain.Error()})
 		return
@@ -550,25 +590,20 @@ func (h *LoginHandler) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
 	}
-	var user models.AuthenUserEmp
-	err = config.DBu.Where("emp_id = ?", claims.EmpID).
-		First(&user).Error
-
+	user, err := userhub.GetUserInfo(claims.EmpID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
-		}
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.Abort()
 		return
 	}
-	newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute, "", "")
+
+	newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating access token", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
-	newRefreshToken, err := funcs.GenerateJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour, "", "")
+	newRefreshToken, err := funcs.GenerateRefreshJWT(user, "refresh", time.Duration(config.AppConfig.JwtRefreshTokenTime)*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating refresh token", "message": messages.ErrInternalServer.Error()})
 		return
@@ -614,6 +649,13 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
+	userInfo, err1 := userhub.GetUserInfo(user.EmpID)
+	if err1 != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
+		return
+	}
+	user.Position = userInfo.Position
+
 	//Check VmsDriverLicenseAnnualList
 	var license models.VmsDriverLicenseAnnualList
 	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", time.Now().Year()+543).

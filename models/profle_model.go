@@ -14,7 +14,7 @@ type AuthenUserEmp struct {
 	FirstName         string   `gorm:"column:first_name" json:"first_name"`
 	LastName          string   `gorm:"column:last_name" json:"last_name"`
 	FullName          string   `gorm:"column:full_name" json:"full_name"`
-	Position          string   `gorm:"column:position" json:"position"`
+	Position          string   `gorm:"column:posi_text" json:"posi_text"`
 	DeptSAP           string   `gorm:"column:dept_sap" json:"dept_sap"`
 	DeptSAPShort      string   `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSAPFull       string   `gorm:"column:dept_sap_full" json:"dept_sap_full"`

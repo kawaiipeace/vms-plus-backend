@@ -538,6 +538,9 @@ definitions:
       driver_dept_sap_work:
         example: "10001"
         type: string
+      is_replacement:
+        example: "1"
+        type: string
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
@@ -547,6 +550,9 @@ definitions:
       ref_other_use_code:
         example: 1
         type: integer
+      replacement_driver_uid:
+        example: 0a33f4df-5da8-4831-b3e4-27b5c6134c7c
+        type: string
     type: object
   models.VmsMasDriverDelete:
     properties:
@@ -763,7 +769,11 @@ definitions:
     type: object
   models.VmsRefCostType:
     properties:
-      ref_cost_no:
+      cost_center:
+        type: string
+      cost_center_code:
+        type: string
+      cost_center_name:
         type: string
       ref_cost_type_code:
         type: string
@@ -1032,6 +1042,9 @@ definitions:
       received_key_start_datetime:
         example: "2025-02-16T08:00:00Z"
         type: string
+      receiver_type:
+        example: 0
+        type: integer
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
@@ -1193,6 +1206,9 @@ definitions:
         type: string
       pickup_place:
         example: Main Office
+        type: string
+      pm_order_no:
+        example: PM123456
         type: string
       ref_cost_type_code:
         example: 1
@@ -1429,314 +1445,6 @@ info:
   title: VMS_PLUS
   version: "1.0"
 paths:
-  /api/booking-admin-dept/menu-requests:
-    get:
-      consumes:
-      - application/json
-      description: Summary booking requests, counts grouped by request status code
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Summary booking requests by request status code
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/request/{trn_request_uid}:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint fetches details of a specific booking request using
-        its unique identifier (TrnRequestUID).
-      parameters:
-      - description: TrnRequestUID (trn_request_uid)
-        in: path
-        name: trn_request_uid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Retrieve a specific booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/search-requests:
-    get:
-      consumes:
-      - application/json
-      description: Search for requests using a keyword and get the summary of counts
-        grouped by request status code
-      parameters:
-      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
-          or work_place)
-        in: query
-        name: search
-        type: string
-      - description: Filter by multiple request status codes (comma-separated, e.g.,
-          'A,B,C')
-        in: query
-        name: ref_request_status_code
-        type: string
-      - description: Filter by start datetime (YYYY-MM-DD format)
-        in: query
-        name: startdate
-        type: string
-      - description: Filter by end datetime (YYYY-MM-DD format)
-        in: query
-        name: enddate
-        type: string
-      - description: Filter by vehicle owner department SAP
-        in: query
-        name: vehicle_owner_dept_sap
-        type: string
-      - description: Order by request_no, start_datetime, ref_request_status_code
-        in: query
-        name: order_by
-        type: string
-      - description: 'Order direction: asc or desc'
-        in: query
-        name: order_dir
-        type: string
-      - description: 'Page number (default: 1)'
-        in: query
-        name: page
-        type: integer
-      - description: 'Number of records per page (default: 10)'
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Search booking requests and get summary counts by request status code
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-approved:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows users to update the sended back status of
-        an item.
-      parameters:
-      - description: VmsTrnRequestApprovedWithRecieiveKey data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestApprovedWithRecieiveKey'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update Approved status for an item
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-canceled:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows users to update the cancel status of an item.
-      parameters:
-      - description: VmsTrnRequestCanceled data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestCanceled'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update cancel status for an item
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-cost:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the cost information
-        for an existing booking request.
-      parameters:
-      - description: VmsTrnRequestCost data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestCost'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update cost details for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-document:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the document associated
-        with their booking request.
-      parameters:
-      - description: VmsTrnRequestDocument data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestDocument'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update document details for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-driver:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the cost information
-        for an existing booking request.
-      parameters:
-      - description: VmsTrnRequestDriver data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestDriver'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update driver for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-pickup:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the pickup information
-        for an existing booking.
-      parameters:
-      - description: VmsTrnRequestPickup data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestPickup'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update pickup details for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-rejected:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows users to update the rejected status of an
-        item.
-      parameters:
-      - description: VmsTrnRequestRejected data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestRejected'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update rejected status for an item
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-trip:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the details of an
-        existing trip associated with their request.
-      parameters:
-      - description: VmsTrnRequestTrip data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestTrip'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update trip details for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-vehicle:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the cost information
-        for an existing booking request.
-      parameters:
-      - description: VmsTrnRequestVehicle data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestVehicle'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update vehicle for a booking request
-      tags:
-      - Booking-admin-dept
-  /api/booking-admin-dept/update-vehicle-user:
-    put:
-      consumes:
-      - application/json
-      description: This endpoint allows a booking user to update the vehicle details
-        associated with their request.
-      parameters:
-      - description: VmsTrnRequestVehicleUser data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/models.VmsTrnRequestVehicleUser'
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Update vehicle information for a booking user
-      tags:
-      - Booking-admin-dept
   /api/booking-admin/menu-requests:
     get:
       consumes:
@@ -1960,6 +1668,28 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Update pickup details for a booking request
+      tags:
+      - Booking-admin
+  /api/booking-admin/update-rejected:
+    put:
+      consumes:
+      - application/json
+      description: This endpoint allows users to update the rejected status of an
+        item.
+      parameters:
+      - description: VmsTrnRequestRejected data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.VmsTrnRequestRejected'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update rejected status for an item
       tags:
       - Booking-admin
   /api/booking-admin/update-trip:
@@ -3266,6 +2996,42 @@ paths:
       summary: Get driver timeline
       tags:
       - Carpool-management
+  /api/carpool-management/export:
+    get:
+      consumes:
+      - application/json
+      description: Export carpool management by criteria
+      parameters:
+      - description: Search query for carpool_name or emp_name
+        in: query
+        name: search
+        type: string
+      - description: Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน
+          1=เปิด 0=ปิด
+        in: query
+        name: is_active
+        type: string
+      - description: Filter by dept_sap
+        in: query
+        name: dept_sap
+        type: string
+      - description: 'Order by fields: carpool_name, number_of_drivers, number_of_vehicles'
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export carpool management
+      tags:
+      - Carpool-management
   /api/carpool-management/mas-department/{carpool_type}:
     get:
       consumes:
@@ -3563,6 +3329,10 @@ paths:
         in: query
         name: end_date
         required: true
+        type: string
+      - description: Search by vehicle license plate, brand, or model
+        in: query
+        name: search
         type: string
       - description: Filter by Car type
         in: query
@@ -5037,6 +4807,17 @@ paths:
       summary: Retrieve the Vehicle Departments
       tags:
       - MAS
+  /api/notification:
+    get:
+      consumes:
+      - application/json
+      description: Get Notification
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Notification
+      tags:
+      - Notification
   /api/received-key-admin/request/{trn_request_uid}:
     get:
       consumes:
@@ -5904,6 +5685,25 @@ paths:
       summary: Retrieve all carpool choose driver options
       tags:
       - REF
+  /api/ref/cost-center:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all cost centers.
+      parameters:
+      - description: Search cost_center_code,cost_center_name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all cost centers
+      tags:
+      - REF
   /api/ref/cost-type:
     get:
       consumes:
@@ -6094,6 +5894,20 @@ paths:
       summary: Retrieve all vehicle key types
       tags:
       - REF
+  /api/ref/vehicle-status:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all vehicle statuses.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all vehicle statuses
+      tags:
+      - REF
   /api/service/request-booking/{request_no}:
     get:
       consumes:
@@ -6111,6 +5925,25 @@ paths:
       security:
       - ServiceKey: []
       summary: Get request booking
+      tags:
+      - Service
+  /api/service/vms-to-eems/{request_no}:
+    get:
+      consumes:
+      - application/json
+      description: Get VMS to EEMS
+      parameters:
+      - description: RequestNo
+        in: path
+        name: request_no
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ServiceKey: []
+      summary: Get VMS to EEMS
       tags:
       - Service
   /api/upload:
@@ -7832,6 +7665,10 @@ paths:
         in: query
         name: ref_fuel_type_id
         type: string
+      - description: Filter by is_tax_credit
+        in: query
+        name: is_tax_credit
+        type: string
       - description: Order by vehicle_license_plate, vehicle_mileage, age,is_active
         in: query
         name: order_by
@@ -7872,6 +7709,10 @@ paths:
         in: query
         name: end_date
         required: true
+        type: string
+      - description: Search by vehicle license plate, brand, or model
+        in: query
+        name: search
         type: string
       - description: Filter by vehicle owner department SAP
         in: query

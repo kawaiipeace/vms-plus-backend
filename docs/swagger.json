@@ -6,493 +6,6 @@
         "version": "1.0"
     },
     "paths": {
-        "/api/booking-admin-dept/menu-requests": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "Summary booking requests, counts grouped by request status code",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Summary booking requests by request status code",
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/request/{trn_request_uid}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint fetches details of a specific booking request using its unique identifier (TrnRequestUID).",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Retrieve a specific booking request",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "TrnRequestUID (trn_request_uid)",
-                        "name": "trn_request_uid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/search-requests": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "Search for requests using a keyword and get the summary of counts grouped by request status code",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Search booking requests and get summary counts by request status code",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
-                        "name": "ref_request_status_code",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by start datetime (YYYY-MM-DD format)",
-                        "name": "startdate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by end datetime (YYYY-MM-DD format)",
-                        "name": "enddate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by vehicle owner department SAP",
-                        "name": "vehicle_owner_dept_sap",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Order by request_no, start_datetime, ref_request_status_code",
-                        "name": "order_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Order direction: asc or desc",
-                        "name": "order_dir",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number (default: 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of records per page (default: 10)",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-approved": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows users to update the sended back status of an item.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update Approved status for an item",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestApprovedWithRecieiveKey data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestApprovedWithRecieiveKey"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-canceled": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows users to update the cancel status of an item.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update cancel status for an item",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestCanceled data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestCanceled"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-cost": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the cost information for an existing booking request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update cost details for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestCost data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestCost"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-document": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the document associated with their booking request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update document details for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestDocument data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestDocument"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-driver": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the cost information for an existing booking request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update driver for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestDriver data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestDriver"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-pickup": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the pickup information for an existing booking.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update pickup details for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestPickup data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestPickup"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-rejected": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows users to update the rejected status of an item.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update rejected status for an item",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestRejected data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-trip": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the details of an existing trip associated with their request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update trip details for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestTrip data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestTrip"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-vehicle": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the cost information for an existing booking request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update vehicle for a booking request",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestVehicle data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestVehicle"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/api/booking-admin-dept/update-vehicle-user": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a booking user to update the vehicle details associated with their request.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Booking-admin-dept"
-                ],
-                "summary": "Update vehicle information for a booking user",
-                "parameters": [
-                    {
-                        "description": "VmsTrnRequestVehicleUser data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.VmsTrnRequestVehicleUser"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/booking-admin/menu-requests": {
             "get": {
                 "security": [
@@ -840,6 +353,41 @@
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnRequestPickup"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/booking-admin/update-rejected": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint allows users to update the rejected status of an item.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-admin"
+                ],
+                "summary": "Update rejected status for an item",
+                "parameters": [
+                    {
+                        "description": "VmsTrnRequestRejected data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.VmsTrnRequestRejected"
                         }
                     }
                 ],
@@ -2915,6 +2463,62 @@
                 "responses": {}
             }
         },
+        "/api/carpool-management/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export carpool management by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Export carpool management",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query for carpool_name or emp_name",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by is_active status (comma-separated, e.g., '2,1,0') 2=ไม่พร้อมใช้งาน 1=เปิด 0=ปิด",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by dept_sap",
+                        "name": "dept_sap",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by fields: carpool_name, number_of_drivers, number_of_vehicles",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/carpool-management/mas-department/{carpool_type}": {
             "get": {
                 "security": [
@@ -3398,6 +3002,12 @@
                         "name": "end_date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -5730,6 +5340,22 @@
                 "responses": {}
             }
         },
+        "/api/notification": {
+            "get": {
+                "description": "Get Notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get Notification",
+                "responses": {}
+            }
+        },
         "/api/received-key-admin/request/{trn_request_uid}": {
             "get": {
                 "security": [
@@ -7092,6 +6718,38 @@
                 "responses": {}
             }
         },
+        "/api/ref/cost-center": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all cost centers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all cost centers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search cost_center_code,cost_center_name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/ref/cost-type": {
             "get": {
                 "security": [
@@ -7413,6 +7071,30 @@
                 "responses": {}
             }
         },
+        "/api/ref/vehicle-status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all vehicle statuses.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all vehicle statuses",
+                "responses": {}
+            }
+        },
         "/api/service/request-booking/{request_no}": {
             "get": {
                 "security": [
@@ -7431,6 +7113,36 @@
                     "Service"
                 ],
                 "summary": "Get request booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RequestNo",
+                        "name": "request_no",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/service/vms-to-eems/{request_no}": {
+            "get": {
+                "security": [
+                    {
+                        "ServiceKey": []
+                    }
+                ],
+                "description": "Get VMS to EEMS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Get VMS to EEMS",
                 "parameters": [
                     {
                         "type": "string",
@@ -10208,6 +9920,12 @@
                     },
                     {
                         "type": "string",
+                        "description": "Filter by is_tax_credit",
+                        "name": "is_tax_credit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Order by vehicle_license_plate, vehicle_mileage, age,is_active",
                         "name": "order_by",
                         "in": "query"
@@ -10269,6 +9987,12 @@
                         "name": "end_date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by vehicle license plate, brand, or model",
+                        "name": "search",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -11021,6 +10745,10 @@
                     "type": "string",
                     "example": "10001"
                 },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
                 "mas_driver_uid": {
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
@@ -11032,6 +10760,10 @@
                 "ref_other_use_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
                 }
             }
         },
@@ -11337,7 +11069,13 @@
         "models.VmsRefCostType": {
             "type": "object",
             "properties": {
-                "ref_cost_no": {
+                "cost_center": {
+                    "type": "string"
+                },
+                "cost_center_code": {
+                    "type": "string"
+                },
+                "cost_center_name": {
                     "type": "string"
                 },
                 "ref_cost_type_code": {
@@ -11720,6 +11458,10 @@
                     "type": "string",
                     "example": "2025-02-16T08:00:00Z"
                 },
+                "receiver_type": {
+                    "type": "integer",
+                    "example": 0
+                },
                 "trn_request_uid": {
                     "type": "string",
                     "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
@@ -11943,6 +11685,10 @@
                 "pickup_place": {
                     "type": "string",
                     "example": "Main Office"
+                },
+                "pm_order_no": {
+                    "type": "string",
+                    "example": "PM123456"
                 },
                 "ref_cost_type_code": {
                     "type": "integer",

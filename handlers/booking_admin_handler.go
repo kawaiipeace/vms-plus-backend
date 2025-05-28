@@ -47,10 +47,7 @@ var StatusNameMapAdminDetail = map[string]string{
 }
 
 func (h *BookingAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query.Where("created_request_emp_id = ?", user.EmpID)
+	return funcs.SetQueryAdminRole(user, query)
 }
 
 func (h *BookingAdminHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
@@ -121,38 +118,34 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
-	query = query.Table("public.vms_trn_request AS req").
-		Select(`
-		req.*, 
-		v.vehicle_license_plate, v.vehicle_license_plate_province_short, v.vehicle_license_plate_province_full,
-		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_name) AS driver_name,
-		COALESCE(NULLIF(req.is_pea_employee_driver::VARCHAR, '1'), d.driver_dept_sap_hire) AS driver_dept_name,
-		md.dept_short AS vehicle_dept_name,
-		mc.carpool_name AS vehicle_carpool_name
-	`).
-		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = req.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_driver AS d ON d.mas_driver_uid = req.mas_carpool_driver_uid").
-		Joins("LEFT JOIN vms_mas_vehicle_department AS mvd ON mvd.mas_vehicle_uid = req.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = mvd.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = req.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid").
-		Where("req.ref_request_status_code IN (?)", statusCodes)
+	query = query.Table("public.vms_trn_request").
+		Select(
+			`vms_trn_request.*,
+			v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name,
+			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,
+			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=vms_trn_request.mas_vehicle_uid) vehicle_dept_name,       
+			(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=vms_trn_request.mas_vehicle_uid) vehicle_carpool_name
+		`).
+		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Joins("LEFT JOIN public.vms_ref_request_status AS status ON vms_trn_request.ref_request_status_code = status.ref_request_status_code").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
-	query = query.Where("req.is_deleted = ?", "0")
+	query = query.Where("vms_trn_request.is_deleted = ?", "0")
 
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.reserve_end_datetime >= ?", startDate)
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.reserve_start_datetime <= ?", endDate)
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
-		query = query.Where("req.ref_request_status_code IN (?)", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
 	}
 
 	// Ordering
@@ -163,11 +156,11 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	switch orderBy {
 	case "request_no":
-		query = query.Order("req.request_no " + orderDir)
+		query = query.Order("vms_trn_request.request_no " + orderDir)
 	case "start_datetime":
-		query = query.Order("req.start_datetime " + orderDir)
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
-		query = query.Order("req.ref_request_status_code " + orderDir)
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
 	}
 
 	// Pagination
@@ -213,10 +206,10 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
-	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Table("public.vms_trn_request").
+		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
+		Group("vms_trn_request.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -352,13 +345,13 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 // UpdateRejected godoc
 // @Summary Update rejected status for an item
 // @Description This endpoint allows users to update the rejected status of an item.
-// @Tags Booking-admin-dept
+// @Tags Booking-admin
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param data body models.VmsTrnRequestRejected true "VmsTrnRequestRejected data"
-// @Router /api/booking-admin-dept/update-rejected [put]
+// @Router /api/booking-admin/update-rejected [put]
 func (h *BookingAdminHandler) UpdateRejected(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
@@ -388,8 +381,8 @@ func (h *BookingAdminHandler) UpdateRejected(c *gin.Context) {
 	request.RejectedRequestDeptSAP = rejectUser.DeptSAP
 	request.RejectedRequestDeptNameShort = rejectUser.DeptSAPShort
 	request.RejectedRequestDeptNameFull = rejectUser.DeptSAPFull
-	request.RejectedRequestDeskPhone = rejectUser.DeskPhone
-	request.RejectedRequestMobilePhone = rejectUser.MobilePhone
+	request.RejectedRequestDeskPhone = rejectUser.TelInternal
+	request.RejectedRequestMobilePhone = rejectUser.TelMobile
 	request.RejectedRequestPosition = rejectUser.Position
 	request.RejectedRequestDatetime = time.Now()
 	request.UpdatedAt = time.Now()
@@ -446,6 +439,11 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		return
 	}
 	request.HandoverUID = uuid.New().String()
+	request.ReceiverType = 0
+	request.CreatedBy = user.EmpID
+	request.CreatedAt = time.Now()
+	request.UpdatedBy = user.EmpID
+	request.UpdatedAt = time.Now()
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
@@ -518,8 +516,8 @@ func (h *BookingAdminHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeptSAP = cancelUser.DeptSAP
 	request.CanceledRequestDeptNameShort = cancelUser.DeptSAPShort
 	request.CanceledRequestDeptNameFull = cancelUser.DeptSAPFull
-	request.CanceledRequestDeskPhone = cancelUser.DeskPhone
-	request.CanceledRequestMobilePhone = cancelUser.MobilePhone
+	request.CanceledRequestDeskPhone = cancelUser.TelInternal
+	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
 	request.CanceledRequestDatetime = time.Now()
 
@@ -584,8 +582,8 @@ func (h *BookingAdminHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.DeskPhone
-	request.VehicleUserMobilePhone = vehicleUser.MobilePhone
+	request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()

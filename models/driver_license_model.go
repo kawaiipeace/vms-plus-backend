@@ -4,21 +4,22 @@ import "time"
 
 //DriverLicense
 type VmsDriverLicenseCard struct {
-	EmpID                     string                          `gorm:"column:emp_id;primaryKey" json:"emp_id" example:"990001"`
-	DriverName                string                          `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
-	DeptSAPShort              string                          `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	TrnRequestAnnualDriverUID string                          `gorm:"column:trn_request_annual_driver_uid" json:"trn_request_annual_driver_uid"`
-	RequestAnnualDriverNo     string                          `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
-	LicenseStatusCode         string                          `gorm:"column:license_status_code" json:"license_status_code"`
-	LicenseStatus             string                          `gorm:"-" json:"license_status"`
-	AnnualYYYY                int                             `gorm:"column:-" json:"annual_yyyy" example:"2568"`
-	IsNoExpiryDate            bool                            `gorm:"column:is_no_expiry_date" json:"is_no_expiry_date"`
-	DriverLicense             VmsDriverLicenseCardLicense     `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_license"`
-	DriverCertificate         VmsDriverLicenseCardCertificate `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_certificate"`
-	ProgressRequestHistory    []ProgressRequestHistory        `gorm:"-" json:"progress_request_history"`
-	NextAnnualYYYY            int                             `gorm:"column:-" json:"next_annual_yyyy" example:"2569"`
-	NextLicenseStatusCode     string                          `gorm:"column:next_license_status_code" json:"next_license_status_code"`
-	NextLicenseStatus         string                          `gorm:"-" json:"next_license_status"`
+	EmpID                         string                          `gorm:"column:emp_id;primaryKey" json:"emp_id" example:"990001"`
+	DriverName                    string                          `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
+	DeptSAPShort                  string                          `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
+	TrnRequestAnnualDriverUID     string                          `gorm:"column:trn_request_annual_driver_uid" json:"trn_request_annual_driver_uid"`
+	RequestAnnualDriverNo         string                          `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
+	LicenseStatusCode             string                          `gorm:"column:license_status_code" json:"license_status_code"`
+	LicenseStatus                 string                          `gorm:"-" json:"license_status"`
+	AnnualYYYY                    int                             `gorm:"column:-" json:"annual_yyyy" example:"2568"`
+	IsNoExpiryDate                bool                            `gorm:"column:is_no_expiry_date" json:"is_no_expiry_date"`
+	DriverLicense                 VmsDriverLicenseCardLicense     `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_license"`
+	DriverCertificate             VmsDriverLicenseCardCertificate `gorm:"foreignKey:EmpID;references:EmpID" json:"driver_certificate"`
+	ProgressRequestHistory        []ProgressRequestHistory        `gorm:"-" json:"progress_request_history"`
+	NextTrnRequestAnnualDriverUID string                          `gorm:"column:next_trn_request_annual_driver_uid" json:"next_trn_request_annual_driver_uid"`
+	NextAnnualYYYY                int                             `gorm:"column:-" json:"next_annual_yyyy" example:"2569"`
+	NextLicenseStatusCode         string                          `gorm:"column:next_license_status_code" json:"next_license_status_code"`
+	NextLicenseStatus             string                          `gorm:"-" json:"next_license_status"`
 }
 
 func (VmsDriverLicenseCard) TableName() string {
