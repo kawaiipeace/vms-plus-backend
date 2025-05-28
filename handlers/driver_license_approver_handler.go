@@ -120,6 +120,10 @@ func (h *DriverLicenseApproverHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("req.request_annual_driver_no " + orderDir)
 	case "driver_license_expire_date":
 		query = query.Order("req.driver_license_expire_date " + orderDir)
+	case "created_request_datetime":
+		query = query.Order("req.created_request_datetime " + orderDir)
+	default:
+		query = query.Order("req.created_request_datetime desc")
 	}
 
 	// Pagination
@@ -530,7 +534,7 @@ func (h *DriverLicenseApproverHandler) UpdateDriverLicenseAnnualApproved(c *gin.
 	request.ApprovedRequestDeptSAPFull = empUser.DeptSAPFull
 	request.ApprovedRequestDatetime = time.Now()
 	request.AnnualYYYY = driverLicenseAnnual.AnnualYYYY
-
+	request.DriverLicenseExpireDate = driverLicenseAnnual.DriverLicenseExpireDate
 	request.RequestIssueDate = request.ApprovedRequestDatetime
 	annualYearEnd := time.Date(driverLicenseAnnual.AnnualYYYY-543, 12, 31, 23, 59, 59, 0, time.UTC)
 	if driverLicenseAnnual.DriverLicenseExpireDate.Before(annualYearEnd) {

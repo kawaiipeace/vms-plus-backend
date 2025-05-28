@@ -102,22 +102,6 @@ func main() {
 	router.PUT("/api/booking-admin/update-vehicle", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateVehicle)
 	router.PUT("/api/booking-admin/update-driver", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateDriver)
 
-	//BookingAdminDeptHandler
-	bookinAdminDeptHandler := handlers.BookingAdminDeptHandler{Role: "admin-dept-approval"}
-	router.GET("/api/booking-admin-dept/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.MenuRequests)
-	router.GET("/api/booking-admin-dept/search-requests", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.SearchRequests)
-	router.GET("/api/booking-admin-dept/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.GetRequest)
-	router.PUT("/api/booking-admin-dept/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateRejected)
-	router.PUT("/api/booking-admin-dept/update-approved", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateApproved)
-	router.PUT("/api/booking-admin-dept/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateCanceled)
-	router.PUT("/api/booking-admin-dept/update-vehicle-user", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateVehicleUser)
-	router.PUT("/api/booking-admin-dept/update-trip", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateTrip)
-	router.PUT("/api/booking-admin-dept/update-pickup", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdatePickup)
-	router.PUT("/api/booking-admin-dept/update-document", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateDocument)
-	router.PUT("/api/booking-admin-dept/update-cost", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateCost)
-	router.PUT("/api/booking-admin-dept/update-vehicle", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateVehicle)
-	router.PUT("/api/booking-admin-dept/update-driver", funcs.ApiKeyAuthenMiddleware(), bookinAdminDeptHandler.UpdateDriver)
-
 	//BookingFinalHandler
 	bookingFinalHandler := handlers.BookingFinalHandler{Role: "final-approval"}
 	router.GET("/api/booking-final/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.MenuRequests)
@@ -414,7 +398,7 @@ func main() {
 	//ServiceHandler
 	serviceHandler := handlers.ServiceHandler{}
 	router.GET("/api/service/request-booking/:request_no", serviceHandler.GetRequestBooking)
-	router.GET("/api/service/request-to-eems/:request_no", serviceHandler.GetVMSToEEMS)
+	router.GET("/api/service/vms-to-eems/:request_no", serviceHandler.GetVMSToEEMS)
 
 	//UploadHandler
 	uploadHandler := handlers.UploadHandler{}

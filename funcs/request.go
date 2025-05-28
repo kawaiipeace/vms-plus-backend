@@ -44,8 +44,7 @@ func MenuRequests(statusMenuMap map[string]string, query *gorm.DB) ([]models.Vms
 	for key := range statusMenuMap {
 		statusCodes := strings.Split(key, ",")
 		var count int64
-		query = query.Debug()
-		if err := query.Table("vms_trn_request").Where("ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
+		if err := query.Table("vms_trn_request").Where("vms_trn_request.ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
 			return nil, err
 		}
 		groupedSummary[key] += int(count)
