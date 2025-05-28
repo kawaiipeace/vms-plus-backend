@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // Claims for JWT
@@ -222,4 +223,38 @@ func GetUserEmpInfo(empID string) models.MasUserEmp {
 		BusinessArea: user.BusinessArea,
 	}
 	return empUser
+}
+
+func SetQueryAdminRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	query = query.Where(
+		`exists (
+			select 1 from vms_mas_carpool_admin ca 
+			where ca.mas_carpool_uid = vms_trn_request.mas_carpool_uid 
+			and ca.admin_emp_no = ? and ca.is_deleted = '0' and ca.is_active = '1' 
+		) or exists (
+			select 1 from vms_mas_vehicle_department vd 
+			where vd.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid 
+			and vd.bureau_dept_sap in (?)	
+		)`,
+		user.EmpID,
+		user.BureauDeptSap,
+	)
+	return query
+}
+
+func SetQueryApproverRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	query = query.Where(
+		`exists (
+			select 1 from vms_mas_carpool_approver ca 
+			where ca.mas_carpool_uid = vms_trn_request.mas_carpool_uid 
+			and ca.approver_emp_no = ? and ca.is_deleted = '0' and ca.is_active = '1' 
+		) or exists (
+			select 1 from vms_mas_vehicle_department vd 
+			where vd.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid 
+			and vd.bureau_dept_sap in (?)	
+		)`,
+		user.EmpID,
+		user.BureauDeptSap,
+	)
+	return query
 }

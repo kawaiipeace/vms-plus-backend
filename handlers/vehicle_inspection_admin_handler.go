@@ -26,19 +26,7 @@ var StatusNameMapVehicelInspectionAdmin = map[string]string{
 }
 
 func (h *VehicleInspectionAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	query = query.Where(
-		`exists (
-			select 1 from vms_mas_carpool_admin ca 
-			where ca.mas_carpool_uid = req.mas_carpool_uid 
-			and ca.admin_emp_no = ? and ca.is_deleted = '0' and ca.is_active = '1' 
-		) or exists (
-			select 1 from vms_mas_vehicle_department vd 
-			where vd.mas_vehicle_uid = req.mas_vehicle_uid 
-			and vd.bureau_dept_sap in (?)	
-		)`,
-		user.EmpID,
-		user.BureauDeptSap,
-	)
+	query = funcs.SetQueryApproverRole(user, query)
 	return query
 }
 func (h *VehicleInspectionAdminHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
@@ -80,21 +68,21 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
-	query = query.Table("public.vms_trn_request AS req").
-		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
-		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
-		Where("req.ref_request_status_code IN (?)", statusCodes)
+	query = query.Table("public.vms_trn_request").
+		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid) parking_place ").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
-		query = query.Where("req.reserve_end_datetime >= ?", startDate)
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
 	}
 	if endDate := c.Query("enddate"); endDate != "" {
-		query = query.Where("req.reserve_start_datetime <= ?", endDate)
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
@@ -115,7 +103,7 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 			codes = append(codes, key)
 		}
 		fmt.Println("codes", codes)
-		query = query.Where("req.ref_request_status_code IN (?)", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -125,11 +113,11 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	switch orderBy {
 	case "request_no":
-		query = query.Order("req.request_no " + orderDir)
+		query = query.Order("vms_trn_request.request_no " + orderDir)
 	case "start_datetime":
-		query = query.Order("req.start_datetime " + orderDir)
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
-		query = query.Order("req.ref_request_status_code " + orderDir)
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
 	}
 
 	// Pagination
@@ -165,10 +153,10 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
-	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Table("public.vms_trn_request").
+		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
+		Group("vms_trn_request.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {

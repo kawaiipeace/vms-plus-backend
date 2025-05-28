@@ -109,12 +109,9 @@ type VmsTrnRequestRequest struct {
 	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	//Step 2
-	MasCarpoolUID        string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
-	RequestedVehicleType string `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
-	MasVehicleUID        string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
-	//VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"-"`
-	//VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"-"`
-	//VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"-"`
+	MasCarpoolUID        string  `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
+	RequestedVehicleType string  `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
+	MasVehicleUID        *string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
 
 	//MasVehicleDepartmentUID string `gorm:"column:mas_vehicle_department_uid" json:"-"`
 	MasVehicleEvUID       string `gorm:"column:mas_vehicle_ev_uid" json:"-"`
@@ -123,9 +120,9 @@ type VmsTrnRequestRequest struct {
 	IsSystemChooseVehicle string `gorm:"-" json:"is_system_choose_vehicle" example:"0"`
 
 	//Step 3
-	MasCarPoolDriverUID string `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid" example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
-	IsPEAEmployeeDriver string `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
-	IsAdminChooseDriver string `gorm:"-" json:"is_admin_choose_driver" example:"0"`
+	MasCarPoolDriverUID *string `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid" example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
+	IsPEAEmployeeDriver string  `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
+	IsAdminChooseDriver string  `gorm:"-" json:"is_admin_choose_driver" example:"0"`
 
 	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string `gorm:"column:driver_emp_name" json:"-"`
@@ -137,8 +134,8 @@ type VmsTrnRequestRequest struct {
 	DriverEmpDeptNameShort string `gorm:"column:driver_emp_dept_name_short" json:"-"`
 	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"-"`
 
-	PickupPlace    string    `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
-	PickupDateTime time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
+	PickupPlace    string     `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
+	PickupDateTime *time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
 
 	//Step 4
 	ConfirmedRequestEmpID         string `gorm:"column:confirmed_request_emp_id" json:"confirmed_request_emp_id" example:"501621"`
