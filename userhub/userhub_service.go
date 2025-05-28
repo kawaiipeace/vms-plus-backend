@@ -146,6 +146,7 @@ func GetUserList(request ServiceListUserRequest) ([]models.MasUserEmp, error) {
 	reqBody := ServiceListUserRequest{
 		ServiceCode:   "vms",
 		Search:        request.Search,
+		UpperDeptSap:  request.UpperDeptSap,
 		BureauDeptSap: request.BureauDeptSap,
 		BusinessArea:  request.BusinessArea,
 		LevelCodes:    request.LevelCodes,

@@ -24,6 +24,7 @@ func (MasUserEmp) TableName() string {
 type MasUserDriver struct {
 	EmpID        string             `gorm:"column:emp_id" json:"emp_id"`
 	FullName     string             `gorm:"column:full_name" json:"full_name"`
+	Position     string             `gorm:"column:posi_text" json:"posi_text"`
 	DeptSAP      string             `gorm:"column:dept_sap" json:"dept_sap"`
 	DeptSAPShort string             `gorm:"column:dept_sap_short" json:"dept_sap_short"`
 	DeptSAPFull  string             `gorm:"column:dept_sap_full" json:"dept_sap_full"`

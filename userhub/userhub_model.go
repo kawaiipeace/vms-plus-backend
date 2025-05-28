@@ -28,7 +28,7 @@ type ServiceUserInfoResponse struct {
 	LastName      string   `json:"last_name" example:"Doe"`
 	FullName      string   `json:"full_name" example:"John Doe"`
 	IdentityNo    string   `json:"identity_no" example:"1234567890"`
-	Position      string   `json:"position" example:"Manager"`
+	Position      string   `json:"posi_text" example:"Manager"`
 	DeptSAP       string   `json:"dept_sap" example:"1234567890"`
 	DeptSAPShort  string   `json:"dept_sap_short" example:"1234567890"`
 	DeptSAPFull   string   `json:"dept_sap_full" example:"1234567890"`
@@ -43,6 +43,7 @@ type ServiceUserInfoResponse struct {
 type ServiceListUserRequest struct {
 	ServiceCode   string   `json:"service_code" example:"vms"`
 	Search        string   `json:"search" example:"700001"`
+	UpperDeptSap  string   `json:"upper_dept_sap" example:"4455"`
 	BureauDeptSap string   `json:"bureau_dept_sap" example:"4455"`
 	BusinessArea  string   `json:"business_area" example:"Z00"`
 	LevelCodes    string   `json:"level_codes" example:"M1,M2,M3"`

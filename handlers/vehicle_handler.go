@@ -79,7 +79,8 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN vms_mas_vehicle_department vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Where("v.is_deleted = '0'")
 	query = query.Where("vd.ref_vehicle_status_code = '0' and vd.is_deleted = '0' and vd.is_active = '1'")
-	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba = ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))", user.BureauDeptSap, user.BusinessArea, ref_trip_type_code)
+	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba = ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))",
+		user.BureauDeptSap, user.BusinessArea, ref_trip_type_code)
 	//ref_other_use_code = 2 -> ref_trip_type_code=1 ค้างแรม
 	//ref_other_use_code = 1 -> ref_trip_type_code=0 ไปกลับ
 
@@ -149,7 +150,7 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 	// Fetch the vehicle record from the database
 	var vehicle models.VmsMasVehicle
 	if err := config.DB.Preload("RefFuelType").
-		Preload("VehicleDepartment.VehicleUser").
+		Preload("VehicleDepartment").
 		First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", parsedID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -160,14 +161,22 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
 		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
 	}
+
+	// Get vehicle department details
+	if err := config.DB.Where("mas_vehicle_uid = ?", parsedID).First(&vehicle.VehicleDepartment).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle department not found", "message": messages.ErrNotfound.Error()})
+		return
+	}
 	vehicle.VehicleDepartment.VehicleUser.EmpID = vehicle.VehicleDepartment.VehicleUserEmpID
 	vehicle.VehicleDepartment.VehicleUser.FullName = vehicle.VehicleDepartment.VehicleUserEmpName
 	vehicle.VehicleDepartment.VehicleUser.DeptSAP = vehicle.VehicleDepartment.VehicleOwnerDeptSap
 	vehicle.VehicleDepartment.VehicleUser.DeptSAPFull = vehicle.VehicleDepartment.OwnerDeptName
-	vehicle.VehicleDepartment.VehicleUser.DeptSAPShort = "สฟฟ.มสด.4(ล)"
+	vehicle.VehicleDepartment.VehicleUser.DeptSAPShort = vehicle.VehicleDepartment.OwnerDeptName
+	vehicle.VehicleDepartment.VehicleUser.ImageUrl = funcs.GetEmpImage(vehicle.VehicleDepartment.VehicleUserEmpID)
 	if strings.TrimSpace(vehicle.VehicleLicensePlate) == "7กษ 4377" {
 		vehicle.IsAdminChooseDriver = true
 	}
+
 	// Return the vehicle data as a JSON response
 	funcs.TrimStringFields(&vehicle)
 	c.JSON(http.StatusOK, vehicle)

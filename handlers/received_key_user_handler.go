@@ -80,7 +80,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 
 	// Apply additional filters (search, date range, etc.)
 	if search := c.Query("search"); search != "" {
-		query = query.Where("req.request_no ILIKE ? OR req.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("req.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR req.vehicle_user_emp_name ILIKE ? OR req.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if startDate := c.Query("startdate"); startDate != "" {
 		query = query.Where("req.reserve_end_datetime >= ?", startDate)

@@ -128,7 +128,7 @@ func (v *VmsMasVehicle) CalculateAge() int {
 }
 
 type VmsMasVehicleDepartment struct {
-	MasVehicleUID                    string     `gorm:"column:mas_vehicle_uid;type:uuid" json:"-"`
+	MasVehicleUID                    string     `gorm:"column:mas_vehicle_uid;primaryKey" json:"-"`
 	County                           string     `gorm:"column:county" json:"county"`
 	VehicleGetDate                   time.Time  `gorm:"column:vehicle_get_date" json:"vehicle_get_date"`
 	VehiclePeaID                     string     `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`

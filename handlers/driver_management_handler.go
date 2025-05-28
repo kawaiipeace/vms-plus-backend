@@ -195,26 +195,35 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	BCode := user.BusinessArea[0:1]
 	driver.DriverID = fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
 
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
+	var departmentHire struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
-	var department struct {
-		DeptShort string
-		DeptFull  string
-	}
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Where("dept_sap = ?", driver.DriverDeptSapHire).
 		Select("dept_short, dept_full").
-		Find(&department).Error; err != nil {
+		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	driver.DriverDeptSapShortWork = department.DeptShort
-	driver.DriverDeptSapFullWork = department.DeptFull
+	driver.DriverDeptSapShortNameHire = departmentHire.DeptShort
+
+	var departmentWork struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+	}
+
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&departmentWork).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	driver.DriverDeptSapShortWork = departmentWork.DeptShort
+	driver.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	for i := range driver.DriverDocuments {
 		driver.DriverDocuments[i].MasDriverUID = driver.MasDriverUID
@@ -274,6 +283,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
+		Preload("DriverVendor").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
@@ -286,6 +296,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	//
 	driver.AlertDriverStatus = "ปฏิบัติงานปกติ"
 	driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
+	driver.DriverTotalSatisfactionReview = 200
 
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
@@ -359,26 +370,37 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Pluck("dept_short", &driver.DriverDeptSapShortNameHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve driverDeptSapShortNameHire: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
+
+	var departmentHire struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
-	var department struct {
-		DeptShort string
-		DeptFull  string
-	}
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapWork).
+		Where("dept_sap = ?", request.DriverDeptSapHire).
 		Select("dept_short, dept_full").
-		Find(&department).Error; err != nil {
+		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	driver.DriverDeptSapShortWork = department.DeptShort
-	driver.DriverDeptSapFullWork = department.DeptFull
+	request.DriverDeptSapShortNameHire = departmentHire.DeptShort
+
+	var departmentWork struct {
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+	}
+
+	if err := config.DB.Model(&models.VmsMasDepartment{}).
+		Where("dept_sap = ?", request.DriverDeptSapWork).
+		Select("dept_short, dept_full").
+		Find(&departmentWork).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	fmt.Println(departmentWork)
+
+	request.DriverDeptSapShortWork = departmentWork.DeptShort
+	request.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {

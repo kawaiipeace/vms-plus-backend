@@ -142,7 +142,7 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenUserEmp, error) {
 func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	// Extract user from JWT
 	var empUser models.AuthenUserEmp
-	//501621
+	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
 		user, err := userhub.GetUserInfo("700001")
 		if err != nil {

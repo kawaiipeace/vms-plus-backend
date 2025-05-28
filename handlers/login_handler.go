@@ -649,6 +649,13 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
+	userInfo, err1 := userhub.GetUserInfo(user.EmpID)
+	if err1 != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
+		return
+	}
+	user.Position = userInfo.Position
+
 	//Check VmsDriverLicenseAnnualList
 	var license models.VmsDriverLicenseAnnualList
 	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", time.Now().Year()+543).
