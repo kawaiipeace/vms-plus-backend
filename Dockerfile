@@ -4,6 +4,8 @@ USER root
 
 COPY . .
 
+RUN swag init -g main.go
+
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vms-plus main.go
 
 FROM alpine:3.21.3
