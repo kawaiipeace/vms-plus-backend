@@ -12,9 +12,11 @@ FROM alpine:3.21.3
 
 RUN apk --no-cache add ca-certificates
 
+ARG APP_PATH=/app
+
 USER 65532
 
-WORKDIR /app
+WORKDIR $APP_PATH
 
 COPY --chown=65532:65532 --from=builder /app/vms-plus . 
 
