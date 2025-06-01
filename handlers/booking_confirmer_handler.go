@@ -21,7 +21,7 @@ type BookingConfirmerHandler struct {
 
 var MenuNameMapConfirmer = map[string]string{
 	"20,21,30": "คำขอใช้ยานพาหนะ",
-	"00":       "ใบอนุญาตขับขี่",
+	"00":       "คำขออนุมัติทำหน้าที่ขับรถยนต์",
 }
 
 var StatusNameMapConfirmer = map[string]string{
@@ -63,7 +63,9 @@ func (h *BookingConfirmerHandler) MenuRequests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode > summary[j].RefRequestStatusCode
+	})
 	c.JSON(http.StatusOK, summary)
 }
 

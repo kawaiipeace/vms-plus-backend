@@ -12,6 +12,7 @@ import (
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/tealeg/xlsx"
 	"gorm.io/gorm"
 )
@@ -69,7 +70,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
 		rt.ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
-		d.vehicle_get_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name, vs.ref_vehicle_status_short_name
+		v.vehicle_registration_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_ref_vehicle_type AS rt ON rt.ref_vehicle_type_code = v.ref_vehicle_type_code").
@@ -219,8 +220,8 @@ func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param start_date query string true "Start date (YYYY-MM-DD)"
-// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param start_date query string true "Start date (YYYY-MM-DD)" default(2025-05-01)
+// @Param end_date query string true "End date (YYYY-MM-DD)" default(2025-06-30)
 // @Param search query string false "Search by vehicle license plate, brand, or model"
 // @Param vehicle_owner_dept_sap query string false "Filter by vehicle owner department SAP"
 // @Param vehicel_car_type_detail query string false "Filter by Car type"
@@ -247,6 +248,16 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		return
 	}
 
+	if startDate.After(endDate) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start date must be before end date", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+	// check if endDate - startDate > 3 months
+	if endDate.Sub(startDate) > 90*24*time.Hour {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Date range cannot exceed 3 months", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
 	var vehicles []models.VehicleTimeLine
 
 	query := h.SetQueryRole(user, config.DB)
@@ -254,19 +265,19 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-				md.dept_short AS vehicle_owner_dept_short, md.dept_full AS vehicle_owner_dept_full, mc.carpool_name AS vehicle_carpool_name, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap)  AS vehicle_dept_name,
+				(select cp.carpool_name from vms_mas_carpool cp, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = cp.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
-				v.vehicle_brand_name,v.vehicle_model_name`).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
+				v.vehicle_brand_name,v.vehicle_model_name,
+				public.fn_get_vehicle_distance_two_months(v.mas_vehicle_uid, ?) AS vehicle_distance`, startDate).
+		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Where("v.is_deleted = ?", "0").
 		Where("exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))",
-			startDate, endDate, startDate, endDate, startDate, endDate).
-		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+			startDate, endDate, startDate, endDate, startDate, endDate)
 
 	if search := c.Query("search"); search != "" {
 		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -303,10 +314,14 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+
 	for i := range vehicles {
+		parts := strings.Split(vehicles[i].VehicleDistance, ",")
+		if len(parts) > 3 {
+			vehicles[i].VehicleMileage = parts[3]
+		}
 		// Preload the vehicle requests for each vehicle
 		if err := config.DB.Table("vms_trn_request").
-			Preload("TripDetails").
 			Preload("MasDriver").
 			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
 			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
@@ -315,10 +330,23 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 		}
 
 		for j := range vehicles[i].VehicleTrnRequests {
-			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
-				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			vehicles[i].VehicleTrnRequests[j].TripDetails = []models.VmsTrnTripDetail{
+				{
+					TrnTripDetailUID: uuid.New().String(),
+					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
+						TrnRequestUID:        vehicles[i].VehicleTrnRequests[j].TrnRequestUID,
+						TripStartDatetime:    vehicles[i].VehicleTrnRequests[j].ReserveStartDatetime,
+						TripEndDatetime:      vehicles[i].VehicleTrnRequests[j].ReserveEndDatetime,
+						TripDeparturePlace:   vehicles[i].VehicleTrnRequests[j].WorkPlace,
+						TripDestinationPlace: vehicles[i].VehicleTrnRequests[j].WorkPlace,
+						TripStartMiles:       0,
+						TripEndMiles:         0,
+					},
+				},
 			}
-			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode == "80" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
+			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode <= "40" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
 			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"

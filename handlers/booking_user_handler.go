@@ -180,7 +180,11 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		"",
 	)
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Request created successfully", "data": result})
+	c.JSON(http.StatusCreated, gin.H{"message": "Request created successfully",
+		"data":            result,
+		"request_no":      request.RequestNo,
+		"trn_request_uid": request.TrnRequestUID,
+	})
 }
 
 // MenuRequests godoc

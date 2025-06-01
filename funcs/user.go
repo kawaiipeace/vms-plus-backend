@@ -1,7 +1,10 @@
 package funcs
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -31,8 +34,9 @@ type Claims struct {
 	BusinessArea  string   `json:"business_area"`
 	ImageUrl      string   `json:"image_url"`
 	Roles         []string `json:"roles"`
-
-	LoginBy string `json:"login_by"`
+	IsEmployee    bool     `json:"is_employee"`
+	LevelCode     string   `json:"level_code"`
+	LoginBy       string   `json:"login_by"`
 	jwt.RegisteredClaims
 }
 
@@ -40,7 +44,56 @@ var (
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 )
 
+func CheckConfirmerRole(user *models.AuthenUserEmp) {
+	if Contains(user.Roles, "level1-approval") {
+		//remove level1-approval
+		user.Roles = RemoveFromSlice(user.Roles, "level1-approval")
+	}
+	//check if vms_trn_request has confirmed_request_emp_id
+	var trnRequestList models.VmsTrnRequestList
+	err := config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&trnRequestList).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "level1-approval")
+		return
+	}
+
+	//check if vms_trn_request_annual_driver has confirmed_request_emp_id
+	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
+	err = config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "level1-approval")
+		return
+	}
+
+}
+func CheckApproverRole(user *models.AuthenUserEmp) {
+	if Contains(user.Roles, "license-approval") {
+		//remove license-approval
+		user.Roles = RemoveFromSlice(user.Roles, "license-approval")
+	}
+
+	//check if vms_trn_request_annual_driver has confirmed_request_emp_id
+	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
+	err := config.DB.Where("approved_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "license-approval")
+		return
+	}
+
+}
+
+func RemoveFromSlice(slice []string, value string) []string {
+	for i, v := range slice {
+		if v == value {
+			return append(slice[:i], slice[i+1:]...)
+		}
+	}
+	return slice
+}
+
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
+	CheckConfirmerRole(&user)
+	CheckApproverRole(&user)
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:         user.EmpID,
@@ -59,6 +112,8 @@ func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Du
 		BusinessArea:  user.BusinessArea,
 		ImageUrl:      user.ImageUrl,
 		Roles:         user.Roles,
+		IsEmployee:    user.IsEmployee,
+		LevelCode:     user.LevelCode,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiration)),
 		},
@@ -134,6 +189,8 @@ func ExtractUserFromJWT(c *gin.Context) (*models.AuthenUserEmp, error) {
 		DeskPhone:     claims["internal_number"].(string),
 		BusinessArea:  claims["business_area"].(string),
 		ImageUrl:      claims["image_url"].(string),
+		IsEmployee:    claims["is_employee"].(bool),
+		LevelCode:     claims["level_code"].(string),
 		Roles:         roles,
 	}
 
@@ -152,9 +209,11 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			return &empUser
 		}
 		empUser = user
-		empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
-			"license-approval", "driver", "admin-super"}
 		empUser.LoginBy = "keycloak"
+		empUser.IsEmployee = true
+		CheckConfirmerRole(&empUser)
+		CheckApproverRole(&empUser)
+		empUser.Roles = append(empUser.Roles, "license-approval")
 		if roles == "*" {
 			return &empUser
 		}
@@ -189,9 +248,13 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		ImageUrl:      jwt.ImageUrl,
 		Roles:         jwt.Roles,
 		LoginBy:       jwt.LoginBy,
+		IsEmployee:    jwt.IsEmployee,
+		LevelCode:     jwt.LevelCode,
 	}
-	empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
-		"license-approval", "driver", "admin-super"}
+
+	//empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
+	//	"license-approval", "driver", "admin-super"}
+
 	if roles == "*" {
 		return &empUser
 	}
@@ -212,15 +275,17 @@ func GetUserEmpInfo(empID string) models.MasUserEmp {
 		return models.MasUserEmp{}
 	}
 	empUser := models.MasUserEmp{
-		EmpID:        user.EmpID,
-		FullName:     user.FullName,
-		Position:     user.Position,
-		DeptSAP:      user.DeptSAP,
-		DeptSAPShort: user.DeptSAPShort,
-		DeptSAPFull:  user.DeptSAPFull,
-		TelMobile:    user.MobilePhone,
-		TelInternal:  user.DeskPhone,
-		BusinessArea: user.BusinessArea,
+		EmpID:         user.EmpID,
+		FullName:      user.FullName,
+		Position:      user.Position,
+		DeptSAP:       user.DeptSAP,
+		DeptSAPShort:  user.DeptSAPShort,
+		DeptSAPFull:   user.DeptSAPFull,
+		TelMobile:     user.MobilePhone,
+		TelInternal:   user.DeskPhone,
+		BusinessArea:  user.BusinessArea,
+		BureauDeptSap: user.BureauDeptSap,
+		IsEmployee:    user.IsEmployee,
 	}
 	return empUser
 }
@@ -257,4 +322,49 @@ func SetQueryApproverRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
 		user.BureauDeptSap,
 	)
 	return query
+}
+
+func GetDeptSAPShort(deptSAP string) string {
+	//call db public.fn_get_long_short_dept_name_by_dept_sap
+	var deptSAPShort string
+	err := config.DB.Raw("SELECT public.fn_get_long_short_dept_name_by_dept_sap(?)", deptSAP).Scan(&deptSAPShort).Error
+	if err != nil {
+		return ""
+	}
+	return deptSAPShort
+}
+func GetDeptSAPFull(deptSAP string) string {
+	//call db public.fn_get_long_full_dept_name_by_dept_sap
+	var deptSAPFull string
+	err := config.DB.Raw("SELECT public.fn_get_long_full_dept_name_by_dept_sap(?)", deptSAP).Scan(&deptSAPFull).Error
+	if err != nil {
+		return ""
+	}
+	return deptSAPFull
+}
+
+func GetUserManager(DeptSAP string) []models.VmsMasManager {
+	url := config.AppConfig.HrPlatformEndPoint + "/get-manager?dept_sap=" + DeptSAP
+	resp, err := http.Get(url)
+	if err != nil {
+		return []models.VmsMasManager{}
+	}
+	fmt.Println(url)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []models.VmsMasManager{}
+	}
+	type ResponseData struct {
+		Data struct {
+			Data struct {
+				DataDetail []models.VmsMasManager `json:"dataDetail"`
+			} `json:"data"`
+		} `json:"data"`
+	}
+	var response ResponseData
+	if err := json.Unmarshal([]byte(body), &response); err != nil {
+		fmt.Println(err)
+	}
+	return response.Data.Data.DataDetail
 }

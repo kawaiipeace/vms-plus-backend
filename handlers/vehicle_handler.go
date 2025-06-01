@@ -17,6 +17,20 @@ type VehicleHandler struct {
 	Role string
 }
 
+// VehicleHandlerInfo godoc
+// @Summary Vehicle handler information
+// @Description This endpoint allows a user to get vehicle handler information.
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Router /api/01-01-vehicle [get]
+func (h *VehicleHandler) VehicleHandlerInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Vehicle handler information",
+	})
+}
+
 // SearchVehicles godoc
 // @Summary Search vehicles by brand, license plate, and filters
 // @Description Retrieves vehicles based on search text, department, and car type filters
@@ -61,9 +75,10 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 
 	totalGroups := len(carpools)
 	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default page = 1
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
-	offset := (page - 1) * limit                            // Calculate offset
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))        // Default page = 1
+	pageLimit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
+	offset := (page - 1) * pageLimit                            // Calculate offset
+	limit := pageLimit
 
 	if page == 1 {
 		limit = limit - totalGroups
@@ -115,7 +130,150 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 			"total":       total,
 			"totalGroups": totalGroups,
 			"page":        page,
-			"limit":       limit,
+			"limit":       pageLimit,
+			"totalPages":  (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		},
+		"vehicles": vehicles,
+		"carpools": carpools,
+	})
+}
+
+// SearchBookingVehicles godoc
+// @Summary Search vehicles by brand, license plate, and filters
+// @Description Retrieves vehicles based on search text, department, and car type filters
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
+// @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
+// @Param search query string false "Search text (Vehicle Brand Name or License Plate)"
+// @Param vehicle_owner_dept query string false "Filter by Vehicle Owner Department"
+// @Param car_type query string false "Filter by Car Type"
+// @Param category_code query string false "Filter by Vehicle Category Code"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/vehicle/search-booking [get]
+func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+
+	empID := c.Param("emp_id")
+	bureauDeptSap := user.BureauDeptSap
+	businessArea := user.BusinessArea
+
+	if empID != "" {
+		empUser := funcs.GetUserEmpInfo(empID)
+		bureauDeptSap = empUser.BureauDeptSap
+		businessArea = empUser.BusinessArea
+	}
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
+		return
+	}
+	var vehicleCanBookings []models.VmsMasVehicleCanBooking
+
+	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?)`,
+		startDate, endDate, bureauDeptSap, businessArea)
+	err := queryCanBooking.Scan(&vehicleCanBookings).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	searchText := c.Query("search")            // Text search for brand name & license plate
+	ownerDept := c.Query("vehicle_owner_dept") // Filter by vehicle owner department
+	carType := c.Query("car_type")             // Filter by car type
+	categoryCode := c.Query("category_code")   // Filter by car type
+	masVehicleUIDs := make([]string, 0)
+	masCarpoolUIDs := make([]string, 0)
+	adminChooseDriverMasCarpoolUIDs := make([]string, 0)
+	for _, vehicleCanBooking := range vehicleCanBookings {
+		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
+			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
+		} else {
+			masVehicleUIDs = append(masVehicleUIDs, vehicleCanBooking.MasVehicleUID)
+		}
+		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 || vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
+			adminChooseDriverMasCarpoolUIDs = append(adminChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
+		}
+	}
+
+	//carpool
+	var carpools []models.VmsMasCarpoolCarBooking
+	queryCarpool := config.DB.Model(&models.VmsMasCarpoolCarBooking{})
+	queryCarpool = queryCarpool.Where("mas_carpool_uid IN (?)", masCarpoolUIDs)
+	queryCarpool.Preload("RefCarpoolChooseCar").
+		Table("vms_mas_carpool cp").
+		Find(&carpools)
+
+	for i := range carpools {
+		if funcs.Contains(adminChooseDriverMasCarpoolUIDs, carpools[i].MasCarpoolUID) {
+			carpools[i].IsAdminChooseDriver = true
+		}
+	}
+
+	totalGroups := len(carpools)
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))        // Default page = 1
+	pageLimit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
+	offset := (page - 1) * pageLimit                            // Calculate offset
+	limit := pageLimit
+	if page == 1 {
+		limit = pageLimit - totalGroups
+	} else {
+		offset = offset - totalGroups
+		carpools = make([]models.VmsMasCarpoolCarBooking, 0)
+	}
+
+	var vehicles []models.VmsMasVehicleList
+	var total int64
+
+	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
+	query = query.Where("v.mas_vehicle_uid IN (?)", masVehicleUIDs)
+	if searchText != "" {
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
+	}
+
+	// Apply filters if provided
+	if ownerDept != "" {
+		query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+	}
+	if carType != "" {
+		query = query.Where("car_type = ?", carType)
+	}
+	if categoryCode != "" {
+		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
+	}
+
+	// Count total records
+	query.Count(&total)
+	query = query.Model(&models.VmsMasVehicleList{})
+	// Execute query with pagination
+	query.Offset(offset).Limit(limit).Find(&vehicles)
+
+	for i := range vehicles {
+		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
+	}
+	// Respond with JSON
+	c.JSON(http.StatusOK, gin.H{
+		"pagination": gin.H{
+			"total":       total,
+			"totalGroups": totalGroups,
+			"page":        page,
+			"limit":       pageLimit,
 			"totalPages":  (total + int64(limit) - 1) / int64(limit), // Calculate total pages
 		},
 		"vehicles": vehicles,
@@ -155,15 +313,26 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	vehicle.Age = vehicle.CalculateAge()
-	vehicle.VehicleImgs = []string{
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+	vehicle.Age = funcs.CalculateAgeInt(vehicle.VehicleRegistrationDate)
+	var vehicleImgs []models.VmsMasVehicleImg
+	if err := config.DB.Where("mas_vehicle_uid = ?", parsedID).Find(&vehicleImgs).Error; err == nil {
+		vehicle.VehicleImgs = make([]string, 0)
+		for _, img := range vehicleImgs {
+			vehicle.VehicleImgs = append(vehicle.VehicleImgs, img.VehicleImgFile)
+		}
+	} else {
+		vehicle.VehicleImgs = []string{
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+		}
 	}
 
 	// Get vehicle department details
-	if err := config.DB.Where("mas_vehicle_uid = ?", parsedID).First(&vehicle.VehicleDepartment).Error; err != nil {
+	if err := config.DB.Where("mas_vehicle_uid = ?", parsedID).
+		Select("*,public.fn_get_oil_station_eng_by_fleetcard(fleet_card_no) as fleet_card_oil_stations").
+		Where("is_deleted = '0' AND is_active = '1'").
+		First(&vehicle.VehicleDepartment).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle department not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -188,26 +357,51 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 // @Tags Vehicle
 // @Accept json
 // @Produce json
+// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
+// @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param name query string false "Filter by vehicle type name (partial match)"
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Router /api/vehicle/types [get]
 func (h *VehicleHandler) GetTypes(c *gin.Context) {
-	var types []models.VmsRefVehicleType
+	user := funcs.GetAuthenUser(c, "*")
+	var vehicleTypes []models.VmsRefVehicleType
 	name := c.Query("name") // Get the 'name' query parameter
 
-	// Build the query
-	query := config.DB
-	if name != "" {
-		query = query.Where("ref_vehicle_type_name ILIKE ?", "%"+name+"%")
+	empID := c.Param("emp_id")
+	bureauDeptSap := user.BureauDeptSap
+	businessArea := user.BusinessArea
+
+	if empID != "" {
+		empUser := funcs.GetUserEmpInfo(empID)
+		bureauDeptSap = empUser.BureauDeptSap
+		businessArea = empUser.BusinessArea
 	}
 
-	// Execute the query
-	query.Find(&types)
-	types = models.AssignTypeImageFromIndex(types)
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
+		return
+	}
+
+	query := config.DB.Raw(`SELECT "CarTypeDetail" ref_vehicle_type_name,count(*) AS available_units FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by "CarTypeDetail"`,
+		startDate, endDate, bureauDeptSap, businessArea)
+	if name != "" {
+		query = query.Where("\"CarTypeDetail\" ILIKE ?", "%"+name+"%")
+	}
+	err := query.Scan(&vehicleTypes).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	vehicleTypes = models.AssignTypeImageFromIndex(vehicleTypes)
 
 	// Respond with JSON
-	c.JSON(http.StatusOK, types)
+	c.JSON(http.StatusOK, vehicleTypes)
 }
 
 // GetCarTypeDetails godoc
@@ -251,33 +445,43 @@ func (h *VehicleHandler) GetCarTypeDetails(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
+// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
+// @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Router /api/vehicle/departments [get]
 func (h *VehicleHandler) GetDepartments(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, "*")
 	var departments []struct {
-		DeptSap   string `json:"dept_sap"`
-		DeptShort string `json:"dept_short"`
-		DeptFull  string `json:"dept_full"`
+		DeptSap   string `gorm:"column:dept_sap" json:"dept_sap"`
+		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
+	}
+	empID := c.Param("emp_id")
+	bureauDeptSap := user.BureauDeptSap
+	businessArea := user.BusinessArea
+
+	if empID != "" {
+		empUser := funcs.GetUserEmpInfo(empID)
+		bureauDeptSap = empUser.BureauDeptSap
+		businessArea = empUser.BusinessArea
 	}
 
-	// SQL query to group and join tables
-	query := `
-        SELECT 
-            vmd.dept_sap,
-            vmd.dept_short,
-            vmd.dept_full
-        FROM 
-            vms_mas_vehicle_department vvd
-        JOIN 
-            vms_mas_department vmd
-        ON 
-            vvd.vehicle_owner_dept_sap = vmd.dept_sap
-        GROUP BY 
-            vmd.dept_sap, vmd.dept_short, vmd.dept_full
-    `
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
+		return
+	}
 
-	// Execute the query
-	if err := config.DB.Raw(query).Scan(&departments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments", "message": messages.ErrInternalServer.Error()})
+	query := config.DB.Raw(`SELECT vehicle_owner_dept_sap AS dept_sap,
+		fn_get_long_short_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_short,
+		fn_get_long_full_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_full
+	 FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by vehicle_owner_dept_sap`,
+		startDate, endDate, bureauDeptSap, businessArea)
+
+	err := query.Scan(&departments).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 

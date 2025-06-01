@@ -25,6 +25,20 @@ import (
 type LoginHandler struct {
 }
 
+// LoginHandlerInfo godoc
+// @Summary Login handler information
+// @Description This endpoint allows a user to get login handler information.
+// @Tags Login
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Router /api/00-login [get]
+func (h *LoginHandler) LoginHandlerInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login handler information",
+	})
+}
+
 // RequestKeyCloak godoc
 // @Summary Request Keycloak authentication token
 // @Description This endpoint allows a user to request an authentication token from Keycloak for secure access.
@@ -135,6 +149,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				BusinessArea:  loginUsr.BusinessArea,
 				Roles:         loginUsr.Roles,
 				LoginBy:       "otp",
+				IsEmployee:    true,
 			}
 			user.LoginBy = "keycloak"
 			newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
@@ -238,7 +253,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 			return
 		}
 	}
-
+	var user models.AuthenUserEmp
 	var successResponse models.ThaiID_Success_Response
 	if err := json.Unmarshal(body, &successResponse); err == nil && successResponse.AccessToken != "" {
 		loginUsr, err := userhub.LoginUser("thaiid", "", successResponse.PID, "", c.ClientIP())
@@ -247,25 +262,53 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 			return
 		}
 		if loginUsr.EmpID == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
-			return
-		}
-		user := models.AuthenUserEmp{
-			EmpID:         loginUsr.EmpID,
-			FirstName:     loginUsr.FirstName,
-			LastName:      loginUsr.LastName,
-			FullName:      loginUsr.FullName,
-			ImageUrl:      loginUsr.ImageUrl,
-			Position:      loginUsr.Position,
-			DeptSAP:       loginUsr.DeptSAP,
-			DeptSAPShort:  loginUsr.DeptSAPShort,
-			DeptSAPFull:   loginUsr.DeptSAPFull,
-			BureauDeptSap: loginUsr.BureauDeptSap,
-			MobilePhone:   loginUsr.MobilePhone,
-			DeskPhone:     loginUsr.DeskPhone,
-			BusinessArea:  loginUsr.BusinessArea,
-			Roles:         loginUsr.Roles,
-			LoginBy:       "otp",
+			//check if driver_identification_no of drivers from table vms_mas_driver
+			var driver models.VmsMasDriver
+			if err := config.DB.Where("driver_identification_no = ?", successResponse.PID).First(&driver).Error; err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+				return
+			}
+			if driver.DriverID == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+				return
+			}
+			user = models.AuthenUserEmp{
+				EmpID:         driver.DriverID,
+				FirstName:     "",
+				LastName:      "",
+				FullName:      driver.DriverName,
+				ImageUrl:      driver.DriverImage,
+				Position:      "",
+				DeptSAP:       driver.DriverDeptSAP,
+				DeptSAPShort:  funcs.GetDeptSAPShort(driver.DriverDeptSAP),
+				DeptSAPFull:   funcs.GetDeptSAPFull(driver.DriverDeptSAP),
+				BureauDeptSap: "",
+				MobilePhone:   driver.DriverContactNumber,
+				DeskPhone:     "",
+				BusinessArea:  "",
+				Roles:         []string{"driver"},
+				LoginBy:       "otp",
+				IsEmployee:    false,
+			}
+
+		} else {
+			user = models.AuthenUserEmp{
+				EmpID:         loginUsr.EmpID,
+				FirstName:     loginUsr.FirstName,
+				LastName:      loginUsr.LastName,
+				FullName:      loginUsr.FullName,
+				ImageUrl:      loginUsr.ImageUrl,
+				Position:      loginUsr.Position,
+				DeptSAP:       loginUsr.DeptSAP,
+				DeptSAPShort:  loginUsr.DeptSAPShort,
+				DeptSAPFull:   loginUsr.DeptSAPFull,
+				BureauDeptSap: loginUsr.BureauDeptSap,
+				MobilePhone:   loginUsr.MobilePhone,
+				DeskPhone:     loginUsr.DeskPhone,
+				BusinessArea:  loginUsr.BusinessArea,
+				Roles:         loginUsr.Roles,
+				LoginBy:       "otp",
+			}
 		}
 		user.LoginBy = "thaiid"
 		newAccessToken, err := funcs.GenerateJWT(user, "access", time.Duration(config.AppConfig.JwtAccessTokenTime)*time.Minute)
@@ -333,6 +376,7 @@ func GetUserInfo(accessToken string) (models.KeyCloak_UserInfo, error) {
 // @Router /api/login/request-otp [post]
 func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	var req models.OTP_Request
+	is_employee := true
 	if err := c.ShouldBindJSON(&req); err != nil || req.Phone == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
 		return
@@ -343,9 +387,14 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 		return
 	}
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid phone number", "message": "หมายเลขโทรศัพท์ไม่มีในระบบ"})
-		return
+		var driver models.VmsMasDriver
+		if err := config.DB.Where("replace(replace(driver_contact_number, '-', ''),' ','') = ? and is_active = '1' and is_deleted = '0'", req.Phone).First(&driver).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Invalid phone number", "message": "หมายเลขโทรศัพท์ไม่มีในระบบ"})
+			return
+		}
+		is_employee = false
 	}
+
 	refCode := funcs.RandomRefCode(4)
 	expiry := time.Minute * time.Duration(config.AppConfig.OtpExpired)
 	otpID, otpErr := SendOTP(req.Phone, refCode, expiry)
@@ -356,9 +405,10 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 
 	expiresAt := time.Now().Add(expiry)
 	otpRequest := models.OTP_Request_Create{
-		PhoneNo:   req.Phone,
-		OTPID:     otpID,
-		ExpiresAt: expiresAt,
+		PhoneNo:    req.Phone,
+		OTPID:      otpID,
+		ExpiresAt:  expiresAt,
+		IsEmployee: is_employee,
 	}
 
 	if err := config.DB.Create(&otpRequest).Error; err != nil {
@@ -470,32 +520,59 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update OTP status: %v", err), "message": messages.ErrTryAgain.Error()})
 		return
 	}
-
-	loginUsr, err := userhub.LoginUser("otp", "", "", otpRequest.PhoneNo, c.ClientIP())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
-		return
-	}
-	if loginUsr.EmpID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
-		return
-	}
-	user := models.AuthenUserEmp{
-		EmpID:         loginUsr.EmpID,
-		FirstName:     loginUsr.FirstName,
-		LastName:      loginUsr.LastName,
-		FullName:      loginUsr.FullName,
-		ImageUrl:      loginUsr.ImageUrl,
-		Position:      loginUsr.Position,
-		DeptSAP:       loginUsr.DeptSAP,
-		DeptSAPShort:  loginUsr.DeptSAPShort,
-		DeptSAPFull:   loginUsr.DeptSAPFull,
-		BureauDeptSap: loginUsr.BureauDeptSap,
-		MobilePhone:   loginUsr.MobilePhone,
-		DeskPhone:     loginUsr.DeskPhone,
-		BusinessArea:  loginUsr.BusinessArea,
-		Roles:         loginUsr.Roles,
-		LoginBy:       "otp",
+	var user models.AuthenUserEmp
+	if otpRequest.IsEmployee {
+		loginUsr, err := userhub.LoginUser("otp", "", "", otpRequest.PhoneNo, c.ClientIP())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrTryAgain.Error()})
+			return
+		}
+		if loginUsr.EmpID == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+		user = models.AuthenUserEmp{
+			EmpID:         loginUsr.EmpID,
+			FirstName:     loginUsr.FirstName,
+			LastName:      loginUsr.LastName,
+			FullName:      loginUsr.FullName,
+			ImageUrl:      loginUsr.ImageUrl,
+			Position:      loginUsr.Position,
+			DeptSAP:       loginUsr.DeptSAP,
+			DeptSAPShort:  loginUsr.DeptSAPShort,
+			DeptSAPFull:   loginUsr.DeptSAPFull,
+			BureauDeptSap: loginUsr.BureauDeptSap,
+			MobilePhone:   loginUsr.MobilePhone,
+			DeskPhone:     loginUsr.DeskPhone,
+			BusinessArea:  loginUsr.BusinessArea,
+			Roles:         loginUsr.Roles,
+			LoginBy:       "otp",
+			IsEmployee:    true,
+		}
+	} else {
+		var driver models.VmsMasDriver
+		if err := config.DB.Where("replace(replace(driver_contact_number, '-', ''),' ','') = ?", otpRequest.PhoneNo).First(&driver).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+		user = models.AuthenUserEmp{
+			EmpID:         driver.DriverID,
+			FirstName:     "",
+			LastName:      "",
+			FullName:      driver.DriverName,
+			ImageUrl:      driver.DriverImage,
+			Position:      "",
+			DeptSAP:       driver.DriverDeptSAP,
+			DeptSAPShort:  funcs.GetDeptSAPShort(driver.DriverDeptSAP),
+			DeptSAPFull:   funcs.GetDeptSAPFull(driver.DriverDeptSAP),
+			BureauDeptSap: "",
+			MobilePhone:   driver.DriverContactNumber,
+			DeskPhone:     "",
+			BusinessArea:  "",
+			Roles:         []string{"driver"},
+			LoginBy:       "otp",
+			IsEmployee:    false,
+		}
 	}
 
 	// Generate JWT tokens
@@ -649,25 +726,50 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	userInfo, err1 := userhub.GetUserInfo(user.EmpID)
-	if err1 != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err1.Error()})
-		return
-	}
-	user.Position = userInfo.Position
 
 	//Check VmsDriverLicenseAnnualList
-	var license models.VmsDriverLicenseAnnualList
-	err := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", time.Now().Year()+543).
-		Order("ref_request_annual_driver_status_code").
-		Find(&license).Error
-	if err == nil {
-		user.LicenseStatusCode = license.RefRequestAnnualDriverStatusCode
-		user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
-	} else {
-		user.LicenseStatusCode = "00"
-		user.LicenseStatus = "ไม่มี"
+	if user.IsEmployee {
+		//check level code in vms_ref_level_code_special
+		var levelCodeSpecial struct {
+			Exists bool
+		}
+		err := config.DB.Raw("SELECT EXISTS(SELECT 1 FROM vms_ref_level_code_special WHERE level_code = ?)", user.LevelCode).
+			Scan(&levelCodeSpecial).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if levelCodeSpecial.Exists {
+			user.LicenseStatusCode = "40"
+			user.LicenseStatus = "ใบอนุญาตทำหน้าที่ขับรถยนต์"
+		} else {
+			var licenses []models.VmsDriverLicenseAnnualList
+			annualYear := time.Now().Year() + 543
+			err := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear).
+				Order("ref_request_annual_driver_status_code").
+				Find(&licenses).Error
+			if err == nil && len(licenses) > 0 {
+				fmt.Println("license", licenses)
+				user.TrnRequestAnnualDriverUID = licenses[0].TrnRequestAnnualDriverUID
+				user.AnnualYYYY = licenses[0].AnnualYYYY
+				user.LicenseStatusCode = licenses[0].RefRequestAnnualDriverStatusCode
+				user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
+			} else {
+				var licenses2 []models.VmsDriverLicenseAnnualList
+				err2 := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear+1).
+					Order("ref_request_annual_driver_status_code").
+					Find(&licenses2).Error
+				if err2 == nil && len(licenses2) > 0 {
+					user.TrnRequestAnnualDriverUID = licenses2[0].TrnRequestAnnualDriverUID
+					user.AnnualYYYY = licenses2[0].AnnualYYYY
+					user.LicenseStatusCode = licenses2[0].RefRequestAnnualDriverStatusCode
+					user.LicenseStatus = StatusDriverAnnualLicense[user.LicenseStatusCode]
+				} else {
+					user.LicenseStatusCode = "00"
+					user.LicenseStatus = "ไม่มี"
+				}
+			}
+		}
 	}
-
 	c.JSON(http.StatusOK, user)
 }

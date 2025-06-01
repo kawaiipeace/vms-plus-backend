@@ -10,9 +10,6 @@ import (
 )
 
 func CheckPhoneNumber(phoneNumber string) (bool, error) {
-	if phoneNumber != "" {
-		return true, nil
-	}
 	client := &http.Client{}
 
 	// Create request body
@@ -135,7 +132,7 @@ func GetUserInfo(empID string) (models.AuthenUserEmp, error) {
 	if err != nil {
 		return models.AuthenUserEmp{}, err
 	}
-
+	response.IsEmployee = true
 	return response, nil
 }
 
@@ -182,6 +179,8 @@ func GetUserList(request ServiceListUserRequest) ([]models.MasUserEmp, error) {
 	if err != nil {
 		return []models.MasUserEmp{}, err
 	}
-
+	for i := range response {
+		response[i].IsEmployee = true
+	}
 	return response, nil
 }

@@ -341,14 +341,13 @@ definitions:
       mas_driver_uid:
         example: 8d14e6df-5d65-486e-b079-393d9c817a09
         type: string
-      mas_vendor_code:
-        example: VENDOR123
-        type: string
       ref_other_use_code:
         example: 1
         type: integer
       replacement_driver_uid:
         example: 0a33f4df-5da8-4831-b3e4-27b5c6134c7c
+        type: string
+      vendor_name:
         type: string
     type: object
   models.VmsMasDriverDelete:
@@ -530,11 +529,11 @@ definitions:
       is_replacement:
         example: "1"
         type: string
-      mas_vendor_code:
-        example: VENDOR123
-        type: string
       ref_other_use_code:
         example: "1"
+        type: string
+      vendor_name:
+        example: VENDOR123
         type: string
       work_type:
         example: 1
@@ -1242,6 +1241,58 @@ info:
   title: VMS_PLUS
   version: "1.0"
 paths:
+  /api/00-01-mas:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to get Mas handler information.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Mas handler information
+      tags:
+      - MAS
+  /api/00-login:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to get login handler information.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Login handler information
+      tags:
+      - Login
+  /api/01-01-vehicle:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to get vehicle handler information.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Vehicle handler information
+      tags:
+      - Vehicle
+  /api/01-02-driver:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint allows a user to get driver handler information.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Driver handler information
+      tags:
+      - Drivers
   /api/booking-admin/menu-requests:
     get:
       consumes:
@@ -3173,6 +3224,21 @@ paths:
       summary: Retrieve a specific driver license annual record
       tags:
       - Driver-license-approver
+  /api/driver-license-approver/menu-requests:
+    get:
+      consumes:
+      - application/json
+      description: Summary driver license requests, counts grouped by request status
+        code
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Summary driver license requests by request status code
+      tags:
+      - Driver-license-approver
   /api/driver-license-approver/search-requests:
     get:
       consumes:
@@ -3760,12 +3826,14 @@ paths:
         in: query
         name: search
         type: string
-      - description: Start date (YYYY-MM-DD)
+      - default: "2025-05-01"
+        description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
         required: true
         type: string
-      - description: End date (YYYY-MM-DD)
+      - default: "2025-05-31"
+        description: End date (YYYY-MM-DD)
         in: query
         name: end_date
         required: true
@@ -4045,6 +4113,54 @@ paths:
         name: name
         type: string
       - description: 'work type to search (1: ค้างคืน, 2: ไป-กลับ)'
+        in: query
+        name: work_type
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Get drivers by name with pagination
+      tags:
+      - Drivers
+  /api/driver/search-booking:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of drivers filtered by name with pagination
+      parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: path
+        name: emp_id
+        required: true
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
+      - description: Driver name to search
+        in: query
+        name: name
+        type: string
+      - default: "2"
+        description: 'work type to search (1: ค้างคืน, 2: ไป-กลับ)'
         in: query
         name: work_type
         type: string
@@ -4347,25 +4463,6 @@ paths:
       summary: Retrieve the Driver Departments
       tags:
       - MAS
-  /api/mas/driver-vendors:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to retrieve Driver Vendors.
-      parameters:
-      - description: Search by Vendor Code or Vendor Name
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Retrieve the Driver Vendors
-      tags:
-      - MAS
   /api/mas/holidays:
     get:
       consumes:
@@ -4433,9 +4530,9 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve Approval License Users.
       parameters:
-      - description: Search by Employee ID or Full Name
+      - description: EmpID
         in: query
-        name: search
+        name: emp_id
         type: string
       produces:
       - application/json
@@ -4452,9 +4549,9 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve Confirmer License Users.
       parameters:
-      - description: Search by Employee ID or Full Name
+      - description: EmpID
         in: query
-        name: search
+        name: emp_id
         type: string
       produces:
       - application/json
@@ -4471,9 +4568,10 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve Confirmer Users.
       parameters:
-      - description: Search by Employee ID or Full Name
+      - description: EmpID
         in: query
-        name: search
+        name: emp_id
+        required: true
         type: string
       produces:
       - application/json
@@ -4612,7 +4710,30 @@ paths:
       produces:
       - application/json
       responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
       summary: Get Notification
+      tags:
+      - Notification
+  /api/notification/read/{notification_uid}:
+    put:
+      consumes:
+      - application/json
+      description: Update Read Notification
+      parameters:
+      - description: Notification UID
+        in: path
+        name: notification_uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Update Read Notification
       tags:
       - Notification
   /api/received-key-admin/request/{trn_request_uid}:
@@ -7497,12 +7618,14 @@ paths:
       - application/json
       description: Get vehicle timeline by date range
       parameters:
-      - description: Start date (YYYY-MM-DD)
+      - default: "2025-05-01"
+        description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
         required: true
         type: string
-      - description: End date (YYYY-MM-DD)
+      - default: "2025-06-30"
+        description: End date (YYYY-MM-DD)
         in: query
         name: end_date
         required: true
@@ -7598,6 +7721,23 @@ paths:
       - application/json
       description: Fetches a list of departments grouped by dept_sap, including dept_short
         and dept_full
+      parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: path
+        name: emp_id
+        required: true
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
       produces:
       - application/json
       responses: {}
@@ -7651,12 +7791,84 @@ paths:
       summary: Search vehicles by brand, license plate, and filters
       tags:
       - Vehicle
+  /api/vehicle/search-booking:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves vehicles based on search text, department, and car type
+        filters
+      parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: path
+        name: emp_id
+        required: true
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
+      - description: Search text (Vehicle Brand Name or License Plate)
+        in: query
+        name: search
+        type: string
+      - description: Filter by Vehicle Owner Department
+        in: query
+        name: vehicle_owner_dept
+        type: string
+      - description: Filter by Car Type
+        in: query
+        name: car_type
+        type: string
+      - description: Filter by Vehicle Category Code
+        in: query
+        name: category_code
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search vehicles by brand, license plate, and filters
+      tags:
+      - Vehicle
   /api/vehicle/types:
     get:
       consumes:
       - application/json
       description: Fetches all vehicle types, optionally filtered by name
       parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: path
+        name: emp_id
+        required: true
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
       - description: Filter by vehicle type name (partial match)
         in: query
         name: name

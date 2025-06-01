@@ -36,6 +36,7 @@ type ServiceUserInfoResponse struct {
 	MobilePhone   string   `json:"mobile_number" example:"0818088770"`
 	DeskPhone     string   `json:"internal_number" example:"0818088770"`
 	BusinessArea  string   `json:"business_area" example:"1234567890"`
+	LevelCode     string   `json:"level_code" example:"1234567890"`
 	ImageUrl      string   `json:"image_url" example:"https://example.com/image.jpg"`
 	Roles         []string `json:"roles" example:"['admin', 'user']"`
 }

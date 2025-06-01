@@ -65,19 +65,17 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 			d.driver_contact_number,
 			d.approved_job_driver_end_date,
 			d.driver_average_satisfaction_score,
-			200 driver_total_satisfaction_review,
+			d.driver_total_satisfaction_review,
 			d.ref_driver_status_code,
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
 			d.is_active,
 			d.contract_no,
 			d.end_date,
-			d.mas_vendor_code,
-			v.mas_vendor_name,
+			d.vendor_name,
 			l.driver_license_end_date,
 			l.driver_license_no
 	`).
 		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
-		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.is_deleted = ? AND exists(select 1 from vms_mas_carpool_driver cpd where cpd.mas_driver_uid = d.mas_driver_uid AND cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?)", "0", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -282,6 +280,8 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Model(&models.VmsMasDriver{})
 	query = query.Where("is_deleted = ?", "0")
+	query = query.Where("not exists (select 1 from vms_mas_carpool_driver cd where cd.mas_driver_uid = vms_mas_driver.mas_driver_uid and cd.is_deleted = '0')")
+
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"
@@ -377,13 +377,11 @@ func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
 			d.is_active,
 			d.contract_no,
 			d.end_date,
-			d.mas_vendor_code,
-			v.mas_vendor_name,
+			d.vendor_name,
 			l.driver_license_end_date,
 			l.driver_license_no
 	`).
 		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
-		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.mas_driver_uid in (?) AND d.is_deleted = ?", masDriverUIDs, "0")
 
 	if err := query.Find(&drivers).
@@ -490,16 +488,16 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		Table("public.vms_mas_driver AS d").
 		Select("*").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
-		Joins("INNER JOIN vms_mas_carpool_driver cd ON cd.mas_driver_uid = d.mas_driver_uid AND cd.mas_carpool_uid = ? AND cd.is_deleted = ?", masCarpoolUID, "0").
-		Where(`exists (select 1 from vms_trn_request r 
+		Joins("INNER JOIN vms_mas_carpool_driver cd ON cd.mas_driver_uid = d.mas_driver_uid AND cd.mas_carpool_uid = ? AND cd.is_deleted = ?", masCarpoolUID, "0")
+		/*Where(`exists (select 1 from vms_trn_request r
 		   where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
-		   AND r.is_pea_employee_driver = ? 
-		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
-		   OR r.reserve_end_datetime BETWEEN ? AND ? 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
+		   AND r.is_pea_employee_driver = ?
+		   AND (r.reserve_start_datetime BETWEEN ? AND ?
+		   OR r.reserve_end_datetime BETWEEN ? AND ?
+		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime
 		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
 			"0", startDate, endDate, startDate, endDate, startDate, endDate)
-
+		*/
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
 		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")

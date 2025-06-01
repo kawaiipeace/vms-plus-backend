@@ -28,16 +28,10 @@ var LicenseStatusNameMapConfirmer = map[string]string{
 }
 
 func (h *DriverLicenseConfirmerHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query
+	return query.Where("confirmed_request_emp_id = ?", user.EmpID)
 }
 
 func (h *DriverLicenseConfirmerHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query
 }
 func (h *DriverLicenseConfirmerHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {

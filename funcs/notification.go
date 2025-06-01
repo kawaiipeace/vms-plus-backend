@@ -43,14 +43,16 @@ func CreateRequestBookingNotification(trnRequestUID string) {
 		if notifyEmpID != "" {
 			//create notification
 			notification := models.Notification{
-				TrnNotifyUID: uuid.New().String(),
-				EmpID:        notifyEmpID,
-				Title:        notifyTemplate.NotifyTitle,
-				Message:      notifyMessage,
-				RecordUID:    request.TrnRequestUID,
-				NotifyType:   notifyTemplate.NotifyType,
-				IsRead:       false,
-				CreatedAt:    time.Now(),
+				TrnNotifyUID:         uuid.New().String(),
+				EmpID:                notifyEmpID,
+				Title:                notifyTemplate.NotifyTitle,
+				Message:              notifyMessage,
+				RecordUID:            request.TrnRequestUID,
+				NotifyType:           notifyTemplate.NotifyType,
+				NotifyRole:           notifyTemplate.NotifyRole,
+				RefRequestStatusCode: request.RefRequestStatusCode,
+				IsRead:               false,
+				CreatedAt:            time.Now(),
 			}
 			if err := config.DB.Create(&notification).Error; err != nil {
 				fmt.Println("Error creating notification:", err)
@@ -71,7 +73,7 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 
 	var notifyTemplates []models.NotificationTemplate
 
-	if err := config.DB.Where("ref_request_annual_driver_status_code = ? AND is_deleted = false AND notify_type = 'request-annual-license'", request.RefRequestAnnualDriverStatusCode).Find(&notifyTemplates).Error; err != nil {
+	if err := config.DB.Where("ref_request_status_code = ? AND is_deleted = false AND notify_type = 'request-annual-driver'", request.RefRequestAnnualDriverStatusCode).Find(&notifyTemplates).Error; err != nil {
 		fmt.Println("Error getting notify templates:", err)
 		return
 	}
@@ -91,14 +93,16 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 		if notifyEmpID != "" {
 			//create notification
 			notification := models.Notification{
-				TrnNotifyUID: uuid.New().String(),
-				EmpID:        notifyEmpID,
-				Title:        notifyTemplate.NotifyTitle,
-				Message:      notifyMessage,
-				RecordUID:    request.TrnRequestAnnualDriverUID,
-				NotifyType:   notifyTemplate.NotifyType,
-				IsRead:       false,
-				CreatedAt:    time.Now(),
+				TrnNotifyUID:         uuid.New().String(),
+				EmpID:                notifyEmpID,
+				Title:                notifyTemplate.NotifyTitle,
+				Message:              notifyMessage,
+				RecordUID:            request.TrnRequestAnnualDriverUID,
+				NotifyType:           notifyTemplate.NotifyType,
+				NotifyRole:           notifyTemplate.NotifyRole,
+				RefRequestStatusCode: request.RefRequestAnnualDriverStatusCode,
+				IsRead:               false,
+				CreatedAt:            time.Now(),
 			}
 			if err := config.DB.Create(&notification).Error; err != nil {
 				fmt.Println("Error creating notification:", err)

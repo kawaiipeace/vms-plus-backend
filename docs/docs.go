@@ -15,6 +15,90 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/00-01-mas": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to get Mas handler information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MAS"
+                ],
+                "summary": "Mas handler information",
+                "responses": {}
+            }
+        },
+        "/api/00-login": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to get login handler information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Login"
+                ],
+                "summary": "Login handler information",
+                "responses": {}
+            }
+        },
+        "/api/01-01-vehicle": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to get vehicle handler information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Vehicle handler information",
+                "responses": {}
+            }
+        },
+        "/api/01-02-driver": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "This endpoint allows a user to get driver handler information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers"
+                ],
+                "summary": "Driver handler information",
+                "responses": {}
+            }
+        },
         "/api/booking-admin/menu-requests": {
             "get": {
                 "security": [
@@ -3073,6 +3157,30 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/driver-license-approver/menu-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Summary driver license requests, counts grouped by request status code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Driver-license-approver"
+                ],
+                "summary": "Summary driver license requests by request status code",
+                "responses": {}
+            }
+        },
         "/api/driver-license-approver/search-requests": {
             "get": {
                 "security": [
@@ -4006,6 +4114,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "2025-05-01",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
                         "in": "query",
@@ -4013,6 +4122,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "2025-05-31",
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query",
@@ -4420,6 +4530,79 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "work type to search (1: ค้างคืน, 2: ไป-กลับ)",
+                        "name": "work_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/driver/search-booking": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Get a list of drivers filtered by name with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Drivers"
+                ],
+                "summary": "Get drivers by name with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Driver name to search",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2",
                         "description": "work type to search (1: ค้างคืน, 2: ไป-กลับ)",
                         "name": "work_type",
                         "in": "query"
@@ -4921,38 +5104,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/mas/driver-vendors": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to retrieve Driver Vendors.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MAS"
-                ],
-                "summary": "Retrieve the Driver Vendors",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search by Vendor Code or Vendor Name",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/mas/holidays": {
             "get": {
                 "security": [
@@ -5078,8 +5229,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search by Employee ID or Full Name",
-                        "name": "search",
+                        "description": "EmpID",
+                        "name": "emp_id",
                         "in": "query"
                     }
                 ],
@@ -5110,8 +5261,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search by Employee ID or Full Name",
-                        "name": "search",
+                        "description": "EmpID",
+                        "name": "emp_id",
                         "in": "query"
                     }
                 ],
@@ -5142,9 +5293,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search by Employee ID or Full Name",
-                        "name": "search",
-                        "in": "query"
+                        "description": "EmpID",
+                        "name": "emp_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {}
@@ -5351,6 +5503,14 @@ const docTemplate = `{
         },
         "/api/notification": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
                 "description": "Get Notification",
                 "consumes": [
                     "application/json"
@@ -5362,6 +5522,39 @@ const docTemplate = `{
                     "Notification"
                 ],
                 "summary": "Get Notification",
+                "responses": {}
+            }
+        },
+        "/api/notification/read/{notification_uid}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Update Read Notification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Update Read Notification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification UID",
+                        "name": "notification_uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -9985,6 +10178,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "2025-05-01",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
                         "in": "query",
@@ -9992,6 +10186,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "2025-06-30",
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query",
@@ -10111,6 +10306,30 @@ const docTemplate = `{
                     "Vehicle"
                 ],
                 "summary": "Get department list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -10182,6 +10401,90 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle/search-booking": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Retrieves vehicles based on search text, department, and car type filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Search vehicles by brand, license plate, and filters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text (Vehicle Brand Name or License Plate)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Vehicle Owner Department",
+                        "name": "vehicle_owner_dept",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Car Type",
+                        "name": "car_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Vehicle Category Code",
+                        "name": "category_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle/types": {
             "get": {
                 "security": [
@@ -10204,6 +10507,28 @@ const docTemplate = `{
                 ],
                 "summary": "Get vehicle types",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Filter by vehicle type name (partial match)",
@@ -10735,10 +11060,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
                 },
-                "mas_vendor_code": {
-                    "type": "string",
-                    "example": "VENDOR123"
-                },
                 "ref_other_use_code": {
                     "type": "integer",
                     "example": 1
@@ -10746,6 +11067,9 @@ const docTemplate = `{
                 "replacement_driver_uid": {
                     "type": "string",
                     "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
+                },
+                "vendor_name": {
+                    "type": "string"
                 }
             }
         },
@@ -10999,13 +11323,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1"
                 },
-                "mas_vendor_code": {
-                    "type": "string",
-                    "example": "VENDOR123"
-                },
                 "ref_other_use_code": {
                     "type": "string",
                     "example": "1"
+                },
+                "vendor_name": {
+                    "type": "string",
+                    "example": "VENDOR123"
                 },
                 "work_type": {
                     "type": "integer",

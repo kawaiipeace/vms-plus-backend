@@ -88,7 +88,7 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 				end
 		end as carpool_authorized_depts
 
-	`)
+	`).Where("cp.is_deleted = ?", "0")
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
 		query = query.Where("UPPER(cp.carpool_name) ILIKE ? OR EXISTS (SELECT 1 FROM vms_mas_carpool_admin cpa WHERE cpa.mas_carpool_uid = cp.mas_carpool_uid AND UPPER(cpa.admin_emp_name) ILIKE ?)", "%"+search+"%", "%"+search+"%")
@@ -323,15 +323,18 @@ func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 
 	query := h.SetQueryRoleDept(user, config.DB)
 	if carpoolType == "02" {
-		query = query.Where("resource_name = 'การไฟฟ้าเขต'")
+		query = query.Where("resource_code = '031'")
+	} else if carpoolType == "03" {
+		query = query.Where("resource_code in (select resource_code From vms_ref_resource_code_is_bureau)")
 	}
+
 	search := c.Query("search")
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1").Limit(100)
 	if search != "" {
 		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
-	query = query.Order("DeptShort")
+	query = query.Order("dept_change_code")
 	if err := query.
 		Find(&lists).Error; err != nil {
 		c.JSON(http.StatusOK, []interface{}{})
@@ -365,6 +368,16 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 
 	carpool.MasCarpoolUID = uuid.New().String()
 	carpool.IsHaveDriverForCarpool = "0"
+	if carpool.CarpoolType == "01" {
+		carpool.CarpoolMainBusinessArea = "Z00"
+	} else if carpool.CarpoolType == "02" {
+		var department models.VmsMasDepartment
+		if err := config.DB.Where("dept_sap = ?", carpool.CarpoolDeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		carpool.CarpoolMainBusinessArea = department.BusinessArea
+	}
 
 	carpool.IsActive = "1"
 	carpool.CreatedAt = time.Now()
@@ -641,12 +654,12 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 	}
 	var admins []models.VmsMasCarpoolAdminList
 	query = config.DB.Table("vms_mas_carpool_admin cpa").
-		Select("cpa.*,public.fn_get_long_short_dept_name_by_dept_sap(cpa.admin_dept_sap) admin_dept_sap_short").
+		Select("cpa.*,fn_get_long_short_dept_name_by_dept_sap(cpa.admin_dept_sap) admin_dept_sap_short").
 		Where("mas_carpool_uid = ? AND cpa.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
-		query = query.Where("UPPER(admin_emp_no) ILIKE ? OR UPPER(admin_name) ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("admin_emp_no ILIKE ? OR admin_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
@@ -779,7 +792,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 		var existingAdmin models.VmsMasCarpoolAdmin
 		if err := config.DB.Where("mas_carpool_uid = ? AND admin_emp_no = ? AND is_deleted = ?", requests[i].MasCarpoolUID, requests[i].AdminEmpNo, "0").First(&existingAdmin).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{
-				"error":   fmt.Sprintf("มีผู้ดูแลที่มี MasCarpoolUID %s และ AdminEmpNo %s อยู่แล้ว", requests[i].MasCarpoolUID, requests[i].AdminEmpNo),
+				"error":   "มีผู้ดูแลที่มีรหัสพนักงานนี้อยู่ในกลุ่มยานพาหนะนี้แล้ว",
 				"message": "ไม่สามารถเพิ่มผู้ดูแลได้เนื่องจากมีผู้ดูแลที่มีรหัสพนักงานนี้อยู่ในกลุ่มยานพาหนะนี้แล้ว",
 			})
 			return
@@ -1183,7 +1196,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 		var existingApprover models.VmsMasCarpoolApprover
 		if err := config.DB.Where("mas_carpool_uid = ? AND approver_emp_no = ? AND is_deleted = ?", requests[i].MasCarpoolUID, requests[i].ApproverEmpNo, "0").First(&existingApprover).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{
-				"error":   fmt.Sprintf("Approver with MasCarpoolUID %s and ApproverEmpNo %s already exists", requests[i].MasCarpoolUID, requests[i].ApproverEmpNo),
+				"error":   "มีผู้อนุมัติที่มีรหัสพนักงานนี้อยู่ในกลุ่มยานพาหนะนี้แล้ว",
 				"Message": "ไม่สามารถเพิ่มผู้อนุมัติได้เนื่องจากมีผู้อนุมัติที่มีรหัสพนักงานนี้อยู่ในกลุ่มยานพาหนะนี้แล้ว",
 			})
 			return

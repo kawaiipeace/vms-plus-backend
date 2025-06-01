@@ -229,7 +229,7 @@ type VmsTrnRequestResponse struct {
 
 	ConfirmedRequestEmpID         string `gorm:"column:confirmed_request_emp_id" json:"confirmed_request_emp_id" example:"501621"`
 	ConfirmedRequestEmpName       string `gorm:"column:confirmed_request_emp_name" json:"confirmed_request_emp_name"`
-	ConfirmedRequestDeskPhone     string `gorm:"column:cconfirmed_request_desk_phone" json:"cconfirmed_request_desk_phone"`
+	ConfirmedRequestDeskPhone     string `gorm:"column:cconfirmed_request_desk_phone" json:"confirmed_request_desk_phone"`
 	ConfirmedRequestMobilePhone   string `gorm:"column:confirmed_request_mobile_phone" json:"confirmed_request_mobile_phone"`
 	ConfirmedRequestPosition      string `gorm:"column:confirmed_request_position" json:"confirmed_request_position"`
 	ConfirmedRequestDeptSAP       string `gorm:"column:confirmed_request_dept_sap" json:"confirmed_request_dept_sap"`

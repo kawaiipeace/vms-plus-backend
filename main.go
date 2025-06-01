@@ -59,6 +59,24 @@ func main() {
 	router.GET("/api/login/profile", funcs.ApiKeyAuthenMiddleware(), loginHandler.Profile)
 	router.GET("/api/logout", funcs.ApiKeyAuthenMiddleware(), loginHandler.Logout)
 
+	//VehicleHandler
+	vehicleHandler := handlers.VehicleHandler{Role: "*"}
+	router.GET("/api/vehicle/search", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchVehicles)
+	router.GET("/api/vehicle/search-booking", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchBookingVehicles)
+	router.GET("/api/vehicle/types", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetTypes)
+	router.GET("/api/vehicle/departments", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetDepartments)
+	router.GET("/api/vehicle/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicle)
+	router.GET("/api/vehicle-info/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
+	router.GET("/api/vehicle/car-types-by-detail", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetCarTypeDetails)
+
+	//DriverHandler
+	driverHandler := handlers.DriverHandler{Role: "*"}
+	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDrivers)
+	router.GET("/api/driver/search-booking", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetBookingDrivers)
+	router.GET("/api/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriver)
+	router.GET("/api/driver/search-other-dept", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversOtherDept)
+	router.GET("/api/driver/work-type", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetWorkType)
+
 	//BookingUserHandler
 	bookingUserHandler := handlers.BookingUserHandler{Role: "vehicle-user"}
 	router.GET("/api/booking-user/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.MenuRequests)
@@ -238,15 +256,6 @@ func main() {
 	router.PUT("/api/vehicle-inspection-admin/update-accepted", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateAccepted)
 	router.PUT("/api/vehicle-inspection-admin/update-inspect-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateInspectVehicleImages)
 
-	//VehicleHandler
-	vehicleHandler := handlers.VehicleHandler{Role: "*"}
-	router.GET("/api/vehicle/search", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchVehicles)
-	router.GET("/api/vehicle/types", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetTypes)
-	router.GET("/api/vehicle/departments", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetDepartments)
-	router.GET("/api/vehicle/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicle)
-	router.GET("/api/vehicle-info/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
-	router.GET("/api/vehicle/car-types-by-detail", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetCarTypeDetails)
-
 	//VehicleManagementHandler
 	vehicleManagementHandler := handlers.VehicleManagementHandler{Role: "admin-super,admin-region,admin-dept"}
 	router.GET("/api/vehicle-management/search", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.SearchVehicles)
@@ -254,12 +263,6 @@ func main() {
 	router.GET("/api/vehicle-management/timeline", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.GetVehicleTimeLine)
 	router.POST("/api/vehicle-management/report-trip-detail", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.ReportTripDetail)
 	router.POST("/api/vehicle-management/report-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.ReportAddFuel)
-
-	driverHandler := handlers.DriverHandler{Role: "*"}
-	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDrivers)
-	router.GET("/api/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriver)
-	router.GET("/api/driver/search-other-dept", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversOtherDept)
-	router.GET("/api/driver/work-type", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetWorkType)
 
 	//DriverManagementHandler
 	driverManagementHandler := handlers.DriverManagementHandler{Role: "admin-super,admin-region,admin-dept"}
@@ -289,7 +292,7 @@ func main() {
 	router.PUT("/api/driver-license-user/resend-license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.ResendDriverLicenseAnnual)
 
 	//DriverLicenseConfirmerHandler
-	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "license-confirmer"}
+	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "level1-approval"}
 	router.GET("/api/driver-license-confirmer/search-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.SearchRequests)
 	router.GET("/api/driver-license-confirmer/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.GetDriverLicenseAnnual)
 	router.PUT("/api/driver-license-confirmer/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualCanceled)
@@ -298,7 +301,8 @@ func main() {
 	router.PUT("/api/driver-license-confirmer/update-license-annual-approver", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualApprover)
 
 	//DriverLicenseApproverHandler
-	driverLicenseApproverHandler := handlers.DriverLicenseApproverHandler{Role: "vehicle-user,license-approver"}
+	driverLicenseApproverHandler := handlers.DriverLicenseApproverHandler{Role: "license-approval"}
+	router.GET("/api/driver-license-approver/menu-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.MenuRequests)
 	router.GET("/api/driver-license-approver/search-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.SearchRequests)
 	router.GET("/api/driver-license-approver/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.GetDriverLicenseAnnual)
 	router.PUT("/api/driver-license-approver/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.UpdateDriverLicenseAnnualCanceled)
@@ -361,7 +365,6 @@ func main() {
 	router.GET("/api/mas/satisfaction_survey_questions", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVmsMasSatisfactionSurveyQuestions)
 	router.GET("/api/mas/vehicle-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleDepartment)
 	router.GET("/api/mas/department-tree", funcs.ApiKeyAuthenMiddleware(), masHandler.GetDepartmentTree)
-	router.GET("/api/mas/driver-vendors", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverVendor)
 	router.GET("/api/mas/driver-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverDepartment)
 	router.GET("/api/mas/user-confirmer-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListConfirmerLicenseUser)
 	router.GET("/api/mas/user-approval-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListApprovalLicenseUser)
@@ -390,7 +393,7 @@ func main() {
 	//NotificationHandler
 	notificationHandler := handlers.NotificationHandler{}
 	router.GET("/api/notification", funcs.ApiKeyAuthenMiddleware(), notificationHandler.GetNotification)
-
+	router.PUT("/api/notification/read/:notification_uid", funcs.ApiKeyAuthenMiddleware(), notificationHandler.UpdateReadNotification)
 	//LogHandler
 	logHandler := handlers.LogHandler{}
 	router.GET("/api/log/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), logHandler.GetLogRequest)

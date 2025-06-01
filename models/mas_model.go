@@ -4,16 +4,18 @@ import "time"
 
 //MasUserEmp
 type MasUserEmp struct {
-	EmpID        string `gorm:"column:emp_id" json:"emp_id"`
-	FullName     string `gorm:"column:full_name" json:"full_name"`
-	DeptSAP      string `gorm:"column:dept_sap" json:"dept_sap"`
-	DeptSAPShort string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
-	DeptSAPFull  string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
-	Position     string `gorm:"column:posi_text" json:"posi_text"`
-	TelMobile    string `gorm:"column:tel_mobile" json:"tel_mobile"`
-	TelInternal  string `gorm:"column:tel_internal" json:"tel_internal"`
-	BusinessArea string `gorm:"column:business_area" json:"business_area"`
-	ImageUrl     string `gorm:"column:image_url" json:"image_url"`
+	EmpID         string `gorm:"column:emp_id" json:"emp_id"`
+	FullName      string `gorm:"column:full_name" json:"full_name"`
+	DeptSAP       string `gorm:"column:dept_sap" json:"dept_sap"`
+	DeptSAPShort  string `gorm:"column:dept_sap_short" json:"dept_sap_short"`
+	DeptSAPFull   string `gorm:"column:dept_sap_full" json:"dept_sap_full"`
+	Position      string `gorm:"column:posi_text" json:"posi_text"`
+	TelMobile     string `gorm:"column:tel_mobile" json:"tel_mobile"`
+	TelInternal   string `gorm:"column:tel_internal" json:"tel_internal"`
+	BureauDeptSap string `gorm:"column:bureau_dept_sap" json:"bureau_dept_sap"`
+	BusinessArea  string `gorm:"column:business_area" json:"business_area"`
+	ImageUrl      string `gorm:"column:image_url" json:"image_url"`
+	IsEmployee    bool   `gorm:"column:is_employee" json:"is_employee"`
 }
 
 func (MasUserEmp) TableName() string {
@@ -63,6 +65,7 @@ type VmsMasDepartment struct {
 	DeptFull       string `gorm:"column:dept_full" json:"dept_full"`
 	CostCenterCode string `gorm:"column:cost_center_code" json:"cost_center_code"`
 	CostCenterName string `gorm:"column:cost_center_name" json:"cost_center_name"`
+	BusinessArea   string `gorm:"column:business_area" json:"business_area"`
 }
 
 func (VmsMasDepartment) TableName() string {
@@ -90,16 +93,6 @@ func (VmsMasDepartmentTree) TableName() string {
 	return "mas_department"
 }
 
-//VmsMasDriverVendor
-type VmsMasDriverVendor struct {
-	MasVendorCode string `gorm:"column:mas_vendor_code;primaryKey" json:"mas_vendor_code"`
-	MasVendorName string `gorm:"column:mas_vendor_name" json:"mas_vendor_name"`
-}
-
-func (VmsMasDriverVendor) TableName() string {
-	return "vms_mas_driver_vendor"
-}
-
 type VmsMasHolidays struct {
 	HolidaysDate   time.Time `gorm:"column:mas_holidays_date" json:"mas_holidays_date"`
 	HolidaysDetail string    `gorm:"column:mas_holidays_detail" json:"mas_holidays_detail"`
@@ -107,4 +100,17 @@ type VmsMasHolidays struct {
 
 func (VmsMasHolidays) TableName() string {
 	return "vms_mas_holidays"
+}
+
+type VmsMasManager struct {
+	Type           string `gorm:"column:type" json:"type"`
+	EmpIDLeader    int    `gorm:"column:emp_id_leader" json:"emp_id_leader"`
+	EmpName        string `gorm:"column:emp_name" json:"emp_name"`
+	PosiCode       int    `gorm:"column:posi_code" json:"posi_code"`
+	LevelCode      string `gorm:"column:level_code" json:"level_code"`
+	DeptShort      string `gorm:"column:dept_short" json:"dept_short"`
+	DeptSAP        int    `gorm:"column:dept_sap" json:"dept_sap"`
+	DeptUpper      int    `gorm:"column:dept_upper" json:"dept_upper"`
+	PlansTextShort string `gorm:"column:plans_text_short" json:"plans_text_short"`
+	Email          string `gorm:"column:email" json:"email"`
 }
