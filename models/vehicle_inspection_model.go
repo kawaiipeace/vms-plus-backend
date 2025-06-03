@@ -77,7 +77,7 @@ func (VmsTrnInspectVehicleImages) TableName() string {
 
 // VehicleImageInspect
 type VehicleImageInspect struct {
-	TrnVehicleImgReturnedUID string    `gorm:"column:trn_vehicle_img_returned_uid;primaryKey" json:"-"`
+	TrnVehicleImgReturnedUID string    `gorm:"column:trn_vehicle_img_inspect_uid;primaryKey" json:"-"`
 	TrnRequestUID            string    `gorm:"column:trn_request_uid;" json:"-"`
 	RefVehicleImgSideCode    int       `gorm:"column:ref_vehicle_img_side_code" json:"ref_vehicle_img_side_code" example:"1"`
 	VehicleImgFile           string    `gorm:"column:vehicle_img_file" json:"vehicle_img_file" example:"http://vms.pea.co.th/side_image.jpg"`
@@ -89,5 +89,6 @@ type VehicleImageInspect struct {
 }
 
 func (VehicleImageInspect) TableName() string {
-	return "public.vms_trn_vehicle_img_returned"
+	return "public.vms_trn_vehicle_img_inspect"
+
 }

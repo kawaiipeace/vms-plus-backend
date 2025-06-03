@@ -64,7 +64,8 @@ func (h *DriverLicenseConfirmerHandler) SearchRequests(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	statusNameMap := LicenseStatusNameMapApprover
+
+	statusNameMap := LicenseStatusNameMapConfirmer
 
 	var requests []models.VmsDriverLicenseAnnualList
 	var summary []models.VmsTrnRequestAnnualDriverSummary

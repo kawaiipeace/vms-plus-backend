@@ -266,7 +266,7 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
 				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap)  AS vehicle_dept_name,
-				(select cp.carpool_name from vms_mas_carpool cp, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = cp.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
+				(select max(cp.carpool_name) from vms_mas_carpool cp, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = cp.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
 				v.vehicle_brand_name,v.vehicle_model_name,
 				public.fn_get_vehicle_distance_two_months(v.mas_vehicle_uid, ?) AS vehicle_distance`, startDate).

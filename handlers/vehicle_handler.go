@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"strings"
 	"vms_plus_be/config"
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
@@ -217,7 +216,9 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 
 	for i := range carpools {
 		if funcs.Contains(adminChooseDriverMasCarpoolUIDs, carpools[i].MasCarpoolUID) {
-			carpools[i].IsAdminChooseDriver = true
+			carpools[i].IsAdminChooseDriver = "1"
+		} else {
+			carpools[i].IsAdminChooseDriver = "0"
 		}
 	}
 
@@ -308,7 +309,6 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 	// Fetch the vehicle record from the database
 	var vehicle models.VmsMasVehicle
 	if err := config.DB.Preload("RefFuelType").
-		Preload("VehicleDepartment").
 		First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", parsedID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -320,7 +320,8 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 		for _, img := range vehicleImgs {
 			vehicle.VehicleImgs = append(vehicle.VehicleImgs, img.VehicleImgFile)
 		}
-	} else {
+	}
+	if len(vehicle.VehicleImgs) == 0 {
 		vehicle.VehicleImgs = []string{
 			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
 			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
@@ -336,17 +337,32 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle department not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	vehicle.VehicleDepartment.VehicleUser.EmpID = vehicle.VehicleDepartment.VehicleUserEmpID
-	vehicle.VehicleDepartment.VehicleUser.FullName = vehicle.VehicleDepartment.VehicleUserEmpName
-	vehicle.VehicleDepartment.VehicleUser.DeptSAP = vehicle.VehicleDepartment.VehicleOwnerDeptSap
-	vehicle.VehicleDepartment.VehicleUser.DeptSAPFull = vehicle.VehicleDepartment.OwnerDeptName
-	vehicle.VehicleDepartment.VehicleUser.DeptSAPShort = vehicle.VehicleDepartment.OwnerDeptName
-	vehicle.VehicleDepartment.VehicleUser.ImageUrl = funcs.GetEmpImage(vehicle.VehicleDepartment.VehicleUserEmpID)
-	if strings.TrimSpace(vehicle.VehicleLicensePlate) == "7กษ 4377" {
-		vehicle.IsAdminChooseDriver = true
+	vehicle.VehicleDepartment.VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicle.VehicleDepartment.VehicleOwnerDeptSap)
+	//check if vehicle is carpool
+	var carpoolVehicle models.VmsMasCarpoolVehicle
+	masCarpoolUID := ""
+	if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = '0' AND is_active = '1'", parsedID).First(&carpoolVehicle).Error; err == nil {
+		masCarpoolUID = carpoolVehicle.MasCarpoolUID
+	}
+	if masCarpoolUID != "" {
+		var carpoolAdmin models.VmsMasCarpoolAdmin
+		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", masCarpoolUID).
+			Select("admin_emp_no,admin_emp_name,admin_dept_sap,admin_position,mobile_contact_number,internal_contact_number").
+			Order("is_main_admin DESC").
+			First(&carpoolAdmin).Error; err == nil {
+			vehicle.VehicleDepartment.VehicleUser.EmpID = carpoolAdmin.AdminEmpNo
+			vehicle.VehicleDepartment.VehicleUser.FullName = carpoolAdmin.AdminEmpName
+			vehicle.VehicleDepartment.VehicleUser.DeptSAP = carpoolAdmin.AdminDeptSap
+			vehicle.VehicleDepartment.VehicleUser.DeptSAPFull = funcs.GetDeptSAPFull(carpoolAdmin.AdminDeptSap)
+			vehicle.VehicleDepartment.VehicleUser.DeptSAPShort = funcs.GetDeptSAPShort(carpoolAdmin.AdminDeptSap)
+			vehicle.VehicleDepartment.VehicleUser.ImageUrl = funcs.GetEmpImage(carpoolAdmin.AdminEmpNo)
+			vehicle.VehicleDepartment.VehicleUser.Position = carpoolAdmin.AdminPosition
+			vehicle.VehicleDepartment.VehicleUser.TelMobile = carpoolAdmin.MobileContactNumber
+			vehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
+			vehicle.VehicleDepartment.VehicleUser.IsEmployee = true
+		}
 	}
 
-	// Return the vehicle data as a JSON response
 	funcs.TrimStringFields(&vehicle)
 	c.JSON(http.StatusOK, vehicle)
 }
@@ -357,7 +373,7 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 // @Tags Vehicle
 // @Accept json
 // @Produce json
-// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param emp_id path string true "Vehicle User EmpID (emp_id)" default(700001)
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param name query string false "Filter by vehicle type name (partial match)"

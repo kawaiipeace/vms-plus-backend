@@ -147,6 +147,7 @@ func GetUserList(request ServiceListUserRequest) ([]models.MasUserEmp, error) {
 		BureauDeptSap: request.BureauDeptSap,
 		BusinessArea:  request.BusinessArea,
 		LevelCodes:    request.LevelCodes,
+		EmpIDs:        request.EmpIDs,
 		Role:          request.Role,
 		Limit:         request.Limit,
 	}

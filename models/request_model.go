@@ -95,11 +95,11 @@ type VmsTrnRequestRequest struct {
 	RefTripTypeCode      int       `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription    string `gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	WorkDescription    string `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
-	DocNo              string `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"attached_document" example:"document.pdf"`
+	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
 
 	RefCostTypeCode int    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
 	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
@@ -109,9 +109,10 @@ type VmsTrnRequestRequest struct {
 	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	//Step 2
-	MasCarpoolUID        string  `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
-	RequestedVehicleType string  `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
-	MasVehicleUID        *string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
+	MasCarpoolUID           string  `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
+	MasVehicleDepartmentUID string  `gorm:"column:mas_vehicle_department_uid" json:"-" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
+	RequestedVehicleType    string  `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
+	MasVehicleUID           *string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
 
 	//MasVehicleDepartmentUID string `gorm:"column:mas_vehicle_department_uid" json:"-"`
 	MasVehicleEvUID       string `gorm:"column:mas_vehicle_ev_uid" json:"-"`
@@ -134,7 +135,7 @@ type VmsTrnRequestRequest struct {
 	DriverEmpDeptNameShort string `gorm:"column:driver_emp_dept_name_short" json:"-"`
 	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"-"`
 
-	PickupPlace    string     `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
+	PickupPlace    *string    `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
 	PickupDateTime *time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
 
 	//Step 4
@@ -169,6 +170,7 @@ type VmsTrnRequestResponse struct {
 	VehicleUserPosition      string `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
 	VehicleUserDeptNameShort string `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
 	VehicleUserDeptNameFull  string `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_name_full"`
+	VehicleUserImageUrl      string `gorm:"-" json:"vehicle_user_image_url"`
 
 	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
@@ -217,6 +219,7 @@ type VmsTrnRequestResponse struct {
 	DriverEmpDeptSAP       string       `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"DPT001"`
 	DriverEmpDeptNameShort string       `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short"`
 	DriverEmpDeptNameFull  string       `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full"`
+	DriverEmpImageUrl      string       `gorm:"-" json:"driver_emp_image_url"`
 	DriverInternalContact  string       `gorm:"column:driver_internal_contact_number" json:"driver_internal_contact_number" example:"1234567890"`
 	DriverMobileContact    string       `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverImageURL         string       `gorm:"-" json:"driver_image_url"`
@@ -235,16 +238,19 @@ type VmsTrnRequestResponse struct {
 	ConfirmedRequestDeptSAP       string `gorm:"column:confirmed_request_dept_sap" json:"confirmed_request_dept_sap"`
 	ConfirmedRequestDeptNameShort string `gorm:"column:confirmed_request_dept_name_short" json:"confirmed_request_dept_name_short"`
 	ConfirmedRequestDeptNameFull  string `gorm:"column:confirmed_request_dept_name_full" json:"confirmed_request_dept_name_full"`
+	ConfirmedRequestImageUrl      string `gorm:"-" json:"confirmed_request_image_url"`
 
-	CanCancelRequest        bool                    `gorm:"-" json:"can_cancel_request"`
-	CanceledRequestDatetime time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
-	CanceledRequestRole     string                  `gorm:"-" json:"canceled_request_role"`
-	RefRequestStatusCode    string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatus        VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
-	RefRequestStatusName    string                  `json:"ref_request_status_name"`
-	RejectRequestReason     string                  `gorm:"column:rejected_request_reason;" json:"rejected_request_reason" example:"Test Send Back"`
-	CanceledRequestReason   string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	ProgressRequestStatus   []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	CanCancelRequest         bool                    `gorm:"-" json:"can_cancel_request"`
+	CancelReqeustEmpID       string                  `gorm:"column:cancel_reqeust_emp_id" json:"cancel_reqeust_emp_id"`
+	CanceledRequestDatetime  time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
+	CanceledRequestRole      string                  `gorm:"-" json:"canceled_request_role"`
+	RefRequestStatusCode     string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatus         VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
+	RefRequestStatusName     string                  `json:"ref_request_status_name"`
+	RejectRequestReason      string                  `gorm:"column:rejected_request_reason;" json:"rejected_request_reason" example:"Test Send Back"`
+	CanceledRequestReason    string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
+	ProgressRequestStatus    []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
+	ProgressRequestStatusEmp `gorm:"-" json:"progress_request_status_emp"`
 }
 
 func (VmsTrnRequestResponse) TableName() string {
@@ -296,7 +302,7 @@ type VmsTrnRequestTrip struct {
 	ReserveEndDatetime   time.Time `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
 	RefTripTypeCode      int       `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	WorkPlace            string    `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription      string    `gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	WorkDescription      string    `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	NumberOfPassengers   int       `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark               string    `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	UpdatedAt            time.Time `gorm:"column:updated_at" json:"-"`
@@ -323,8 +329,8 @@ func (VmsTrnRequestPickup) TableName() string {
 // VmsTrnRequestDocument
 type VmsTrnRequestDocument struct {
 	TrnRequestUID string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	DocNo         string    `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	DocFile       string    `gorm:"column:doc_file" json:"attached_document" example:"document.pdf"`
+	DocNo         string    `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
+	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
 	UpdatedAt     time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy     string    `gorm:"column:updated_by" json:"-"`
 }

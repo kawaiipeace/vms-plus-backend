@@ -235,7 +235,7 @@ func main() {
 	router.PUT("/api/vehicle-in-use-driver/update-received-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.UpdateReceivedVehicleImages)
 
 	//VehicleInspectionAdminHandler
-	vehicleInspectionAdminHandler := handlers.VehicleInspectionAdminHandler{Role: "admin-approval,admin-dept-approval"}
+	vehicleInspectionAdminHandler := handlers.VehicleInspectionAdminHandler{Role: "admin-approval"}
 	router.GET("/api/vehicle-inspection-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.SearchRequests)
 	router.GET("/api/vehicle-inspection-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetRequest)
 	router.GET("/api/vehicle-inspection-admin/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetVehicleTripDetails)

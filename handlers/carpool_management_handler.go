@@ -365,12 +365,43 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
+	for i := range carpool.CarPoolVehicles {
+		//check exist vehicle vms_mas_vehicle
+		var vehicle models.VmsMasVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", carpool.CarPoolVehicles[i].MasVehicleUID, "0").First(&vehicle).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error() + " รถยนต์ที่ต้องการสร้างระบบไม่มีอยู่ในระบบ กรุณาตรวจสอบอีกครั้ง"})
+			return
+		}
+		//check duplicate vehicle in another carpool
+		var carpoolVehicle models.VmsMasCarpoolVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", carpool.CarPoolVehicles[i].MasVehicleUID, "0").First(&carpoolVehicle).Error; err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Vehicle already exists in another carpool", "message": messages.ErrNotfound.Error() + " รถยนต์ที่ต้องการสร้างระบบมีอยู่ในกลุ่มรถอื่นแล้ว"})
+			return
+		}
+	}
+	for i := range carpool.CarPoolDrivers {
+		//check exist driver vms_mas_driver
+		var driver models.VmsMasDriver
+		if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", carpool.CarPoolDrivers[i].MasDriverUID, "0").First(&driver).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error() + " คนขับที่ต้องการสร้างระบบไม่มีอยู่ในระบบ กรุณาตรวจสอบอีกครั้ง"})
+			return
+		}
+		//check duplicate driver in another carpool
+		var carpoolDriver models.VmsMasCarpoolDriver
+		if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", carpool.CarPoolDrivers[i].MasDriverUID, "0").First(&carpoolDriver).Error; err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Driver already exists in another carpool", "message": messages.ErrNotfound.Error() + " คนขับที่ต้องการสร้างระบบมีอยู่ในกลุ่มคนขับอื่นแล้ว"})
+			return
+		}
+	}
 
 	carpool.MasCarpoolUID = uuid.New().String()
 	carpool.IsHaveDriverForCarpool = "0"
 	if carpool.CarpoolType == "01" {
-		carpool.CarpoolMainBusinessArea = "Z00"
+		carpool.CarpoolMainBusinessArea = "Z000"
 	} else if carpool.CarpoolType == "02" {
+		if carpool.CarpoolDeptSap == "" && len(carpool.CarpoolAuthorizedDepts) > 0 {
+			carpool.CarpoolDeptSap = carpool.CarpoolAuthorizedDepts[0].DeptSap
+		}
 		var department models.VmsMasDepartment
 		if err := config.DB.Where("dept_sap = ?", carpool.CarpoolDeptSap).First(&department).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
@@ -401,6 +432,99 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		return
 	}
 
+	// Create Admin
+	for i := range carpool.CarPoolAdmins {
+		carpool.CarPoolAdmins[i].MasCarpoolAdminUID = uuid.New().String()
+		carpool.CarPoolAdmins[i].MasCarpoolUID = carpool.MasCarpoolUID
+		carpool.CarPoolAdmins[i].CreatedAt = time.Now()
+		carpool.CarPoolAdmins[i].CreatedBy = user.EmpID
+		carpool.CarPoolAdmins[i].UpdatedAt = time.Now()
+		carpool.CarPoolAdmins[i].UpdatedBy = user.EmpID
+		carpool.CarPoolAdmins[i].IsDeleted = "0"
+		carpool.CarPoolAdmins[i].IsActive = "1"
+		empUser := funcs.GetUserEmpInfo(carpool.CarPoolAdmins[i].AdminEmpNo)
+		carpool.CarPoolAdmins[i].AdminDeptSap = empUser.DeptSAP
+		carpool.CarPoolAdmins[i].AdminEmpName = empUser.FullName
+		carpool.CarPoolAdmins[i].AdminPosition = empUser.Position
+	}
+	if len(carpool.CarPoolAdmins) > 0 {
+		if err := config.DB.Create(&carpool.CarPoolAdmins).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create admin: " + err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+
+	CheckMainCarpoolAdmin(carpool.MasCarpoolUID)
+
+	// Create Approver
+	for i := range carpool.CarPoolApprovers {
+		carpool.CarPoolApprovers[i].MasCarpoolApproverUID = uuid.New().String()
+		carpool.CarPoolApprovers[i].MasCarpoolUID = carpool.MasCarpoolUID
+		carpool.CarPoolApprovers[i].CreatedAt = time.Now()
+		carpool.CarPoolApprovers[i].CreatedBy = user.EmpID
+		carpool.CarPoolApprovers[i].UpdatedAt = time.Now()
+		carpool.CarPoolApprovers[i].UpdatedBy = user.EmpID
+		carpool.CarPoolApprovers[i].IsDeleted = "0"
+		carpool.CarPoolApprovers[i].IsActive = "1"
+		empUser := funcs.GetUserEmpInfo(carpool.CarPoolApprovers[i].ApproverEmpNo)
+		carpool.CarPoolApprovers[i].ApproverDeptSap = empUser.DeptSAP
+		carpool.CarPoolApprovers[i].ApproverEmpName = empUser.FullName
+		carpool.CarPoolApprovers[i].ApproverPosition = empUser.Position
+	}
+	if len(carpool.CarPoolApprovers) > 0 {
+		if err := config.DB.Create(&carpool.CarPoolApprovers).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create approver: " + err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+
+	CheckMainCarpoolApprover(carpool.MasCarpoolUID)
+
+	// Create Vehicle
+	for i := range carpool.CarPoolVehicles {
+		carpool.CarPoolVehicles[i].MasCarpoolVehicleUID = uuid.New().String()
+		carpool.CarPoolVehicles[i].MasCarpoolUID = carpool.MasCarpoolUID
+		carpool.CarPoolVehicles[i].CreatedAt = time.Now()
+		carpool.CarPoolVehicles[i].CreatedBy = user.EmpID
+		carpool.CarPoolVehicles[i].UpdatedAt = time.Now()
+		carpool.CarPoolVehicles[i].UpdatedBy = user.EmpID
+		carpool.CarPoolVehicles[i].IsDeleted = "0"
+		carpool.CarPoolVehicles[i].IsActive = "1"
+		carpool.CarPoolVehicles[i].StartDate = time.Now()
+		carpool.CarPoolVehicles[i].EndDate = time.Now().AddDate(10, 0, 0)
+		var masVehicleDepartmentUID string
+		if err := config.DB.Table("vms_mas_vehicle_department").Where("mas_vehicle_uid = ?", carpool.CarPoolVehicles[i].MasVehicleUID).Pluck("mas_vehicle_department_uid", &masVehicleDepartmentUID).Error; err == nil {
+			carpool.CarPoolVehicles[i].MasVehicleDepartmentUID = masVehicleDepartmentUID
+		}
+	}
+
+	if len(carpool.CarPoolVehicles) > 0 {
+		if err := config.DB.Create(&carpool.CarPoolVehicles).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create vehicle: " + err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+
+	// Create Driver
+	for i := range carpool.CarPoolDrivers {
+		carpool.CarPoolDrivers[i].MasCarpoolDriverUID = uuid.New().String()
+		carpool.CarPoolDrivers[i].MasCarpoolUID = carpool.MasCarpoolUID
+		carpool.CarPoolDrivers[i].CreatedAt = time.Now()
+		carpool.CarPoolDrivers[i].CreatedBy = user.EmpID
+		carpool.CarPoolDrivers[i].UpdatedAt = time.Now()
+		carpool.CarPoolDrivers[i].UpdatedBy = user.EmpID
+		carpool.CarPoolDrivers[i].IsDeleted = "0"
+		carpool.CarPoolDrivers[i].IsActive = "1"
+		carpool.CarPoolDrivers[i].StartDate = time.Now()
+		carpool.CarPoolDrivers[i].EndDate = time.Now().AddDate(1, 0, 0)
+	}
+
+	if len(carpool.CarPoolDrivers) > 0 {
+		if err := config.DB.Create(&carpool.CarPoolDrivers).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver: " + err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
 	c.JSON(http.StatusCreated, gin.H{
 		"message":         "Carpool created successfully",
 		"data":            carpool,
@@ -456,7 +580,7 @@ func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param mas_carpool_uid path string true "MasCarpoolUID (mas_carpool_uid)"
-// @Param carpool body models.VmsMasCarpoolRequest true "VmsMasCarpoolRequest data"
+// @Param carpool body models.VmsMasCarpoolUpdate true "VmsMasCarpoolUpdate data"
 // @Router /api/carpool-management/update/{mas_carpool_uid} [put]
 func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, h.Role)
@@ -464,14 +588,14 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 		return
 	}
 	masCarpoolUID := c.Param("mas_carpool_uid")
-	var request models.VmsMasCarpoolRequest
+	var request models.VmsMasCarpoolUpdate
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existingCarpool models.VmsMasCarpoolRequest
+	var existingCarpool models.VmsMasCarpoolUpdate
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
@@ -482,10 +606,7 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 	request.UpdatedBy = user.EmpID
 
 	request.IsHaveDriverForCarpool = existingCarpool.IsHaveDriverForCarpool
-	request.IsMustPassStatus30 = existingCarpool.IsMustPassStatus30
-	request.IsMustPassStatus40 = existingCarpool.IsMustPassStatus40
-	request.IsMustPassStatus50 = existingCarpool.IsMustPassStatus50
-	request.IsActive = existingCarpool.IsActive
+	request.CarpoolMainBusinessArea = existingCarpool.CarpoolMainBusinessArea
 	request.CreatedAt = existingCarpool.CreatedAt
 	request.CreatedBy = existingCarpool.CreatedBy
 
@@ -536,23 +657,7 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-	var count int64
-	tables := []string{"vms_mas_carpool_admin", "vms_mas_carpool_approver", "vms_mas_carpool_vehicle", "vms_mas_carpool_driver"}
-	for _, table := range tables {
-		if err := config.DB.Table(table).
-			Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").
-			Count(&count).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to check dependencies in table %s: %v", table, err), "message": messages.ErrInternalServer.Error()})
-			return
-		}
-		if count > 0 {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   fmt.Sprintf("Cannot delete admin carpool as it has dependencies in table %s", table),
-				"message": "การลบหน่วยงานที่สามารถใช้บริการกลุ่มยานพาหนะนี้ จำเป็นต้องลบยานพาหนะ, พนักงานขับรถ, ผู้ดูแลยานพาหนะ และผู้อนุมัติที่สังกัดหน่วยงานนั้น ออกจากกลุ่มก่อน",
-			})
-			return
-		}
-	}
+
 	var requests int64
 	if err := config.DB.Table("vms_trn_request").
 		Where("mas_vehicle_uid IN (SELECT mas_vehicle_uid FROM vms_mas_carpool_vehicle WHERE mas_carpool_uid = ? AND is_deleted = ?)", request.MasCarpoolUID, "0").
@@ -573,6 +678,31 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 		"updated_at": time.Now(),
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	//update is deleted to 1 in carpool_admin, carpool_approver, carpool_vehicle and carpool_driver
+	if err := config.DB.Model(&models.VmsMasCarpoolAdmin{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
+		"is_deleted": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool admin", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	if err := config.DB.Model(&models.VmsMasCarpoolApprover{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
+		"is_deleted": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool approver", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	if err := config.DB.Model(&models.VmsMasCarpoolVehicle{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
+		"is_deleted": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool vehicle", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	if err := config.DB.Model(&models.VmsMasCarpoolDriver{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
+		"is_deleted": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool driver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -810,6 +940,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 		empUser := funcs.GetUserEmpInfo(requests[i].AdminEmpNo)
 		requests[i].AdminDeptSap = empUser.DeptSAP
 		requests[i].AdminEmpName = empUser.FullName
+		requests[i].AdminPosition = empUser.Position
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -1214,6 +1345,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolApprover(c *gin.Context) {
 		empUser := funcs.GetUserEmpInfo(requests[i].ApproverEmpNo)
 		requests[i].ApproverDeptSap = empUser.DeptSAP
 		requests[i].ApproverEmpName = empUser.FullName
+		requests[i].ApproverPosition = empUser.Position
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -1277,6 +1409,7 @@ func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 	empUser := funcs.GetUserEmpInfo(request.ApproverEmpNo)
 	request.ApproverDeptSap = empUser.DeptSAP
 	request.ApproverEmpName = empUser.FullName
+	request.ApproverPosition = empUser.Position
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})

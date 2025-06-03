@@ -125,15 +125,17 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		request.MasCarpoolUID = funcs.DefaultUUID()
 	}
 
-	/*if request.MasVehicleUID != "" {
-		var vehicle models.VmsMasVehicle
+	if request.MasVehicleUID != nil && *request.MasVehicleUID != "" {
+		var vehicle models.VmsMasVehicleDepartment
 		if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
-			request.VehicleLicensePlate = strings.TrimSpace(vehicle.VehicleLicensePlate)
-			request.VehicleLicensePlateProvinceShort = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceShort)
-			request.VehicleLicensePlateProvinceFull = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceFull)
+			request.MasVehicleDepartmentUID = vehicle.MasVehicleDepartmentUID
+		}
+		var carpool models.VmsMasCarpoolVehicle
+		if err := config.DB.First(&carpool, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
+			request.MasCarpoolUID = carpool.MasCarpoolUID
 		}
 	}
-	*/
+
 	if request.IsPEAEmployeeDriver == "1" && request.DriverEmpID != "" {
 		driverUser := funcs.GetUserEmpInfo(request.DriverEmpID)
 		request.DriverEmpID = driverUser.EmpID
@@ -424,6 +426,18 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 		return
 	}
 	if request.RefRequestStatusCode == "20" {
+		empUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        empUser.EmpID,
+			EmpName:      empUser.FullName,
+			EmpPosition:  empUser.Position,
+			DeptSAP:      empUser.DeptSAP,
+			DeptSAPShort: empUser.DeptSAPShort,
+			DeptSAPFull:  empUser.DeptSAPFull,
+			PhoneNumber:  empUser.TelInternal,
+			MobileNumber: empUser.TelMobile,
+		}
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "1", ProgressName: "รออนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
@@ -432,6 +446,7 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 	}
 
 	if request.RefRequestStatusCode == "21" {
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "21", "ผู้อนุมัติต้นสังกัด")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากต้นสังกัด"},
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
@@ -444,22 +459,55 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "1", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empIDs, err := funcs.GetAdminApprovalEmpIDs(request.TrnRequestUID)
+		if err == nil && len(empIDs) > 0 {
+			empUser := funcs.GetUserEmpInfo(empIDs[0])
+			request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+				ActionRole:   "ผู้ดูแลยานพาหนะ",
+				EmpID:        empUser.EmpID,
+				EmpName:      empUser.FullName,
+				EmpPosition:  empUser.Position,
+				DeptSAP:      empUser.DeptSAP,
+				DeptSAPShort: empUser.DeptSAPShort,
+				DeptSAPFull:  empUser.DeptSAPFull,
+				PhoneNumber:  empUser.TelInternal,
+				MobileNumber: empUser.TelMobile,
+			}
+		}
 	}
 	if request.RefRequestStatusCode == "31" {
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "31", "ผู้ดูแลยานพาหนะ")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
 	}
-	if request.RefRequestStatusCode >= "40" {
+	if request.RefRequestStatusCode == "40" {
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "40", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empIDs, err := funcs.GetFinalApprovalEmpIDs(request.TrnRequestUID)
+		if err == nil && len(empIDs) > 0 {
+			empUser := funcs.GetUserEmpInfo(empIDs[0])
+			request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+				ActionRole:   "ผู้อนุมัติให้ใช้ยานพาหนะ",
+				EmpID:        empUser.EmpID,
+				EmpName:      empUser.FullName,
+				EmpPosition:  empUser.Position,
+				DeptSAP:      empUser.DeptSAP,
+				DeptSAPShort: empUser.DeptSAPShort,
+				DeptSAPFull:  empUser.DeptSAPFull,
+				PhoneNumber:  empUser.TelInternal,
+				MobileNumber: empUser.TelMobile,
+			}
+		}
 	}
-	if request.RefRequestStatusCode >= "41" {
+	if request.RefRequestStatusCode == "41" {
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "41", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
@@ -467,6 +515,7 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 		}
 	}
 	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "50", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
@@ -475,7 +524,7 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 
 	}
 	if request.RefRequestStatusCode == "90" {
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "90", "ผู้ยกเลิกคำขอ")
 		if request.CanceledRequestRole == "vehicle-user" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},

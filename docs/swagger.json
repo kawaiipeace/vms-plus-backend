@@ -2775,12 +2775,12 @@
                         "required": true
                     },
                     {
-                        "description": "VmsMasCarpoolRequest data",
+                        "description": "VmsMasCarpoolUpdate data",
                         "name": "carpool",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VmsMasCarpoolRequest"
+                            "$ref": "#/definitions/models.VmsMasCarpoolUpdate"
                         }
                     }
                 ],
@@ -4521,7 +4521,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "work type to search (1: ค้างคืน, 2: ไป-กลับ)",
+                        "description": "work type to search (0: ไป-กลับ ,1: ค้างคืน)",
                         "name": "work_type",
                         "in": "query"
                     },
@@ -4593,8 +4593,8 @@
                     },
                     {
                         "type": "string",
-                        "default": "2",
-                        "description": "work type to search (1: ค้างคืน, 2: ไป-กลับ)",
+                        "default": "0",
+                        "description": "work type to search (0: ไป-กลับ,1: ค้างคืน)",
                         "name": "work_type",
                         "in": "query"
                     },
@@ -10501,7 +10501,7 @@
                     {
                         "type": "string",
                         "default": "700001",
-                        "description": "Employee ID (emp_id) default(700001)",
+                        "description": "Vehicle User EmpID (emp_id)",
                         "name": "emp_id",
                         "in": "path",
                         "required": true
@@ -10858,6 +10858,27 @@
                 }
             }
         },
+        "models.VmsMasCarpoolAdminCreate": {
+            "type": "object",
+            "properties": {
+                "admin_emp_no": {
+                    "type": "string",
+                    "example": "990003"
+                },
+                "internal_contact_number": {
+                    "type": "string",
+                    "example": "1234"
+                },
+                "is_main_admin": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "mobile_contact_number": {
+                    "type": "string",
+                    "example": "9876543210"
+                }
+            }
+        },
         "models.VmsMasCarpoolApprover": {
             "type": "object",
             "properties": {
@@ -10872,6 +10893,27 @@
                 "mas_carpool_uid": {
                     "type": "string",
                     "example": "164632c9-1d33-477e-b335-97a4e79a5845"
+                },
+                "mobile_contact_number": {
+                    "type": "string",
+                    "example": "9876543211"
+                }
+            }
+        },
+        "models.VmsMasCarpoolApproverCreate": {
+            "type": "object",
+            "properties": {
+                "approver_emp_no": {
+                    "type": "string",
+                    "example": "990004"
+                },
+                "internal_contact_number": {
+                    "type": "string",
+                    "example": "5678"
+                },
+                "is_main_approver": {
+                    "type": "string",
+                    "example": "0"
                 },
                 "mobile_contact_number": {
                     "type": "string",
@@ -10910,7 +10952,7 @@
                 },
                 "mas_driver_uid": {
                     "type": "string",
-                    "example": "334632c9-1d33-477e-b335-97a4e79a5845"
+                    "example": "9c63bdfa-1a80-4238-8a3a-cbc1891161a2"
                 }
             }
         },
@@ -10927,7 +10969,98 @@
                 }
             }
         },
+        "models.VmsMasCarpoolDriverCreate": {
+            "type": "object",
+            "properties": {
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "9c63bdfa-1a80-4238-8a3a-cbc1891161a2"
+                }
+            }
+        },
         "models.VmsMasCarpoolRequest": {
+            "type": "object",
+            "properties": {
+                "carpool_admins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolAdminCreate"
+                    }
+                },
+                "carpool_approvers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolApproverCreate"
+                    }
+                },
+                "carpool_authorized_depts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolAuthorizedDept"
+                    }
+                },
+                "carpool_contact_number": {
+                    "type": "string",
+                    "example": "111"
+                },
+                "carpool_contact_place": {
+                    "type": "string",
+                    "example": "city"
+                },
+                "carpool_dept_sap": {
+                    "type": "string",
+                    "example": "10001"
+                },
+                "carpool_drivers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolDriverCreate"
+                    }
+                },
+                "carpool_name": {
+                    "type": "string",
+                    "example": "carpool_name"
+                },
+                "carpool_type": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "carpool_vehicles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasCarpoolVehicleCreate"
+                    }
+                },
+                "is_active": {
+                    "type": "string"
+                },
+                "is_must_pass_status_30": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_must_pass_status_40": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_must_pass_status_50": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "ref_carpool_choose_car_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_carpool_choose_driver_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "remark": {
+                    "type": "string",
+                    "example": "remark"
+                }
+            }
+        },
+        "models.VmsMasCarpoolUpdate": {
             "type": "object",
             "properties": {
                 "carpool_authorized_depts": {
@@ -10955,9 +11088,6 @@
                 "carpool_type": {
                     "type": "string",
                     "example": "1"
-                },
-                "is_active": {
-                    "type": "string"
                 },
                 "is_must_pass_status_30": {
                     "type": "string",
@@ -10994,7 +11124,7 @@
                 },
                 "mas_vehicle_uid": {
                     "type": "string",
-                    "example": "334632c9-1d33-477e-b335-97a4e79a5845"
+                    "example": "770ea678-c586-4d6b-9df2-c7d756bd4cc4"
                 }
             }
         },
@@ -11008,6 +11138,15 @@
                 "mas_carpool_vehicle_uid": {
                     "type": "string",
                     "example": "164632c9-1d33-477e-b335-97a4e79a5845"
+                }
+            }
+        },
+        "models.VmsMasCarpoolVehicleCreate": {
+            "type": "object",
+            "properties": {
+                "mas_vehicle_uid": {
+                    "type": "string",
+                    "example": "770ea678-c586-4d6b-9df2-c7d756bd4cc4"
                 }
             }
         },
@@ -11435,6 +11574,10 @@
                     "type": "string",
                     "example": "2025-03-26T08:00:00Z"
                 },
+                "before_vat_price": {
+                    "type": "number",
+                    "example": 46.5
+                },
                 "mas_vehicle_department_uid": {
                     "type": "string"
                 },
@@ -11505,6 +11648,10 @@
                     "type": "string",
                     "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
                 },
+                "vat": {
+                    "type": "number",
+                    "example": 3.5
+                },
                 "vehicle_license_plate": {
                     "type": "string"
                 },
@@ -11519,6 +11666,10 @@
         "models.VmsTrnAddFuelRequest": {
             "type": "object",
             "properties": {
+                "before_vat_price": {
+                    "type": "number",
+                    "example": 46.5
+                },
                 "mile": {
                     "type": "integer",
                     "example": 12000
@@ -11562,6 +11713,10 @@
                 "trn_request_uid": {
                     "type": "string",
                     "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "vat": {
+                    "type": "number",
+                    "example": 3.5
                 }
             }
         },
@@ -11832,11 +11987,11 @@
         "models.VmsTrnRequestDocument": {
             "type": "object",
             "properties": {
-                "attached_document": {
+                "doc_file": {
                     "type": "string",
                     "example": "document.pdf"
                 },
-                "reference_number": {
+                "doc_no": {
                     "type": "string",
                     "example": "REF123456"
                 },
@@ -11896,10 +12051,6 @@
                     "type": "string",
                     "example": "A12345"
                 },
-                "attached_document": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
                 "car_user_internal_contact_number": {
                     "type": "string",
                     "example": "1122"
@@ -11916,6 +12067,14 @@
                 "cost_center": {
                     "type": "string",
                     "example": "B0002211"
+                },
+                "doc_file": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "doc_no": {
+                    "type": "string",
+                    "example": "REF123456"
                 },
                 "driver_emp_id": {
                     "type": "string",
@@ -11971,10 +12130,6 @@
                     "type": "integer",
                     "example": 3
                 },
-                "objective": {
-                    "type": "string",
-                    "example": "Business Meeting"
-                },
                 "pickup_datetime": {
                     "type": "string",
                     "example": "2025-02-16T08:30:00Z"
@@ -11990,10 +12145,6 @@
                 "ref_cost_type_code": {
                     "type": "integer",
                     "example": 1
-                },
-                "reference_number": {
-                    "type": "string",
-                    "example": "REF123456"
                 },
                 "remark": {
                     "type": "string",
@@ -12023,6 +12174,10 @@
                     "type": "string",
                     "example": "WBS12345"
                 },
+                "work_description": {
+                    "type": "string",
+                    "example": "Business Meeting"
+                },
                 "work_place": {
                     "type": "string",
                     "example": "Head Office"
@@ -12049,10 +12204,6 @@
                     "type": "integer",
                     "example": 3
                 },
-                "objective": {
-                    "type": "string",
-                    "example": "Business Meeting"
-                },
                 "remark": {
                     "type": "string",
                     "example": "Urgent request"
@@ -12068,6 +12219,10 @@
                 "trn_request_uid": {
                     "type": "string",
                     "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "work_description": {
+                    "type": "string",
+                    "example": "Business Meeting"
                 },
                 "work_place": {
                     "type": "string",

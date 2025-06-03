@@ -204,6 +204,21 @@ definitions:
         example: "9876543210"
         type: string
     type: object
+  models.VmsMasCarpoolAdminCreate:
+    properties:
+      admin_emp_no:
+        example: "990003"
+        type: string
+      internal_contact_number:
+        example: "1234"
+        type: string
+      is_main_admin:
+        example: "0"
+        type: string
+      mobile_contact_number:
+        example: "9876543210"
+        type: string
+    type: object
   models.VmsMasCarpoolApprover:
     properties:
       approver_emp_no:
@@ -214,6 +229,21 @@ definitions:
         type: string
       mas_carpool_uid:
         example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+      mobile_contact_number:
+        example: "9876543211"
+        type: string
+    type: object
+  models.VmsMasCarpoolApproverCreate:
+    properties:
+      approver_emp_no:
+        example: "990004"
+        type: string
+      internal_contact_number:
+        example: "5678"
+        type: string
+      is_main_approver:
+        example: "0"
         type: string
       mobile_contact_number:
         example: "9876543211"
@@ -240,7 +270,7 @@ definitions:
         example: 164632c9-1d33-477e-b335-97a4e79a5845
         type: string
       mas_driver_uid:
-        example: 334632c9-1d33-477e-b335-97a4e79a5845
+        example: 9c63bdfa-1a80-4238-8a3a-cbc1891161a2
         type: string
     type: object
   models.VmsMasCarpoolDriverActive:
@@ -252,7 +282,71 @@ definitions:
         example: 164632c9-1d33-477e-b335-97a4e79a5845
         type: string
     type: object
+  models.VmsMasCarpoolDriverCreate:
+    properties:
+      mas_driver_uid:
+        example: 9c63bdfa-1a80-4238-8a3a-cbc1891161a2
+        type: string
+    type: object
   models.VmsMasCarpoolRequest:
+    properties:
+      carpool_admins:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolAdminCreate'
+        type: array
+      carpool_approvers:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolApproverCreate'
+        type: array
+      carpool_authorized_depts:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolAuthorizedDept'
+        type: array
+      carpool_contact_number:
+        example: "111"
+        type: string
+      carpool_contact_place:
+        example: city
+        type: string
+      carpool_dept_sap:
+        example: "10001"
+        type: string
+      carpool_drivers:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolDriverCreate'
+        type: array
+      carpool_name:
+        example: carpool_name
+        type: string
+      carpool_type:
+        example: "1"
+        type: string
+      carpool_vehicles:
+        items:
+          $ref: '#/definitions/models.VmsMasCarpoolVehicleCreate'
+        type: array
+      is_active:
+        type: string
+      is_must_pass_status_30:
+        example: "0"
+        type: string
+      is_must_pass_status_40:
+        example: "0"
+        type: string
+      is_must_pass_status_50:
+        example: "0"
+        type: string
+      ref_carpool_choose_car_id:
+        example: 1
+        type: integer
+      ref_carpool_choose_driver_id:
+        example: 1
+        type: integer
+      remark:
+        example: remark
+        type: string
+    type: object
+  models.VmsMasCarpoolUpdate:
     properties:
       carpool_authorized_depts:
         items:
@@ -272,8 +366,6 @@ definitions:
         type: string
       carpool_type:
         example: "1"
-        type: string
-      is_active:
         type: string
       is_must_pass_status_30:
         example: "0"
@@ -300,7 +392,7 @@ definitions:
         example: 164632c9-1d33-477e-b335-97a4e79a5845
         type: string
       mas_vehicle_uid:
-        example: 334632c9-1d33-477e-b335-97a4e79a5845
+        example: 770ea678-c586-4d6b-9df2-c7d756bd4cc4
         type: string
     type: object
   models.VmsMasCarpoolVehicleActive:
@@ -310,6 +402,12 @@ definitions:
         type: string
       mas_carpool_vehicle_uid:
         example: 164632c9-1d33-477e-b335-97a4e79a5845
+        type: string
+    type: object
+  models.VmsMasCarpoolVehicleCreate:
+    properties:
+      mas_vehicle_uid:
+        example: 770ea678-c586-4d6b-9df2-c7d756bd4cc4
         type: string
     type: object
   models.VmsMasDriverArray:
@@ -610,6 +708,9 @@ definitions:
       add_fuel_date_time:
         example: "2025-03-26T08:00:00Z"
         type: string
+      before_vat_price:
+        example: 46.5
+        type: number
       mas_vehicle_department_uid:
         type: string
       mas_vehicle_uid:
@@ -661,6 +762,9 @@ definitions:
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
+      vat:
+        example: 3.5
+        type: number
       vehicle_license_plate:
         type: string
       vehicle_license_plate_province_full:
@@ -670,6 +774,9 @@ definitions:
     type: object
   models.VmsTrnAddFuelRequest:
     properties:
+      before_vat_price:
+        example: 46.5
+        type: number
       mile:
         example: 12000
         type: integer
@@ -703,6 +810,9 @@ definitions:
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
+      vat:
+        example: 3.5
+        type: number
     type: object
   models.VmsTrnInspectVehicleImages:
     properties:
@@ -892,10 +1002,10 @@ definitions:
     type: object
   models.VmsTrnRequestDocument:
     properties:
-      attached_document:
+      doc_file:
         example: document.pdf
         type: string
-      reference_number:
+      doc_no:
         example: REF123456
         type: string
       trn_request_uid:
@@ -937,9 +1047,6 @@ definitions:
       activity_no:
         example: A12345
         type: string
-      attached_document:
-        example: document.pdf
-        type: string
       car_user_internal_contact_number:
         example: "1122"
         type: string
@@ -952,6 +1059,12 @@ definitions:
         type: string
       cost_center:
         example: B0002211
+        type: string
+      doc_file:
+        example: document.pdf
+        type: string
+      doc_no:
+        example: REF123456
         type: string
       driver_emp_id:
         example: "700001"
@@ -994,9 +1107,6 @@ definitions:
       number_of_passengers:
         example: 3
         type: integer
-      objective:
-        example: Business Meeting
-        type: string
       pickup_datetime:
         example: "2025-02-16T08:30:00Z"
         type: string
@@ -1009,9 +1119,6 @@ definitions:
       ref_cost_type_code:
         example: 1
         type: integer
-      reference_number:
-        example: REF123456
-        type: string
       remark:
         example: Urgent request
         type: string
@@ -1033,6 +1140,9 @@ definitions:
       wbs_no:
         example: WBS12345
         type: string
+      work_description:
+        example: Business Meeting
+        type: string
       work_place:
         example: Head Office
         type: string
@@ -1051,9 +1161,6 @@ definitions:
       number_of_passengers:
         example: 3
         type: integer
-      objective:
-        example: Business Meeting
-        type: string
       remark:
         example: Urgent request
         type: string
@@ -1065,6 +1172,9 @@ definitions:
         type: integer
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      work_description:
+        example: Business Meeting
         type: string
       work_place:
         example: Head Office
@@ -2981,12 +3091,12 @@ paths:
         name: mas_carpool_uid
         required: true
         type: string
-      - description: VmsMasCarpoolRequest data
+      - description: VmsMasCarpoolUpdate data
         in: body
         name: carpool
         required: true
         schema:
-          $ref: '#/definitions/models.VmsMasCarpoolRequest'
+          $ref: '#/definitions/models.VmsMasCarpoolUpdate'
       produces:
       - application/json
       responses: {}
@@ -4112,7 +4222,7 @@ paths:
         in: query
         name: name
         type: string
-      - description: 'work type to search (1: ค้างคืน, 2: ไป-กลับ)'
+      - description: 'work type to search (0: ไป-กลับ ,1: ค้างคืน)'
         in: query
         name: work_type
         type: string
@@ -4159,8 +4269,8 @@ paths:
         in: query
         name: name
         type: string
-      - default: "2"
-        description: 'work type to search (1: ค้างคืน, 2: ไป-กลับ)'
+      - default: "0"
+        description: 'work type to search (0: ไป-กลับ,1: ค้างคืน)'
         in: query
         name: work_type
         type: string
@@ -7854,7 +7964,7 @@ paths:
       description: Fetches all vehicle types, optionally filtered by name
       parameters:
       - default: "700001"
-        description: Employee ID (emp_id) default(700001)
+        description: Vehicle User EmpID (emp_id)
         in: path
         name: emp_id
         required: true

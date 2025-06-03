@@ -199,7 +199,18 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 			return
 		}
 	}
+
+	//check vehicle is not duplicate in another carpool
 	for i := range requests {
+		var existingVehicle models.VmsMasCarpoolVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND mas_carpool_uid != ? AND is_deleted = ?", requests[i].MasVehicleUID, requests[i].MasCarpoolUID, "0").First(&existingVehicle).Error; err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("Vehicle with MasVehicleUID %s already exists in another carpool", requests[i].MasVehicleUID),
+				"message": "ข้อมูลรถที่ระบุมีอยู่ในกลุ่มรถอื่นแล้ว",
+			})
+			return
+		}
+
 		requests[i].MasCarpoolVehicleUID = uuid.New().String()
 		requests[i].CreatedAt = time.Now()
 		requests[i].CreatedBy = user.EmpID
@@ -294,15 +305,17 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	offset := (page - 1) * limit // Calculate offset
 
-	var vehicles []models.VmsMasVehicleList
+	var vehicles []models.VmsMasVehicleCarpoolList
 	var total int64
 	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Table("vms_mas_vehicle v")
-	query = query.Select("v.*,md.dept_short")
-	query = query.Model(&models.VmsMasVehicleList{})
+	query = query.Select("v.*,d.vehicle_owner_dept_sap vehicle_owner_dept_sap,fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_owner_dept_short" +
+		",d.fleet_card_no,d.vehicle_mileage vehicle_mileage" +
+		",(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name" +
+		",(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name")
+	query = query.Model(&models.VmsMasVehicleCarpoolList{})
 	query = query.Where("v.is_deleted = '0'")
 	query = query.Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
-	query = query.Joins("LEFT JOIN vms_mas_department AS md ON d.vehicle_owner_dept_sap = md.dept_sap")
 	query = query.Where("not exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0')")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
@@ -315,9 +328,9 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 
-	vehicles = models.AssignVehicleImageFromIndex(vehicles)
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
 	}
 	// Respond with JSON
 	if len(vehicles) == 0 {

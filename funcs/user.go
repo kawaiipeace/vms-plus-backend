@@ -72,14 +72,40 @@ func CheckApproverRole(user *models.AuthenUserEmp) {
 		user.Roles = RemoveFromSlice(user.Roles, "license-approval")
 	}
 
-	//check if vms_trn_request_annual_driver has confirmed_request_emp_id
+	//check if exist vms_trn_request_annual_driver has approved_request_emp_id=user.EmpID
 	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
 	err := config.DB.Where("approved_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
 	if err == nil {
 		user.Roles = append(user.Roles, "license-approval")
 		return
 	}
+}
 
+func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
+	if Contains(user.Roles, "admin-approval") {
+		//remove admin-approval
+		user.Roles = RemoveFromSlice(user.Roles, "admin-approval")
+	}
+	//check if vms_trn_request has confirmed_request_emp_id
+	var adminApproval models.VmsMasCarpoolAdmin
+	err := config.DB.Where("admin_emp_no = ?", user.EmpID).First(&adminApproval).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "admin-approval")
+		return
+	}
+}
+func CheckFinalApprovalRole(user *models.AuthenUserEmp) {
+	if Contains(user.Roles, "final-approval") {
+		//remove final-approval
+		user.Roles = RemoveFromSlice(user.Roles, "final-approval")
+	}
+	//check if vms_trn_request has confirmed_request_emp_id
+	var finalApproval models.VmsMasCarpoolApprover
+	err := config.DB.Where("approver_emp_no = ?", user.EmpID).First(&finalApproval).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "final-approval")
+		return
+	}
 }
 
 func RemoveFromSlice(slice []string, value string) []string {
@@ -94,6 +120,8 @@ func RemoveFromSlice(slice []string, value string) []string {
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
 	CheckConfirmerRole(&user)
 	CheckApproverRole(&user)
+	CheckAdminApprovalRole(&user)
+	CheckFinalApprovalRole(&user)
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:         user.EmpID,
@@ -202,7 +230,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("700001")
+		user, err := userhub.GetUserInfo("496762")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
@@ -213,7 +241,9 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		empUser.IsEmployee = true
 		CheckConfirmerRole(&empUser)
 		CheckApproverRole(&empUser)
-		empUser.Roles = append(empUser.Roles, "license-approval")
+		CheckAdminApprovalRole(&empUser)
+		CheckFinalApprovalRole(&empUser)
+		//empUser.Roles = append(empUser.Roles, "license-approval")
 		if roles == "*" {
 			return &empUser
 		}

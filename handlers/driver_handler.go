@@ -42,7 +42,7 @@ func (h *VehicleHandler) DriverHandlerInfo(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param name query string false "Driver name to search"
-// @Param work_type query string false "work type to search (1: ค้างคืน, 2: ไป-กลับ)"
+// @Param work_type query string false "work type to search (0: ไป-กลับ ,1: ค้างคืน)"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search [get]
@@ -135,7 +135,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param name query string false "Driver name to search"
-// @Param work_type query string false "work type to search (1: ค้างคืน, 2: ไป-กลับ)" default(2)
+// @Param work_type query string false "work type to search (0: ไป-กลับ,1: ค้างคืน)" default(0)
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search-booking [get]
@@ -168,9 +168,9 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	}
 
 	var driverCanBookings []models.VmsMasDriverCanBooking
-	tripTypeCode := 1
-	if workType == "2" {
-		tripTypeCode = 0
+	tripTypeCode := 0
+	if workType == "1" {
+		tripTypeCode = 1
 	}
 	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_drivers_view (?, ?, ?, ?, ?)`,
 		startDate, endDate, bureauDeptSap, businessArea, tripTypeCode)
@@ -366,6 +366,7 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 	} else if driver.WorkType == 2 {
 		driver.WorkTypeName = "ไป-กลับ"
 	}
+	driver.DriverDeptSAPShort = funcs.GetDeptSAPShort(driver.DriverDeptSAP)
 	driver.WorkCount = 4
 	driver.WorkDays = 16
 	driver.Status = "ว่าง"

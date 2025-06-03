@@ -23,7 +23,8 @@ type VmsMasDriver struct {
 	DriverName                     string                `gorm:"column:driver_name" json:"driver_name"`
 	DriverImage                    string                `gorm:"column:driver_image" json:"driver_image"`
 	DriverNickname                 string                `gorm:"column:driver_nickname" json:"driver_nickname"`
-	DriverDeptSAP                  string                `gorm:"column:driver_dept_sap" json:"driver_dept_sap"`
+	DriverDeptSAP                  string                `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
+	DriverDeptSAPShort             string                `gorm:"column:driver_dept_sap_short" json:"driver_dept_sap_short"`
 	DriverIdentificationNo         string                `gorm:"column:driver_identification_no" json:"driver_identification_no"`
 	DriverContactNumber            string                `gorm:"column:driver_contact_number" json:"driver_contact_number"`
 	DriverAverageSatisfactionScore float64               `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`

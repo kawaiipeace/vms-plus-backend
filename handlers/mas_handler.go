@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -48,11 +49,11 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	search := c.Query("search")
 
 	request := userhub.ServiceListUserRequest{
-		ServiceCode:   "vms",
-		Search:        search,
-		BureauDeptSap: user.BureauDeptSap,
-		Role:          "vehicle-user",
-		Limit:         100,
+		ServiceCode: "vms",
+		Search:      search,
+		//BureauDeptSap: user.BureauDeptSap,
+		Role:  "vehicle-user",
+		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
 	// Sort lists to put the current user's emp_id first
@@ -306,7 +307,11 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 			}
 		}
 	}
-
+	for i := range list {
+		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
+		list[i].TelMobile = empInfo.TelMobile
+		list[i].TelInternal = empInfo.TelInternal
+	}
 	c.JSON(http.StatusOK, list)
 }
 
@@ -341,18 +346,18 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 	}
 
 	var empIDs []string
-	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != funcs.DefaultUUID() {
 		if err := config.DB.Table("vms_mas_carpool_admin").
-			Select("emp_uid").
+			Select("admin_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
-			Pluck("emp_uid", &empIDs).Error; err != nil {
+			Pluck("admin_emp_no", &empIDs).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
 		request := userhub.ServiceListUserRequest{
 			ServiceCode: "vms",
 			Search:      search,
-			EmpIDs:      empIDs,
+			EmpIDs:      strings.Join(empIDs, ","),
 			Limit:       100,
 		}
 		lists, err := userhub.GetUserList(request)
@@ -412,18 +417,19 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 	}
 
 	var empIDs []string
-	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != funcs.DefaultUUID() {
 		if err := config.DB.Table("vms_mas_carpool_approver").
-			Select("emp_uid").
+			Select("approver_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
-			Pluck("emp_uid", &empIDs).Error; err != nil {
+			Pluck("approver_emp_no", &empIDs).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
+		fmt.Println("empIDs", empIDs)
 		request := userhub.ServiceListUserRequest{
 			ServiceCode: "vms",
 			Search:      search,
-			EmpIDs:      empIDs,
+			EmpIDs:      strings.Join(empIDs, ","),
 			Limit:       100,
 		}
 		lists, err := userhub.GetUserList(request)
@@ -432,6 +438,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, lists)
+		return
 	} else {
 		var bureauDeptSap string
 		request := userhub.ServiceListUserRequest{
@@ -448,8 +455,8 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, lists)
+		return
 	}
-	c.JSON(http.StatusOK, []interface{}{})
 }
 
 // GetUserEmp godoc
@@ -679,7 +686,11 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 			}
 		}
 	}
-
+	for i := range list {
+		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
+		list[i].TelMobile = empInfo.TelMobile
+		list[i].TelInternal = empInfo.TelInternal
+	}
 	c.JSON(http.StatusOK, list)
 }
 

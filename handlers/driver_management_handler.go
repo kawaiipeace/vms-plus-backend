@@ -478,6 +478,7 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 			UpdatedAt:                time.Now(),
 			UpdatedBy:                user.EmpID,
 			IsDeleted:                "0",
+			IsActive:                 "1",
 			MasDriverUID:             driver.MasDriverUID,
 			DriverLicenseNo:          request.DriverLicenseNo,
 			DriverLicenseStartDate:   request.DriverLicenseStartDate,
@@ -916,9 +917,9 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
 		Where("d.is_deleted = ?", "0")
 
-	name := strings.ToUpper(c.Query("name"))
-	if name != "" {
-		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	search := strings.ToUpper(c.Query("search"))
+	if search != "" {
+		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if workType := c.Query("work_type"); workType != "" {
 		workTypes := strings.Split(workType, ",")
@@ -932,6 +933,7 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		isActiveValues := strings.Split(isActive, ",")
 		query = query.Where("is_active IN (?)", isActiveValues)
 	}
+
 	// Pagination
 	page := c.DefaultQuery("page", "1")
 	limit := c.DefaultQuery("limit", "10")
@@ -974,8 +976,8 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 					TrnTripDetailUID: uuid.New().String(),
 					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
 						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
-						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
-						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
+						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
+						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
 						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripStartMiles:       0,
