@@ -24,11 +24,11 @@ type VmsTrnRequesService struct {
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription    string `gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	WorkDescription    string `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
-	DocNo              string `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"attached_document" example:"document.pdf"`
+	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -136,22 +136,14 @@ func (VmsTrnRequesService) TableName() string {
 
 // MADE BY PEACE
 type VmsToEEMS struct {
-	TrnRequestUID           string 			`gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
-	RequestNo               string 			`gorm:"column:request_no" json:"request_no"`
-	VehicleLicensePlate     string 			`gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
-	ReserveStartDatetime 	time.Time		`gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
-	ReserveEndDatetime   	time.Time  		`gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
-	WorkPlace          		string 			`gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription    		string 			`gorm:"column:work_description" json:"objective" example:"Business Meeting"`
-	DocNo              		string 			`gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	MasCarpoolDriverUID  	string           `gorm:"column:mas_carpool_driver_uid;type:uuid" json:"mas_carpool_driver_uid"`
-	MasDriver            	VmsMasDriver     `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
-
-	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
-	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
-	VehicleDepartmentDeptSapShort string        `gorm:"column:vehicle_department_dept_sap_short" json:"mas_vehicle_department_dept_sap_short"`
-	VehicleDepartmentDeptSapFull  string        `gorm:"column:vehicle_department_dept_sap_full" json:"mas_vehicle_department_dept_sap_full"`
-	MasVehicle                    VmsMasVehicle `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
+	TrnRequestUID        string    `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
+	RequestNo            string    `gorm:"column:request_no" json:"request_no"`
+	VehicleLicensePlate  string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
+	ReserveStartDatetime time.Time `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   time.Time `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
+	WorkPlace            string    `gorm:"column:work_place" json:"work_place" example:"Head Office"`
+	WorkDescription      string    `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
+	DocNo                string    `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
 }
 
 func (VmsToEEMS) TableName() string {

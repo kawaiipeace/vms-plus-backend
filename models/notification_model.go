@@ -3,16 +3,19 @@ package models
 import "time"
 
 type Notification struct {
-	TrnNotifyUID string    `gorm:"column:trn_notify_uid;primaryKey" json:"trn_notify_uid"`
-	NotifyType   string    `gorm:"column:notify_type;not null" json:"notify_type"`
-	RecordUID    string    `gorm:"column:record_uid;not null" json:"record_uid"`
-	EmpID        string    `gorm:"column:emp_id;not null" json:"emp_id"`
-	Title        string    `gorm:"column:title;not null" json:"title"`
-	Message      string    `gorm:"column:message;not null" json:"message"`
-	IsRead       bool      `gorm:"column:is_read;default:false" json:"is_read"`
-	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
-	ReadAt       time.Time `gorm:"column:read_at" json:"read_at"`
-	Duration     string    `gorm:"-" json:"duration"`
+	TrnNotifyUID         string    `gorm:"column:trn_notify_uid;primaryKey" json:"trn_notify_uid"`
+	NotifyType           string    `gorm:"column:notify_type;not null" json:"notify_type"`
+	NotifyRole           string    `gorm:"column:notify_role;not null" json:"notify_role"`
+	RecordUID            string    `gorm:"column:record_uid;not null" json:"record_uid"`
+	EmpID                string    `gorm:"column:emp_id;not null" json:"emp_id"`
+	Title                string    `gorm:"column:title;not null" json:"title"`
+	Message              string    `gorm:"column:message;not null" json:"message"`
+	IsRead               bool      `gorm:"column:is_read;default:false" json:"is_read"`
+	CreatedAt            time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
+	ReadAt               time.Time `gorm:"column:read_at" json:"read_at"`
+	Duration             string    `gorm:"-" json:"duration"`
+	NotifyURL            string    `gorm:"-" json:"notify_url"`
+	RefRequestStatusCode string    `gorm:"column:ref_request_status_code;not null" json:"ref_request_status_code"`
 }
 
 func (Notification) TableName() string {

@@ -46,6 +46,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	VehicleUserPosition      string `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
 	VehicleUserDeptNameShort string `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
 	VehicleUserDeptNameFull  string `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_name_full"`
+	VehicleUserImageUrl      string `gorm:"-" json:"vehicle_user_image_url"`
 
 	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
@@ -57,11 +58,11 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription    string `gorm:"column:work_description" json:"objective" example:"Business Meeting"`
+	WorkDescription    string `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
-	DocNo              string `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"attached_document" example:"document.pdf"`
+	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -86,6 +87,9 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	DriverMobileContact   string `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverImageURL        string `gorm:"-" json:"driver_image_url"`
 
+	PickupPlace    string    `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
+	PickupDateTime time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
+
 	MasVehicleUID                 string        `gorm:"column:mas_vehicle_uid;type:uuid" json:"mas_vehicle_uid"`
 	VehicleDepartmentDeptSap      string        `gorm:"column:vehicle_department_dept_sap" json:"vehicle_department_dept_sap"`
 	VehicleDepartmentDeptSapShort string        `gorm:"column:vehicle_department_dept_sap_short" json:"mas_vehicle_department_dept_sap_short"`
@@ -99,7 +103,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RefVehicleKeyTypeCode int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	ReceivedKeyDatetime   time.Time            `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceiverKeyType       int                  `gorm:"column:receiver_key_type" json:"receiver_key_type" example:"3"`
-	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:ReceiverKeyType;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
+	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 
 	ReceivedKeyEmpID         string `gorm:"column:receiver_personal_id" json:"received_key_emp_id" example:"990001"`
@@ -226,6 +230,8 @@ type VmsTrnAddFuelRequest struct {
 	TaxInvoiceNo         string    `gorm:"column:tax_invoice_no;type:varchar(20)" json:"tax_invoice_no" example:"INV1234567890"`
 	PricePerLiter        float64   `gorm:"column:price_per_liter;type:numeric(10,2)" json:"price_per_liter" example:"35.50"`
 	SumLiter             float64   `gorm:"column:sum_liter;type:numeric(10,2)" json:"sum_liter" example:"50.00"`
+	Vat                  float64   `gorm:"column:vat;type:numeric(10,2)" json:"vat" example:"3.50"`
+	BeforeVatPrice       float64   `gorm:"column:before_vat_price;type:numeric(10,2)" json:"before_vat_price" example:"46.50"`
 	SumPrice             float64   `gorm:"column:sum_price;type:numeric(10,2)" json:"sum_price" example:"1872.50"`
 	ReceiptImg           string    `gorm:"column:receipt_img;type:varchar(100)" json:"receipt_img" example:"http://vms.pea.co.th/receipt.jpg"`
 	RefPaymentTypeCode   int       `gorm:"column:ref_payment_type_code" json:"ref_payment_type_code" example:"1"`
@@ -264,10 +270,11 @@ func (VmsTrnAddFuel) TableName() string {
 type VmsTrnSatisfactionSurveyAnswers struct {
 	TrnSatisfactionSurveyAnswersUID    string    `gorm:"column:trn_satisfaction_survey_answers_uid;primaryKey" json:"-"`
 	TrnRequestUID                      string    `gorm:"column:trn_request_uid" json:"-"`
-	MasSatisfactionSurveyQuestionsCode int       `gorm:"column:mas_satisfaction_survey_questions_uid" json:"mas_satisfaction_survey_questions_code" example:"1"`
+	MasSatisfactionSurveyQuestionsCode string    `gorm:"column:mas_satisfaction_survey_questions_uid" json:"mas_satisfaction_survey_questions_code" example:"1"`
 	SurveyAnswerScore                  int       `gorm:"column:survey_answer_score" json:"survey_answer" example:"5"`
 	SurveyAnswerDate                   time.Time `gorm:"column:survey_answer_date" json:"-"`
 	SurveyAnswerEmpID                  string    `gorm:"column:survey_answer_emp_id" json:"-"`
+	DriverID                           string    `gorm:"column:driver_id" json:"-"`
 }
 
 func (VmsTrnSatisfactionSurveyAnswers) TableName() string {

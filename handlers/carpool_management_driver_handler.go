@@ -65,19 +65,17 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 			d.driver_contact_number,
 			d.approved_job_driver_end_date,
 			d.driver_average_satisfaction_score,
-			200 driver_total_satisfaction_review,
+			d.driver_total_satisfaction_review,
 			d.ref_driver_status_code,
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
 			d.is_active,
 			d.contract_no,
 			d.end_date,
-			d.mas_vendor_code,
-			v.mas_vendor_name,
+			d.vendor_name,
 			l.driver_license_end_date,
 			l.driver_license_no
 	`).
 		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
-		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.is_deleted = ? AND exists(select 1 from vms_mas_carpool_driver cpd where cpd.mas_driver_uid = d.mas_driver_uid AND cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?)", "0", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -187,7 +185,8 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		var existingDriver models.VmsMasCarpoolDriver
 		if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", requests[i].MasDriverUID, "0").First(&existingDriver).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{
-				"error": fmt.Sprintf("Driver with MasCarpoolUID %s and MasDriverUID %s already exists", requests[i].MasCarpoolUID, requests[i].MasDriverUID),
+				"error":   fmt.Sprintf("Driver with MasCarpoolUID %s and MasDriverUID %s already exists", requests[i].MasCarpoolUID, requests[i].MasDriverUID),
+				"message": "ข้อมูลคนขับที่ระบุมีอยู่ในกลุ่มอื่นแล้ว",
 			})
 			return
 		}
@@ -274,14 +273,16 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 		return
 	}
 	name := strings.ToUpper(c.Query("name"))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))     // Default: page 1
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "300")) // Default: 10 items per page
 	offset := (page - 1) * limit
 
 	var drivers []models.VmsMasDriver
 	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Model(&models.VmsMasDriver{})
 	query = query.Where("is_deleted = ?", "0")
+	query = query.Where("not exists (select 1 from vms_mas_carpool_driver cd where cd.mas_driver_uid = vms_mas_driver.mas_driver_uid and cd.is_deleted = '0')")
+
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"
@@ -377,13 +378,11 @@ func (h *CarpoolManagementHandler) GetMasDriverDetails(c *gin.Context) {
 			d.is_active,
 			d.contract_no,
 			d.end_date,
-			d.mas_vendor_code,
-			v.mas_vendor_name,
+			d.vendor_name,
 			l.driver_license_end_date,
 			l.driver_license_no
 	`).
 		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
-		Joins("LEFT JOIN vms_mas_driver_vendor v ON v.mas_vendor_code = d.mas_vendor_code").
 		Where("d.mas_driver_uid in (?) AND d.is_deleted = ?", masDriverUIDs, "0")
 
 	if err := query.Find(&drivers).
@@ -485,20 +484,15 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 	}
 
 	var drivers []models.DriverTimeLine
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select("*").
-		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
+		Select("d.*, w_thismth.job_count job_count_this_month, w_thismth.total_days total_day_this_month, w_lastmth.job_count job_count_last_month, w_lastmth.total_days total_day_last_month").
 		Joins("INNER JOIN vms_mas_carpool_driver cd ON cd.mas_driver_uid = d.mas_driver_uid AND cd.mas_carpool_uid = ? AND cd.is_deleted = ?", masCarpoolUID, "0").
-		Where(`exists (select 1 from vms_trn_request r 
-		   where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
-		   AND r.is_pea_employee_driver = ? 
-		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
-		   OR r.reserve_end_datetime BETWEEN ? AND ? 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
-			"0", startDate, endDate, startDate, endDate, startDate, endDate)
+		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = d.driver_id AND w_thismth.is_deleted = ?", startDate.Year(), startDate.Month(), "0").
+		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
+		Where("d.is_deleted = ?", "0")
 
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
@@ -541,13 +535,11 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		return
 	}
 	for i := range drivers {
-		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", 22, 3)
-		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", 16, 2)
-
+		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayLastMonth, drivers[i].JobCountLastMonth)
+		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
 		if err := config.DB.Table("vms_trn_request").
-			Preload("TripDetails").
-			Where("mas_carpool_driver_uid = ? AND is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
+			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
 			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
@@ -555,10 +547,24 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {
-			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
-				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			drivers[i].DriverTrnRequests[j].TripDetails = []models.VmsTrnTripDetail{
+				{
+					TrnTripDetailUID: uuid.New().String(),
+					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
+						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
+						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
+						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
+						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
+						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
+						TripStartMiles:       0,
+						TripEndMiles:         0,
+					},
+				},
 			}
-			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode == "80" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
+			} else if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
 			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
@@ -569,7 +575,6 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		}
 	}
 	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
-	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
 		"drivers":    drivers,

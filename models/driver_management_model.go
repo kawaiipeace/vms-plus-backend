@@ -41,7 +41,7 @@ type VmsMasDriverRequest struct {
 	ContractNo                 string                     `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
 	DriverDeptSapHire          string                     `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"1000"`
 	DriverDeptSapShortNameHire string                     `gorm:"column:driver_dept_sap_short_name_hire" json:"-"`
-	MasVendorCode              string                     `gorm:"column:mas_vendor_code" json:"mas_vendor_code" example:"VENDOR123"`
+	VendorName                 string                     `gorm:"column:vendor_name" json:"vendor_name" example:"VENDOR123"`
 	DriverDeptSapWork          string                     `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work" example:"10001"`
 	DriverDeptSapShortWork     string                     `gorm:"column:driver_dept_sap_short_work" json:"-"`
 	DriverDeptSapFullWork      string                     `gorm:"column:driver_dept_sap_full_work" json:"-"`
@@ -76,7 +76,7 @@ type VmsMasDriverImport struct {
 	ContractNo                 string                     `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
 	DriverDeptSapHire          string                     `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"HR"`
 	DriverDeptSapShortNameHire string                     `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire" example:"HR"`
-	MasVendorCode              string                     `gorm:"column:mas_vendor_code" json:"mas_vendor_code" example:"VENDOR123"`
+	VendorName                 string                     `gorm:"column:vendor_name" json:"vendor_name"`
 	DriverDeptSapWork          string                     `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work" example:"กยจ."`
 	DriverDeptSapShortNameWork string                     `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
 	StartDate                  time.Time                  `gorm:"column:start_date" json:"start_date" example:"2023-01-01T00:00:00Z"`
@@ -150,7 +150,7 @@ type VmsMasDriverResponse struct {
 	ContractNo                     string                      `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
 	DriverDeptSapHire              string                      `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"CON123456"`
 	DriverDeptSapShortNameHire     string                      `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire" example:"HR"`
-	MasVendorCode                  string                      `gorm:"column:mas_vendor_code" json:"mas_vendor_code" example:"VENDOR123"`
+	VendorName                     string                      `gorm:"column:vender_name" json:"vender_name" example:"VENDOR123"`
 	DriverDeptSapWork              string                      `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_short_work" example:"กยจ."`
 	DriverDeptSapShortNameWork     string                      `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
 	ApprovedJobDriverStartDate     time.Time                   `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00Z"`
@@ -159,7 +159,6 @@ type VmsMasDriverResponse struct {
 	DriverDocuments                []VmsMasDriverDocument      `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_documents"`
 	DriverAverageSatisfactionScore float64                     `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                         `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
-	DriverVendor                   VmsMasDriverVendor          `gorm:"foreignKey:MasVendorCode;references:MasVendorCode" json:"driver_vendor"`
 	CreatedAt                      time.Time                   `gorm:"column:created_at" json:"-"`
 	CreatedBy                      string                      `gorm:"column:created_by" json:"-"`
 	UpdatedAt                      time.Time                   `gorm:"column:updated_at" json:"-"`
@@ -233,7 +232,7 @@ type VmsMasDriverContractUpdate struct {
 	ContractNo                 string    `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
 	DriverDeptSapHire          string    `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"1000"`
 	DriverDeptSapShortNameHire string    `gorm:"column:driver_dept_sap_short_name_hire" json:"-"`
-	MasVendorCode              string    `gorm:"column:mas_vendor_code" json:"mas_vendor_code" example:"VENDOR123"`
+	VendorName                 string    `gorm:"column:vendor_name" json:"vendor_name"`
 	DriverDeptSapWork          string    `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work" example:"10001"`
 	DriverDeptSapShortWork     string    `gorm:"column:driver_dept_sap_short_work" json:"-"`
 	DriverDeptSapFullWork      string    `gorm:"column:driver_dept_sap_full_work" json:"-"`
@@ -241,7 +240,7 @@ type VmsMasDriverContractUpdate struct {
 	ApprovedJobDriverEndDate   time.Time `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
 	RefOtherUseCode            int       `gorm:"column:ref_other_use_code" json:"ref_other_use_code" example:"1"`
 	IsReplacement              string    `gorm:"column:is_replacement" json:"is_replacement" example:"1"`
-	ReplacementDriverUID       string    `gorm:"column:replacement_driver_uid" json:"replacement_driver_uid" example:"0a33f4df-5da8-4831-b3e4-27b5c6134c7c"`
+	ReplacementDriverUID       *string   `gorm:"column:replaced_mas_driver_uid" json:"replacement_driver_uid" example:"0a33f4df-5da8-4831-b3e4-27b5c6134c7c"`
 	UpdatedAt                  time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                  string    `gorm:"column:updated_by" json:"-"`
 }
@@ -375,8 +374,12 @@ type DriverTimeLine struct {
 	DriverNickname             string             `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
 	DriverContactNumber        string             `gorm:"column:driver_contact_number" json:"driver_contact_number" example:"+1234567890"`
 	DriverDeptSapShortNameWork string             `gorm:"column:driver_dept_sap_short_name_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	WorkLastMonth              string             `gorm:"column:work_last_month" json:"work_last_month" example:"22 วัน/3 งาน"`
-	WorkThisMonth              string             `gorm:"column:work_this_month" json:"work_this_month" example:"16 วัน/2 งาน"`
+	JobCountThisMonth          int                `gorm:"column:job_count_this_month" json:"job_count_this_month"`
+	JobCountLastMonth          int                `gorm:"column:job_count_last_month" json:"job_count_last_month"`
+	TotalDayThisMonth          int                `gorm:"column:total_day_this_month" json:"total_day_this_month"`
+	TotalDayLastMonth          int                `gorm:"column:total_day_last_month" json:"total_day_last_month"`
+	WorkThisMonth              string             `gorm:"column:work_this_month" json:"work_this_month" example:"22 วัน/3 งาน"`
+	WorkLastMonth              string             `gorm:"column:work_last_month" json:"work_last_month" example:"16 วัน/2 งาน"`
 	DriverTrnRequests          []DriverTrnRequest `gorm:"-" json:"driver_trn_requests"`
 }
 
@@ -384,10 +387,11 @@ type DriverTrnRequest struct {
 	TrnRequestUID          string             `gorm:"column:trn_request_uid" json:"trn_request_uid"`
 	MasDriverUID           string             `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
 	RequestNo              string             `gorm:"column:request_no" json:"request_no"`
-	ReserveStartDatetime   string             `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime     string             `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	ReserveStartDatetime   time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime     time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName   string             `json:"ref_request_status_name"`
+	WorkPlace              string             `gorm:"column:work_place" json:"work_place"`
 	RefTripTypeCode        int                `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
 	VehicleUserEmpID       string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 	VehicleUserEmpName     string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`

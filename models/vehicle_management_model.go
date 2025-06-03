@@ -54,6 +54,7 @@ type VehicleTimeLine struct {
 	VehicleModelName                 string              `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
 	VehicleCarTypeDetail             string              `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	VehicleMileage                   string              `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	VehicleDistance                  string              `gorm:"column:vehicle_distance" json:"-"`
 	VehicleTrnRequests               []VehicleTrnRequest `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle_trn_requests"`
 }
 
@@ -61,8 +62,8 @@ type VehicleTrnRequest struct {
 	MasVehicleUID          string             `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
 	TrnRequestUID          string             `gorm:"column:trn_request_uid" json:"trn_request_uid"`
 	RequestNo              string             `gorm:"column:request_no" json:"request_no"`
-	ReserveStartDatetime   string             `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime     string             `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	ReserveStartDatetime   time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime     time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName   string             `json:"ref_request_status_name"`
 	RefTripTypeCode        int                `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
