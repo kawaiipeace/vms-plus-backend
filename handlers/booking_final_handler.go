@@ -466,14 +466,14 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
-
+			h.UpdateRecievedKeyUser(request.TrnRequestUID)
 		} else {
 			// Handle other errors
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to query key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 			return
 		}
 	}
-	h.UpdateRecievedKeyUser(request.TrnRequestUID)
+
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
 		"ผู้อนุมัติ อนุมัติคำขอแล้ว",
