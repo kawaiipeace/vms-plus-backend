@@ -77,7 +77,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			d.parking_place
 		`).
 		Joins("LEFT JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = cpv.mas_vehicle_uid").
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Where("cpv.mas_carpool_uid = ? AND cpv.is_deleted = ?", masCarpoolUID, "0")
 
 	search := strings.ToUpper(c.Query("search"))
@@ -118,10 +118,18 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
 		funcs.TrimStringFields(&vehicles[i])
-		vehicles[i].VehicleImgs = []string{
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+		var vehicleImgs []models.VmsMasVehicleImg
+		if err := config.DB.Where("mas_vehicle_uid = ?", vehicles[i].MasVehicleUID).Find(&vehicleImgs).Error; err == nil {
+			vehicles[i].VehicleImgs = make([]string, 0)
+			for _, img := range vehicleImgs {
+				vehicles[i].VehicleImgs = append(vehicles[i].VehicleImgs, img.VehicleImgFile)
+			}
+		} else {
+			vehicles[i].VehicleImgs = []string{
+				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
+				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
+				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
+			}
 		}
 	}
 	if len(vehicles) == 0 {
@@ -191,7 +199,18 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 			return
 		}
 	}
+
+	//check vehicle is not duplicate in another carpool
 	for i := range requests {
+		var existingVehicle models.VmsMasCarpoolVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND mas_carpool_uid != ? AND is_deleted = ?", requests[i].MasVehicleUID, requests[i].MasCarpoolUID, "0").First(&existingVehicle).Error; err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("Vehicle with MasVehicleUID %s already exists in another carpool", requests[i].MasVehicleUID),
+				"message": "ข้อมูลรถที่ระบุมีอยู่ในกลุ่มรถอื่นแล้ว",
+			})
+			return
+		}
+
 		requests[i].MasCarpoolVehicleUID = uuid.New().String()
 		requests[i].CreatedAt = time.Now()
 		requests[i].CreatedBy = user.EmpID
@@ -286,15 +305,18 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	offset := (page - 1) * limit // Calculate offset
 
-	var vehicles []models.VmsMasVehicleList
+	var vehicles []models.VmsMasVehicleCarpoolList
 	var total int64
 	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Table("vms_mas_vehicle v")
-	query = query.Select("v.*,md.dept_short")
-	query = query.Model(&models.VmsMasVehicleList{})
+	query = query.Select("v.*,d.vehicle_owner_dept_sap vehicle_owner_dept_sap,fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_owner_dept_short" +
+		",d.fleet_card_no,d.vehicle_mileage vehicle_mileage" +
+		",(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name" +
+		",(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name")
+	query = query.Model(&models.VmsMasVehicleCarpoolList{})
 	query = query.Where("v.is_deleted = '0'")
 	query = query.Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
-	query = query.Joins("LEFT JOIN vms_mas_department AS md ON d.vehicle_owner_dept_sap = md.dept_sap")
+	query = query.Where("not exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0')")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
 		query = query.Where("v.vehicle_brand_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
@@ -306,9 +328,9 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 
-	vehicles = models.AssignVehicleImageFromIndex(vehicles)
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
 	}
 	// Respond with JSON
 	if len(vehicles) == 0 {
@@ -385,7 +407,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.vehicle_pea_id,
 			d.parking_place
 		`).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = ?", masVehicleUIDs, "0")
 
 	if err := query.Find(&vehicles).Error; err != nil {
@@ -490,28 +512,38 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		return
 	}
 
+	if startDate.After(endDate) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start date must be before end date", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+	// check if endDate - startDate > 3 months
+	if endDate.Sub(startDate) > 90*24*time.Hour {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Date range cannot exceed 3 months", "message": messages.ErrInvalidDate.Error()})
+		return
+	}
+
 	var vehicles []models.VehicleTimeLine
 
-	query := h.SetQueryRole(user, config.DB).
-		Table("public.vms_mas_vehicle AS v").
-		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short,
-			v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id,
-			d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-			md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
-			v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
-			v.vehicle_brand_name,v.vehicle_model_name`).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
-		Joins("INNER JOIN vms_mas_carpool_vehicle cv ON cv.mas_vehicle_uid = v.mas_vehicle_uid AND cv.mas_carpool_uid = ? AND cv.is_deleted = ?", masCarpoolUID, "0").
-		Joins(`INNER JOIN vms_trn_request r 
-		   ON r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90'
-		   AND (r.reserve_start_datetime BETWEEN ? AND ? 
-		   OR r.reserve_end_datetime BETWEEN ? AND ? 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-		   OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)`,
-			startDate, endDate, startDate, endDate, startDate, endDate).
-		Where("v.is_deleted= ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
+	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_mas_vehicle AS v").
+		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
+				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
+				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap)  AS vehicle_dept_name,
+				(select max(cp.carpool_name) from vms_mas_carpool cp, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = cp.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
+				v."CarTypeDetail" AS vehicle_car_type_detail, 0 AS vehicle_mileage,
+				v.vehicle_brand_name,v.vehicle_model_name,
+				public.fn_get_vehicle_distance_two_months(v.mas_vehicle_uid, ?) AS vehicle_distance`, startDate).
+		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
+		Where("v.is_deleted = ?", "0").
+		Where("exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0' and cv.mas_carpool_uid = ?)", masCarpoolUID)
+		/*Where("exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
+		"r.reserve_start_datetime BETWEEN ? AND ? "+
+		"OR r.reserve_end_datetime BETWEEN ? AND ? "+
+		"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
+		"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))",
+		startDate, endDate, startDate, endDate, startDate, endDate)
+		*/
 
 	if search := c.Query("search"); search != "" {
 		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -523,17 +555,6 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 	if vehicleCarTypeDetail := c.Query("vehicel_car_type_detail"); vehicleCarTypeDetail != "" {
 		query = query.Where("v.\"CarTypeDetail\" = ?", vehicleCarTypeDetail)
 	}
-
-	if isActive := c.Query("is_active"); isActive != "" {
-		isActiveList := strings.Split(isActive, ",")
-		query = query.Where("d.is_active IN (?)", isActiveList)
-	}
-
-	if refVehicleStatusCode := c.Query("ref_vehicle_status_code"); refVehicleStatusCode != "" {
-		refVehicleStatusCodeList := strings.Split(refVehicleStatusCode, ",")
-		query = query.Where("d.ref_vehicle_status_code IN (?)", refVehicleStatusCodeList)
-	}
-
 	// Pagination
 	page := c.DefaultQuery("page", "1")
 	limit := c.DefaultQuery("limit", "10")
@@ -560,10 +581,14 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+
 	for i := range vehicles {
+		parts := strings.Split(vehicles[i].VehicleDistance, ",")
+		if len(parts) > 3 {
+			vehicles[i].VehicleMileage = parts[3]
+		}
 		// Preload the vehicle requests for each vehicle
 		if err := config.DB.Table("vms_trn_request").
-			Preload("TripDetails").
 			Preload("MasDriver").
 			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
 			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
@@ -572,10 +597,23 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		}
 
 		for j := range vehicles[i].VehicleTrnRequests {
-			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
-				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			vehicles[i].VehicleTrnRequests[j].TripDetails = []models.VmsTrnTripDetail{
+				{
+					TrnTripDetailUID: uuid.New().String(),
+					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
+						TrnRequestUID:        vehicles[i].VehicleTrnRequests[j].TrnRequestUID,
+						TripStartDatetime:    vehicles[i].VehicleTrnRequests[j].ReserveEndDatetime,
+						TripEndDatetime:      vehicles[i].VehicleTrnRequests[j].ReserveStartDatetime,
+						TripDeparturePlace:   vehicles[i].VehicleTrnRequests[j].WorkPlace,
+						TripDestinationPlace: vehicles[i].VehicleTrnRequests[j].WorkPlace,
+						TripStartMiles:       0,
+						TripEndMiles:         0,
+					},
+				},
 			}
-			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "40" {
+			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode == "80" {
+				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
+			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode <= "40" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
 			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
@@ -588,14 +626,15 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
 	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
+
 	c.JSON(http.StatusOK, gin.H{
-		"vehicles":   vehicles,
-		"last_month": lastMonth,
 		"pagination": gin.H{
 			"total":      total,
-			"page":       pageInt,
+			"page":       page,
 			"limit":      pageSizeInt,
 			"totalPages": (total + int64(pageSizeInt) - 1) / int64(pageSizeInt), // Calculate total pages
 		},
+		"last_month": lastMonth,
+		"vehicles":   vehicles,
 	})
 }

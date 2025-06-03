@@ -50,6 +50,7 @@ type Config struct {
 	DevSaveFileUrl      string
 	UserHubEndPoint     string
 	UserHubServiceKey   string
+	HrPlatformEndPoint  string
 }
 
 // AppConfig is a globally accessible configuration variable
@@ -91,6 +92,7 @@ func InitConfig() {
 		DevSaveFileUrl:      os.Getenv("DEV_SAVE_FILE_URL"),
 		UserHubEndPoint:     os.Getenv("USER_HUB_END_POINT"),
 		UserHubServiceKey:   os.Getenv("USER_HUB_SERVICE_KEY"),
+		HrPlatformEndPoint:  os.Getenv("HR_PLATFORM_END_POINT"),
 	}
 	fmt.Printf("load AppConfig: %s %d\n", AppConfig.AppName, AppConfig.Port)
 }

@@ -20,6 +20,10 @@ type VmsDriverLicenseCard struct {
 	NextAnnualYYYY                int                             `gorm:"column:-" json:"next_annual_yyyy" example:"2569"`
 	NextLicenseStatusCode         string                          `gorm:"column:next_license_status_code" json:"next_license_status_code"`
 	NextLicenseStatus             string                          `gorm:"-" json:"next_license_status"`
+	PrevTrnRequestAnnualDriverUID string                          `gorm:"column:prev_trn_request_annual_driver_uid" json:"prev_trn_request_annual_driver_uid"`
+	PrevAnnualYYYY                int                             `gorm:"column:-" json:"prev_annual_yyyy" example:"2567"`
+	PrevLicenseStatusCode         string                          `gorm:"column:prev_license_status_code" json:"prev_license_status_code"`
+	PrevLicenseStatus             string                          `gorm:"-" json:"prev_license_status"`
 }
 
 func (VmsDriverLicenseCard) TableName() string {

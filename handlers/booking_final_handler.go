@@ -178,9 +178,9 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
 			requests[i].Can_Choose_Vehicle = true
 		}
-		if requests[i].TripType == 1 {
+		if requests[i].TripType == 0 {
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 2 {
+		} else if requests[i].TripType == 1 {
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}
@@ -246,7 +246,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/booking-final/request/{trn_request_uid} [get]
 func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -254,19 +254,32 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	if request.RefRequestStatusCode >= "40" {
+	if request.RefRequestStatusCode == "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empUser := funcs.GetUserEmpInfo(user.EmpID)
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติให้ใช้ยานพาหนะ",
+			EmpID:        empUser.EmpID,
+			EmpName:      empUser.FullName,
+			EmpPosition:  empUser.Position,
+			DeptSAP:      empUser.DeptSAP,
+			DeptSAPShort: empUser.DeptSAPShort,
+			DeptSAPFull:  empUser.DeptSAPFull,
+			PhoneNumber:  empUser.TelInternal,
+			MobileNumber: empUser.TelMobile,
+		}
 	}
-	if request.RefRequestStatusCode >= "41" {
+	if request.RefRequestStatusCode == "41" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากเจ้าของยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "41", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
 	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
@@ -274,10 +287,10 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติให้ใช้ยานพาหนะ"},
 		}
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "50", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
 	if request.RefRequestStatusCode == "90" {
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "90", "ผู้ยกเลิกคำขอ")
 		if request.CanceledRequestRole == "vehicle-user" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},
@@ -453,6 +466,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
+			h.UpdateRecievedKeyUser(request.TrnRequestUID)
 		} else {
 			// Handle other errors
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to query key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
@@ -468,6 +482,29 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
+
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		return
+	}
+	var request = models.VmsTrnReceivedKeyPEA{}
+	request.TrnRequestUID = trnRequestUID
+	request.ReceiverType = 2 // PEA
+	empUser := funcs.GetUserEmpInfo(trnRequest.VehicleUserEmpID)
+	request.ReceiverPersonalId = empUser.EmpID
+	request.ReceiverFullname = empUser.FullName
+	request.ReceiverDeptSAP = empUser.DeptSAP
+	request.ReceiverDeptNameShort = empUser.DeptSAPShort
+	request.ReceiverDeptNameFull = empUser.DeptSAPFull
+	request.ReceiverPosition = empUser.Position
+	request.ReceiverMobilePhone = empUser.TelMobile
+	request.ReceiverDeskPhone = empUser.TelInternal
+
+	if err := config.DB.Save(&request).Error; err != nil {
+		return
+	}
 }
 
 // UpdateCanceled godoc

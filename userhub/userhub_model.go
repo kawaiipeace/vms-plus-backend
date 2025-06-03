@@ -36,18 +36,19 @@ type ServiceUserInfoResponse struct {
 	MobilePhone   string   `json:"mobile_number" example:"0818088770"`
 	DeskPhone     string   `json:"internal_number" example:"0818088770"`
 	BusinessArea  string   `json:"business_area" example:"1234567890"`
+	LevelCode     string   `json:"level_code" example:"1234567890"`
 	ImageUrl      string   `json:"image_url" example:"https://example.com/image.jpg"`
 	Roles         []string `json:"roles" example:"['admin', 'user']"`
 }
 
 type ServiceListUserRequest struct {
-	ServiceCode   string   `json:"service_code" example:"vms"`
-	Search        string   `json:"search" example:"700001"`
-	UpperDeptSap  string   `json:"upper_dept_sap" example:"4455"`
-	BureauDeptSap string   `json:"bureau_dept_sap" example:"4455"`
-	BusinessArea  string   `json:"business_area" example:"Z00"`
-	LevelCodes    string   `json:"level_codes" example:"M1,M2,M3"`
-	EmpIDs        []string `json:"emp_ids" example:"['700001', '700002']"`
-	Role          string   `json:"role" example:"admin_approval"`
-	Limit         int      `json:"limit" example:"10"`
+	ServiceCode   string `json:"service_code" example:"vms"`
+	Search        string `json:"search" example:"700001"`
+	UpperDeptSap  string `json:"upper_dept_sap" example:"4455"`
+	BureauDeptSap string `json:"bureau_dept_sap" example:"4455"`
+	BusinessArea  string `json:"business_area" example:"Z00"`
+	LevelCodes    string `json:"level_codes" example:"M1,M2,M3"`
+	EmpIDs        string `json:"emp_ids" example:"700001,700002"`
+	Role          string `json:"role" example:"admin_approval"`
+	Limit         int    `json:"limit" example:"10"`
 }

@@ -266,7 +266,7 @@ func (h *VehicleInUseUserHandler) CreateVehicleTripDetail(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.MasVehicleUID = func() string {
@@ -341,7 +341,7 @@ func (h *VehicleInUseUserHandler) UpdateVehicleTripDetail(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -388,7 +388,7 @@ func (h *VehicleInUseUserHandler) DeleteVehicleTripDetail(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	if err := config.DB.Model(&existing).UpdateColumns(map[string]interface{}{
@@ -428,7 +428,7 @@ func (h *VehicleInUseUserHandler) GetVehicleTripDetails(c *gin.Context) {
 	var trnRequest models.VmsTrnRequestList
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trnRequestUid).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -478,7 +478,7 @@ func (h *VehicleInUseUserHandler) GetVehicleTripDetail(c *gin.Context) {
 	var trnRequest models.VmsTrnRequestList
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trip.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -520,7 +520,7 @@ func (h *VehicleInUseUserHandler) CreateVehicleAddFuel(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", request.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	request.RefCostTypeCode = trnRequest.RefCostTypeCode
@@ -589,7 +589,7 @@ func (h *VehicleInUseUserHandler) UpdateVehicleAddFuel(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -642,7 +642,7 @@ func (h *VehicleInUseUserHandler) DeleteVehicleAddFuel(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", existing.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -683,7 +683,7 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 	var trnRequest models.VmsTrnRequestList
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", trnRequestUid).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -737,7 +737,7 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetail(c *gin.Context) {
 	var trnRequest models.VmsTrnRequestList
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Table("public.vms_trn_request").Where("trn_request_uid = ?", fuel.TrnRequestUID).First(&trnRequest).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 
@@ -799,27 +799,35 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Uid"})
 		return
 	}
-	var trnRequest models.VmsTrnRequestResponse
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
-		return
-	}
 
 	var reqs []models.VmsTrnSatisfactionSurveyAnswers
 	if err := c.ShouldBindJSON(&reqs); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "message": messages.ErrInvalidJSONInput.Error()})
 		return
 	}
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
 
+	var driver models.VmsMasDriver
+	if trnRequest.MasCarpoolDriverUID != "" {
+		if err := config.DB.First(&driver, "mas_driver_uid = ?", trnRequest.MasCarpoolDriverUID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrBookingNotFound.Error()})
+			return
+		}
+	}
 	for _, req := range reqs {
 		var existing models.VmsTrnSatisfactionSurveyAnswers
-		if err := config.DB.First(&existing, "trn_request_uid = ? AND mas_satisfaction_survey_questions_code = ?", trnRequestUID, req.MasSatisfactionSurveyQuestionsCode).Error; err != nil {
+		if err := config.DB.First(&existing, "trn_request_uid = ? AND mas_satisfaction_survey_questions_uid = ?", trnRequestUID, req.MasSatisfactionSurveyQuestionsCode).Error; err != nil {
 			if gorm.ErrRecordNotFound == err {
 				// Handle record not found logic (create new record)
 				req.TrnSatisfactionSurveyAnswersUID = uuid.NewString()
 				req.TrnRequestUID = trnRequestUID.String()
 				req.SurveyAnswerDate = time.Now()
 				req.SurveyAnswerEmpID = user.EmpID
+				req.DriverID = driver.DriverID
 				if err := config.DB.Create(&req).Error; err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create record: %v", err), "message": messages.ErrInternalServer.Error()})
 					return
@@ -885,8 +893,8 @@ func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
 	request.ReturnedVehicleEmpID = empUser.EmpID
 	request.ReturnedVehicleEmpName = empUser.FullName
 	request.ReturnedVehicleDeptSAP = empUser.DeptSAP
-	request.ReturnedVehicleDeptNameShort = empUser.DeptSAPShort
-	request.ReturnedVehicleDeptNameFull = empUser.DeptSAPFull
+	request.ReturnedVehicleDeptNameShort = funcs.GetDeptSAPShort(empUser.DeptSAP)
+	request.ReturnedVehicleDeptNameFull = funcs.GetDeptSAPFull(empUser.DeptSAP)
 	for i := range request.VehicleImages {
 		request.VehicleImages[i].TrnVehicleImgReturnedUID = uuid.New().String()
 		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID

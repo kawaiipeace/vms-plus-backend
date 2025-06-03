@@ -156,9 +156,9 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
 			requests[i].Can_Choose_Vehicle = true
 		}
-		if requests[i].TripType == 1 {
+		if requests[i].TripType == 0 {
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 2 {
+		} else if requests[i].TripType == 1 {
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}
@@ -278,8 +278,8 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 	request.ReceivedVehicleEmpID = empUser.EmpID
 	request.ReceivedVehicleEmpName = empUser.FullName
 	request.ReceivedVehicleDeptSAP = empUser.DeptSAP
-	request.ReceivedVehicleDeptSAPShort = empUser.DeptSAPShort
-	request.ReceivedVehicleDeptSAPFull = empUser.DeptSAPFull
+	request.ReceivedVehicleDeptSAPShort = funcs.GetDeptSAPShort(empUser.DeptSAP)
+	request.ReceivedVehicleDeptSAPFull = funcs.GetDeptSAPFull(empUser.DeptSAP)
 	for i := range request.VehicleImages {
 		request.VehicleImages[i].TrnVehicleImgReceivedUID = uuid.New().String()
 		request.VehicleImages[i].TrnRequestUID = request.TrnRequestUID

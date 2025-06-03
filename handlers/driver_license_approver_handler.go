@@ -20,28 +20,50 @@ type DriverLicenseApproverHandler struct {
 }
 
 var LicenseStatusNameMapApprover = map[string]string{
-	"10": "รอตรวจสอบ",
-	"11": "ตีกลับคำขอ",
 	"20": "รออนุมัติ",
 	"30": "อนุมัติ",
 	"90": "ยกเลิกคำขอ",
 }
+var MenuNameMapLicenseApprover = map[string]string{
+	"00": "คำขออนุมัติทำหน้าที่ขับรถยนต์",
+}
 
 func (h *DriverLicenseApproverHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query
+	return query.Where("approved_request_emp_id = ?", user.EmpID)
 }
 
 func (h *DriverLicenseApproverHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query
 }
 func (h *DriverLicenseApproverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_annual_driver_status_code in ('20') and is_deleted = '0'")
+}
+
+// MenuRequests godoc
+// @Summary Summary driver license requests by request status code
+// @Description Summary driver license requests, counts grouped by request status code
+// @Tags Driver-license-approver
+// @Accept  json
+// @Produce  json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/driver-license-approver/menu-requests [get]
+func (h *DriverLicenseApproverHandler) MenuRequests(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	statusMenuMap := MenuNameMapLicenseApprover
+	query := h.SetQueryRole(user, config.DB)
+	summary, err := funcs.MenuRequests(statusMenuMap, query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode > summary[j].RefRequestStatusCode
+	})
+	c.JSON(http.StatusOK, summary)
 }
 
 // SearchRequests godoc

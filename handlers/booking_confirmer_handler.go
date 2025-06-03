@@ -21,7 +21,7 @@ type BookingConfirmerHandler struct {
 
 var MenuNameMapConfirmer = map[string]string{
 	"20,21,30": "คำขอใช้ยานพาหนะ",
-	"00":       "ใบอนุญาตขับขี่",
+	"00":       "คำขออนุมัติทำหน้าที่ขับรถยนต์",
 }
 
 var StatusNameMapConfirmer = map[string]string{
@@ -32,10 +32,7 @@ var StatusNameMapConfirmer = map[string]string{
 }
 
 func (h *BookingConfirmerHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
-	return query.Where("confirmed_request_emp_id = ? or created_request_emp_id = ?", user.EmpID, user.EmpID)
+	return query.Where("confirmed_request_emp_id = ? ", user.EmpID)
 }
 
 func (h *BookingConfirmerHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
@@ -63,7 +60,9 @@ func (h *BookingConfirmerHandler) MenuRequests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode > summary[j].RefRequestStatusCode
+	})
 	c.JSON(http.StatusOK, summary)
 }
 
@@ -231,7 +230,7 @@ func (h *BookingConfirmerHandler) SearchRequests(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/booking-confirmer/request/{trn_request_uid} [get]
 func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -245,6 +244,18 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empUser := funcs.GetUserEmpInfo(user.EmpID)
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        empUser.EmpID,
+			EmpName:      empUser.FullName,
+			EmpPosition:  empUser.Position,
+			DeptSAP:      empUser.DeptSAP,
+			DeptSAPShort: empUser.DeptSAPShort,
+			DeptSAPFull:  empUser.DeptSAPFull,
+			PhoneNumber:  empUser.TelInternal,
+			MobileNumber: empUser.TelMobile,
+		}
 	}
 
 	if request.RefRequestStatusCode == "21" {
@@ -253,12 +264,28 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "0", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "21", "ผู้อนุมัติต้นสังกัด")
 	}
 	if request.RefRequestStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "1", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
+		}
+		empIDs, err := funcs.GetAdminApprovalEmpIDs(request.TrnRequestUID)
+		if err == nil && len(empIDs) > 0 {
+			empUser := funcs.GetUserEmpInfo(empIDs[0])
+			request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+				ActionRole:   "ผู้ดูแลยานพาหนะ",
+				EmpID:        empUser.EmpID,
+				EmpName:      empUser.FullName,
+				EmpPosition:  empUser.Position,
+				DeptSAP:      empUser.DeptSAP,
+				DeptSAPShort: empUser.DeptSAPShort,
+				DeptSAPFull:  empUser.DeptSAPFull,
+				PhoneNumber:  empUser.TelInternal,
+				MobileNumber: empUser.TelMobile,
+			}
 		}
 	}
 	if request.RefRequestStatusCode == "31" {
@@ -267,20 +294,37 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "31", "ผู้ดูแลยานพาหนะ")
 	}
-	if request.RefRequestStatusCode >= "40" {
+	if request.RefRequestStatusCode == "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empIDs, err := funcs.GetFinalApprovalEmpIDs(request.TrnRequestUID)
+		if err == nil && len(empIDs) > 0 {
+			empUser := funcs.GetUserEmpInfo(empIDs[0])
+			request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+				ActionRole:   "ผู้อนุมัติให้ใช้ยานพาหนะ",
+				EmpID:        empUser.EmpID,
+				EmpName:      empUser.FullName,
+				EmpPosition:  empUser.Position,
+				DeptSAP:      empUser.DeptSAP,
+				DeptSAPShort: empUser.DeptSAPShort,
+				DeptSAPFull:  empUser.DeptSAPFull,
+				PhoneNumber:  empUser.TelInternal,
+				MobileNumber: empUser.TelMobile,
+			}
+		}
 	}
-	if request.RefRequestStatusCode >= "41" {
+	if request.RefRequestStatusCode == "41" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากเจ้าของยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "41", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
 	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
@@ -288,10 +332,10 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติให้ใช้ยานพาหนะ"},
 		}
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "50", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
 	if request.RefRequestStatusCode == "90" {
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "90", "ผู้ยกเลิกคำขอ")
 		if request.CanceledRequestRole == "vehicle-user" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},

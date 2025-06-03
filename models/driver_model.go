@@ -23,7 +23,8 @@ type VmsMasDriver struct {
 	DriverName                     string                `gorm:"column:driver_name" json:"driver_name"`
 	DriverImage                    string                `gorm:"column:driver_image" json:"driver_image"`
 	DriverNickname                 string                `gorm:"column:driver_nickname" json:"driver_nickname"`
-	DriverDeptSAP                  string                `gorm:"column:driver_dept_sap" json:"driver_dept_sap"`
+	DriverDeptSAP                  string                `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
+	DriverDeptSAPShort             string                `gorm:"column:driver_dept_sap_short" json:"driver_dept_sap_short"`
 	DriverIdentificationNo         string                `gorm:"column:driver_identification_no" json:"driver_identification_no"`
 	DriverContactNumber            string                `gorm:"column:driver_contact_number" json:"driver_contact_number"`
 	DriverAverageSatisfactionScore float64               `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
@@ -37,12 +38,11 @@ type VmsMasDriver struct {
 	Status                         string                `gorm:"-" json:"status"`
 	RefDriverStatusCode            int                   `gorm:"column:ref_driver_status_code" json:"-"`
 	DriverStatus                   VmsRefDriverStatus    `gorm:"foreignKey:RefDriverStatusCode;references:RefDriverStatusCode" json:"driver_status"`
-	WorkDays                       int                   `gorm:"-" json:"work_days"`
-	WorkCount                      int                   `gorm:"-" json:"work_count"`
+	WorkDays                       int                   `gorm:"column:total_days" json:"work_days"`
+	WorkCount                      int                   `gorm:"column:job_count" json:"work_count"`
 	DriverTripDetails              []VmsDriverTripDetail `gorm:"-" json:"trip_Details"`
 	DriverLicense                  VmsMasDriverLicense   `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
-	MasVendorCode                  string                `gorm:"column:mas_vendor_code" json:"mas_vendor_code"`
-	DriverVendor                   VmsMasDriverVendor    `gorm:"foreignKey:MasVendorCode;references:MasVendorCode" json:"driver_vendor"`
+	VendorName                     string                `gorm:"column:vendor_name" json:"vendor_name"`
 }
 
 func (VmsMasDriver) TableName() string {
@@ -109,4 +109,10 @@ type VmsTrnAnnualDriver struct {
 
 func (VmsTrnAnnualDriver) TableName() string {
 	return "vms_trn_request_annual_driver"
+}
+
+type VmsMasDriverCanBooking struct {
+	MasDriverUID string `gorm:"column:mas_driver_uid;type:uuid" json:"mas_driver_uid"`
+	DriverID     string `gorm:"column:driver_id" json:"driver_id"`
+	DriverName   string `gorm:"column:driver_name" json:"driver_name"`
 }
