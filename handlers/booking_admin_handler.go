@@ -21,25 +21,25 @@ type BookingAdminHandler struct {
 }
 
 var MenuNameMapAdmin = map[string]string{
-	"30,31": "ตรวจสอบคำขอ",
-	"50,51": "ให้กุญแจ",
-	"60":    "เดินทาง",
-	"70,71": "ตรวจสอบยานพาหนะ",
-	"80":    "เสร็จสิ้น",
-	"90":    "ยกเลิก",
+	"30,31,40": "ตรวจสอบคำขอ",
+	"50,51":    "ให้กุญแจ",
+	"60":       "เดินทาง",
+	"70,71":    "ตรวจสอบยานพาหนะ",
+	"80":       "เสร็จสิ้น",
+	"90":       "ยกเลิก",
 }
 
 var StatusNameMapAdmin = map[string]string{
-	"30": "รออนุมัติ",
+	"30": "รอตรวจสอบ",
 	"31": "ตีกลับ",
-	"40": "อนุมัติแล้ว",
+	"40": "รออนุมัติ",
 	"90": "ยกเลิกคำขอ",
 }
 
 var StatusNameMapAdminDetail = map[string]string{
-	"30": "รออนุมัติ",
+	"30": "รอตรวจสอบ",
 	"31": "ตีกลับ",
-	"40": "อนุมัติแล้ว",
+	"40": "รออนุมัติ",
 	"70": "ตรวจสอบยานพาหนะ",
 	"71": "ตรวจสอบยานพาหนะไม่ผ่าน",
 	"80": "เสร็จสิ้น",
@@ -197,9 +197,9 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
 			requests[i].Can_Choose_Vehicle = true
 		}
-		if requests[i].TripType == 1 {
+		if requests[i].TripType == 0 {
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 2 {
+		} else if requests[i].TripType == 1 {
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}
@@ -269,7 +269,7 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 // @Param trn_request_uid path string true "TrnRequestUID (trn_request_uid)"
 // @Router /api/booking-admin/request/{trn_request_uid} [get]
 func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -283,6 +283,18 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "1", ProgressName: "รอผู้ดูแลยานพาหนะตรวจสอบ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empUser := funcs.GetUserEmpInfo(user.EmpID)
+		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+			ActionRole:   "ผู้ดูแลยานพาหนะ",
+			EmpID:        empUser.EmpID,
+			EmpName:      empUser.FullName,
+			EmpPosition:  empUser.Position,
+			DeptSAP:      empUser.DeptSAP,
+			DeptSAPShort: empUser.DeptSAPShort,
+			DeptSAPFull:  empUser.DeptSAPFull,
+			PhoneNumber:  empUser.TelInternal,
+			MobileNumber: empUser.TelMobile,
+		}
 	}
 	if request.RefRequestStatusCode == "31" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
@@ -290,31 +302,50 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "31", "ผู้ดูแลยานพาหนะ")
+
 	}
-	if request.RefRequestStatusCode >= "40" {
+	if request.RefRequestStatusCode == "40" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ใช้ยานพาหนะ"},
 		}
+		empIDs, err := funcs.GetFinalApprovalEmpIDs(request.TrnRequestUID)
+		if err == nil && len(empIDs) > 0 {
+			empUser := funcs.GetUserEmpInfo(empIDs[0])
+			request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
+				ActionRole:   "ผู้อนุมัติให้ใช้ยานพาหนะ",
+				EmpID:        empUser.EmpID,
+				EmpName:      empUser.FullName,
+				EmpPosition:  empUser.Position,
+				DeptSAP:      empUser.DeptSAP,
+				DeptSAPShort: empUser.DeptSAPShort,
+				DeptSAPFull:  empUser.DeptSAPFull,
+				PhoneNumber:  empUser.TelInternal,
+				MobileNumber: empUser.TelMobile,
+			}
+		}
 	}
-	if request.RefRequestStatusCode >= "41" {
+	if request.RefRequestStatusCode == "41" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "2", ProgressName: "ถูกตีกลับจากเจ้าของยานพาหนะ"},
 		}
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "41", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
+
 	if request.RefRequestStatusCode >= "50" && request.RefRequestStatusCode < "90" { //
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติให้ใช้ยานพาหนะ"},
 		}
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "50", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 	}
 	if request.RefRequestStatusCode == "90" {
-
+		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "90", "ผู้ยกเลิกคำขอ")
 		if request.CanceledRequestRole == "vehicle-user" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ขอใช้ยานพาหนะ"},
@@ -338,6 +369,7 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 			}
 		}
+
 	}
 	c.JSON(http.StatusOK, request)
 }
@@ -580,10 +612,10 @@ func (h *BookingAdminHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserEmpID = vehicleUser.EmpID
 	request.VehicleUserEmpName = vehicleUser.FullName
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
-	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
-	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.TelInternal
-	request.VehicleUserMobilePhone = vehicleUser.TelMobile
+	request.VehicleUserDeptNameShort = funcs.GetDeptSAPShort(vehicleUser.DeptSAP)
+	request.VehicleUserDeptNameFull = funcs.GetDeptSAPFull(vehicleUser.DeptSAP)
+	//request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	//request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()

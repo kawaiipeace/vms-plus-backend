@@ -283,7 +283,6 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
-		Preload("DriverVendor").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
@@ -397,7 +396,6 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	fmt.Println(departmentWork)
 
 	request.DriverDeptSapShortWork = departmentWork.DeptShort
 	request.DriverDeptSapFullWork = departmentWork.DeptFull
@@ -466,9 +464,31 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	request.MasDriverUID = driver.MasDriverUID
 	request.MasDriverLicenseUID = driverLicense.MasDriverLicenseUID
 
-	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
+	//if exists driver_license_no update else create
+	if err := config.DB.Where("driver_license_no = ?", request.DriverLicenseNo).First(&models.VmsMasDriverLicense{}).Error; err != nil {
+		if err := config.DB.Save(&request).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	} else {
+		createRequest := models.VmsMasDriverLicenseRequest{
+			MasDriverLicenseUID:      uuid.New().String(),
+			CreatedAt:                time.Now(),
+			CreatedBy:                user.EmpID,
+			UpdatedAt:                time.Now(),
+			UpdatedBy:                user.EmpID,
+			IsDeleted:                "0",
+			IsActive:                 "1",
+			MasDriverUID:             driver.MasDriverUID,
+			DriverLicenseNo:          request.DriverLicenseNo,
+			DriverLicenseStartDate:   request.DriverLicenseStartDate,
+			DriverLicenseEndDate:     request.DriverLicenseEndDate,
+			RefDriverLicenseTypeCode: request.RefDriverLicenseTypeCode,
+		}
+		if err := config.DB.Save(&createRequest).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 
 	if err := config.DB.Find(&result).Error; err != nil {
@@ -859,8 +879,8 @@ func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Param search query string false "driver_name,driver_nickname,driver_dept_sap_short_name_work to search"
-// @Param start_date query string true "Start date (YYYY-MM-DD)"
-// @Param end_date query string true "End date (YYYY-MM-DD)"
+// @Param start_date query string true "Start date (YYYY-MM-DD)" default(2025-05-01)
+// @Param end_date query string true "End date (YYYY-MM-DD)" default(2025-05-31)
 // @Param work_type query string false "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')"
 // @Param ref_driver_status_code query string false "Filter by driver status code (comma-separated, e.g., '1,2')"
 // @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
@@ -888,23 +908,18 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 	}
 
 	var drivers []models.DriverTimeLine
+	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 
 	query := h.SetQueryRole(user, config.DB).
 		Table("public.vms_mas_driver AS d").
-		Select("*").
-		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
-		Where(`exists (select 1 from vms_trn_request r 
-			where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90'
-			AND r.is_pea_employee_driver = ? 
-			AND (r.reserve_start_datetime BETWEEN ? AND ? 
-			OR r.reserve_end_datetime BETWEEN ? AND ? 
-			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime 
-			OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))`,
-			"0", startDate, endDate, startDate, endDate, startDate, endDate)
+		Select("d.*, w_thismth.job_count job_count_this_month, w_thismth.total_days total_day_this_month, w_lastmth.job_count job_count_last_month, w_lastmth.total_days total_day_last_month").
+		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = d.driver_id AND w_thismth.is_deleted = ?", startDate.Year(), startDate.Month(), "0").
+		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
+		Where("d.is_deleted = ?", "0")
 
-	name := strings.ToUpper(c.Query("name"))
-	if name != "" {
-		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	search := strings.ToUpper(c.Query("search"))
+	if search != "" {
+		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if workType := c.Query("work_type"); workType != "" {
 		workTypes := strings.Split(workType, ",")
@@ -918,6 +933,7 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		isActiveValues := strings.Split(isActive, ",")
 		query = query.Where("is_active IN (?)", isActiveValues)
 	}
+
 	// Pagination
 	page := c.DefaultQuery("page", "1")
 	limit := c.DefaultQuery("limit", "10")
@@ -943,11 +959,10 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		return
 	}
 	for i := range drivers {
-		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", 22, 3)
-		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", 16, 2)
+		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayLastMonth, drivers[i].JobCountLastMonth)
+		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
 		if err := config.DB.Table("vms_trn_request").
-			Preload("TripDetails").
 			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
 			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
@@ -956,10 +971,24 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {
-			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
-				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
+			drivers[i].DriverTrnRequests[j].TripDetails = []models.VmsTrnTripDetail{
+				{
+					TrnTripDetailUID: uuid.New().String(),
+					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
+						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
+						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
+						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
+						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
+						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
+						TripStartMiles:       0,
+						TripEndMiles:         0,
+					},
+				},
 			}
-			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+
+			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode == "80" {
+				drivers[i].DriverTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
+			} else if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
 			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
@@ -970,7 +999,6 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		}
 	}
 	thaiMonths := []string{"ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."}
-	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 	lastMonth := fmt.Sprintf("%s%02d", thaiMonths[lastMonthDate.Month()-1], (lastMonthDate.Year()+543)%100)
 	c.JSON(http.StatusOK, gin.H{
 		"drivers":    drivers,
@@ -1039,7 +1067,7 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 				return birthdate
 			}(),
 			ContractNo:                 record["contract_no"],
-			MasVendorCode:              record["mas_vendor_code"],
+			VendorName:                 record["vendor_name"],
 			DriverDeptSapHire:          record["driver_dept_sap_hire"],
 			DriverDeptSapShortNameHire: record["driver_dept_sap_short_name_hire"],
 			DriverDeptSapWork:          record["driver_dept_sap_work"],
@@ -1081,7 +1109,10 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			IsDeleted:     "0",
 			IsActive:      "1",
 		}
-		drivers = append(drivers, driver)
+		//check if driver already exists
+		if err := config.DB.Where("driver_identification_no = ? AND start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.StartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
+			drivers = append(drivers, driver)
+		}
 	}
 
 	if err := config.DB.Create(&drivers).Error; err != nil {

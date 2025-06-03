@@ -25,9 +25,6 @@ var StatusNameMapReceivedKeyUser = map[string]string{
 }
 
 func (h *ReceivedKeyUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
 }
 func (h *ReceivedKeyUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
@@ -71,11 +68,14 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
 		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place ").
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place,"+
+			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = req.trn_request_uid").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 
-	query = query.Where("? in (created_request_emp_id,vehicle_user_emp_id)", user.EmpID)
 	query = query.Where("req.is_deleted = ?", "0")
 
 	// Apply additional filters (search, date range, etc.)
@@ -314,7 +314,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupPEA(c *gin.Context) {
 	request.ReceiverType = 2 // PEA
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
-	empUser := funcs.GetUserEmpInfo(user.EmpID)
+	empUser := funcs.GetUserEmpInfo(request.ReceiverPersonalId)
 	request.ReceiverPersonalId = empUser.EmpID
 	request.ReceiverFullname = empUser.FullName
 	request.ReceiverDeptSAP = empUser.DeptSAP

@@ -19,16 +19,10 @@ type DriverLicenseUserHandler struct {
 }
 
 func (h *DriverLicenseUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query.Where("created_request_emp_id = ?", user.EmpID)
 }
 
 func (h *DriverLicenseUserHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query
 }
 func (h *DriverLicenseUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
@@ -153,6 +147,23 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 		driver.NextLicenseStatus = StatusDriverAnnualLicense[driver.NextLicenseStatusCode]
 	}
 
+	//prev annual
+	var licensePrev models.VmsDriverLicenseAnnualResponse
+	queryPrev := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear-1)
+	errPrev := queryPrev.Order("ref_request_annual_driver_status_code").
+		First(&licensePrev).Error
+
+	if errPrev == nil {
+		driver.PrevTrnRequestAnnualDriverUID = licensePrev.TrnRequestAnnualDriverUID
+		driver.PrevAnnualYYYY = licensePrev.AnnualYYYY
+		driver.PrevLicenseStatusCode = licensePrev.RefRequestAnnualDriverStatusCode
+		driver.PrevLicenseStatus = StatusDriverAnnualLicense[driver.PrevLicenseStatusCode]
+	} else {
+		driver.PrevAnnualYYYY = annualYear - 1
+		driver.PrevLicenseStatusCode = "00"
+		driver.PrevLicenseStatus = StatusDriverAnnualLicense[driver.PrevLicenseStatusCode]
+	}
+
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 
@@ -179,6 +190,14 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input", "message": messages.ErrInvalidJSONInput.Error()})
+		return
+	}
+
+	checkQuery := config.DB.Where("created_request_emp_id = ? and annual_yyyy = ? and is_deleted = ? and ref_request_annual_driver_status_code <> ?", user.EmpID, request.AnnualYYYY, "0", "90")
+	var checkRequest models.VmsDriverLicenseAnnualRequest
+	err := checkQuery.First(&checkRequest).Error
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Request already exists", "message": messages.ErrBadRequest.Error()})
 		return
 	}
 	request.TrnRequestAnnualDriverUID = uuid.New().String()
@@ -364,21 +383,21 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
-			ActionRole:   "ผู้ขออนุมัติ",
-			EmpID:        request.CreatedRequestEmpID,
-			EmpName:      request.CreatedRequestEmpName,
-			EmpPosition:  request.CreatedRequestEmpPosition,
-			DeptSAP:      request.CreatedRequestDeptSap,
-			DeptSAPShort: request.CreatedRequestDeptSapNameShort,
-			DeptSAPFull:  request.CreatedRequestDeptSapNameFull,
-			PhoneNumber:  request.CreatedRequestPhoneNumber,
-			MobileNumber: request.CreatedRequestMobileNumber,
+			ActionRole:   "ผู้อนุมัติต้นสังกัด",
+			EmpID:        request.ConfirmedRequestEmpID,
+			EmpName:      request.ConfirmedRequestEmpName,
+			EmpPosition:  request.ConfirmedRequestEmpPosition,
+			DeptSAP:      request.ConfirmedRequestDeptSap,
+			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
+			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
+			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
+			MobileNumber: request.ConfirmedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "11" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด", ProgressDatetime: request.ConfirmedRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด", ProgressDatetime: request.RejectedRequestDatetime},
 			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
@@ -400,15 +419,15 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
-			ActionRole:   "ผู้อนุมัติต้นสังกัด",
-			EmpID:        request.ConfirmedRequestEmpID,
-			EmpName:      request.ConfirmedRequestEmpName,
-			EmpPosition:  request.ConfirmedRequestEmpPosition,
-			DeptSAP:      request.ConfirmedRequestDeptSap,
-			DeptSAPShort: request.ConfirmedRequestDeptSapShort,
-			DeptSAPFull:  request.ConfirmedRequestDeptSapFull,
-			PhoneNumber:  request.ConfirmedRequestPhoneNumber,
-			MobileNumber: request.ConfirmedRequestMobileNumber,
+			ActionRole:   "ผู้อนุมัติให้ทำหน้าที่ขับรถประจำปี",
+			EmpID:        request.ApprovedRequestEmpID,
+			EmpName:      request.ApprovedRequestEmpName,
+			EmpPosition:  request.ApprovedRequestEmpPosition,
+			DeptSAP:      request.ApprovedRequestDeptSap,
+			DeptSAPShort: request.ApprovedRequestDeptSapShort,
+			DeptSAPFull:  request.ApprovedRequestDeptSapFull,
+			PhoneNumber:  request.ApprovedRequestPhoneNumber,
+			MobileNumber: request.ApprovedRequestMobileNumber,
 		}
 	}
 	if request.RefRequestAnnualDriverStatusCode == "21" {

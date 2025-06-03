@@ -69,24 +69,32 @@ func CalculateAge(date time.Time) string {
 	return fmt.Sprintf("%d ปี %d เดือน", years, months)
 }
 
+func CalculateAgeInt(date time.Time) int {
+	now := time.Now()
+	// Subtract the registration year from the current year
+	age := now.Year() - date.Year()
+
+	// Adjust if the current date is before the registration date in the year
+	if now.YearDay() < date.YearDay() {
+		age--
+	}
+	return age
+}
+
 func GetEmpImage(empID string) string {
 	return fmt.Sprintf("https://pictureapi.pea.co.th/MyphotoAPI/api/v1/Main/GetPicImg?EmpCode=%s&Type=2&SType=2", empID)
 }
 
 func GetDuration(createdAt time.Time) string {
 	duration := time.Since(createdAt)
-
-	if duration.Hours() < 24 {
-		if duration.Hours() < 1 {
-			minutes := int(duration.Minutes())
-			return fmt.Sprintf("%d นาทีที่แล้ว", minutes)
-		}
-		hours := int(duration.Hours())
-		return fmt.Sprintf("%d ชั่วโมงที่แล้ว", hours)
+	switch {
+	case duration.Hours() < 1:
+		return fmt.Sprintf("%d นาทีที่แล้ว", int(duration.Minutes()))
+	case duration.Hours() < 24:
+		return fmt.Sprintf("%d ชั่วโมงที่แล้ว", int(duration.Hours()))
+	default:
+		return fmt.Sprintf("%d วันที่แล้ว", int(duration.Hours()/24))
 	}
-
-	days := int(duration.Hours() / 24)
-	return fmt.Sprintf("%d วันที่แล้ว", days)
 }
 
 // ParseCSV parses a CSV file and returns a slice of maps where each map represents a row with column names as keys.

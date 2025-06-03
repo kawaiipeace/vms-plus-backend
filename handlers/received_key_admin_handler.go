@@ -30,7 +30,7 @@ func (h *ReceivedKeyAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query
 	return query
 }
 func (h *ReceivedKeyAdminHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('50') and is_deleted = '0'")
+	return query.Where("ref_request_status_code in ('50','60','70') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -164,9 +164,9 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
 			requests[i].Can_Choose_Vehicle = true
 		}
-		if requests[i].TripType == 1 {
+		if requests[i].TripType == 0 {
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 2 {
+		} else if requests[i].TripType == 1 {
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}

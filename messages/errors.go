@@ -17,4 +17,5 @@ var (
 	ErrInvalidDate         = errors.New("วันที่ไม่ถูกต้อง")
 	ErrInvalidFileType     = errors.New("ประเภทไฟล์ไม่ถูกต้อง")
 	ErrUnauthorized        = errors.New("ไม่มีสิทธิ์เข้าถึง")
+	ErrInvalidRequest      = errors.New("คำขอไม่ถูกต้อง")
 )

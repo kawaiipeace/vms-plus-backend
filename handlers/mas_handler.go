@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -15,6 +17,20 @@ import (
 )
 
 type MasHandler struct {
+}
+
+// MasHandlerInfo godoc
+// @Summary Mas handler information
+// @Description This endpoint allows a user to get Mas handler information.
+// @Tags MAS
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Router /api/00-01-mas [get]
+func (h *MasHandler) MasHandlerInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Mas handler information",
+	})
 }
 
 // ListVehicleUser godoc
@@ -33,11 +49,11 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	search := c.Query("search")
 
 	request := userhub.ServiceListUserRequest{
-		ServiceCode:   "vms",
-		Search:        search,
-		BureauDeptSap: user.BureauDeptSap,
-		Role:          "vehicle-user",
-		Limit:         100,
+		ServiceCode: "vms",
+		Search:      search,
+		//BureauDeptSap: user.BureauDeptSap,
+		Role:  "vehicle-user",
+		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
 	// Sort lists to put the current user's emp_id first
@@ -214,28 +230,89 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param search query string false "Search by Employee ID or Full Name"
+// @Param emp_id query string true "EmpID"
 // @Router /api/mas/user-confirmer-users [get]
 func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, "*")
-	var lists []models.MasUserEmp
-	search := c.Query("search")
-
-	request := userhub.ServiceListUserRequest{
-		ServiceCode:   "vms",
-		Search:        search,
-		BureauDeptSap: user.BureauDeptSap,
-		//LevelCodes:    "M1,M2,M3",
-		Role:  "level1-approval",
-		Limit: 100,
+	empID := c.Query("emp_id")
+	if empID == "" {
+		empID = user.EmpID
 	}
-	lists, err := userhub.GetUserList(request)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	userInfo := funcs.GetUserEmpInfo(empID)
+	managers := funcs.GetUserManager(userInfo.DeptSAP)
+	list := []models.MasUserEmp{}
+	for _, manager := range managers {
+		if manager.Type == "L" && manager.LevelCode >= "M5" {
+			list = append(list, models.MasUserEmp{
+				EmpID:        strconv.Itoa(manager.EmpIDLeader),
+				FullName:     manager.EmpName,
+				Position:     manager.PlansTextShort,
+				DeptSAP:      strconv.Itoa(manager.DeptSAP),
+				DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+				DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+				ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+				IsEmployee:   true,
+			})
+		}
 	}
 
-	c.JSON(http.StatusOK, lists)
+	if len(list) == 0 {
+		for _, manager := range managers {
+			if manager.Type == "U" {
+				list = append(list, models.MasUserEmp{
+					EmpID:        strconv.Itoa(manager.EmpIDLeader),
+					FullName:     manager.EmpName,
+					Position:     manager.PlansTextShort,
+					DeptSAP:      strconv.Itoa(manager.DeptSAP),
+					DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+					DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+					ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+					IsEmployee:   true,
+				})
+			}
+		}
+	}
+
+	if len(list) == 0 && len(managers) > 0 {
+		upperManagers := funcs.GetUserManager(strconv.Itoa(managers[0].DeptUpper))
+		for _, manager := range upperManagers {
+			if manager.Type == "L" && manager.LevelCode >= "M5" {
+				list = append(list, models.MasUserEmp{
+					EmpID:        strconv.Itoa(manager.EmpIDLeader),
+					FullName:     manager.EmpName,
+					Position:     manager.PlansTextShort,
+					DeptSAP:      strconv.Itoa(manager.DeptSAP),
+					DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+					DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+					ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+					IsEmployee:   true,
+				})
+			}
+		}
+
+		if len(list) == 0 {
+			for _, manager := range upperManagers {
+				if manager.Type == "U" {
+					list = append(list, models.MasUserEmp{
+						EmpID:        strconv.Itoa(manager.EmpIDLeader),
+						FullName:     manager.EmpName,
+						Position:     manager.PlansTextShort,
+						DeptSAP:      strconv.Itoa(manager.DeptSAP),
+						DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+						DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+						ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+						IsEmployee:   true,
+					})
+				}
+			}
+		}
+	}
+	for i := range list {
+		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
+		list[i].TelMobile = empInfo.TelMobile
+		list[i].TelInternal = empInfo.TelInternal
+	}
+	c.JSON(http.StatusOK, list)
 }
 
 // ListAdminApprovalUser godoc
@@ -269,18 +346,18 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 	}
 
 	var empIDs []string
-	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != funcs.DefaultUUID() {
 		if err := config.DB.Table("vms_mas_carpool_admin").
-			Select("emp_uid").
+			Select("admin_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
-			Pluck("emp_uid", &empIDs).Error; err != nil {
+			Pluck("admin_emp_no", &empIDs).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
 		request := userhub.ServiceListUserRequest{
 			ServiceCode: "vms",
 			Search:      search,
-			EmpIDs:      empIDs,
+			EmpIDs:      strings.Join(empIDs, ","),
 			Limit:       100,
 		}
 		lists, err := userhub.GetUserList(request)
@@ -340,18 +417,19 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 	}
 
 	var empIDs []string
-	if result.MasCarpoolUID != "" && result.MasCarpoolUID == funcs.DefaultUUID() {
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != funcs.DefaultUUID() {
 		if err := config.DB.Table("vms_mas_carpool_approver").
-			Select("emp_uid").
+			Select("approver_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
-			Pluck("emp_uid", &empIDs).Error; err != nil {
+			Pluck("approver_emp_no", &empIDs).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
+		fmt.Println("empIDs", empIDs)
 		request := userhub.ServiceListUserRequest{
 			ServiceCode: "vms",
 			Search:      search,
-			EmpIDs:      empIDs,
+			EmpIDs:      strings.Join(empIDs, ","),
 			Limit:       100,
 		}
 		lists, err := userhub.GetUserList(request)
@@ -360,6 +438,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, lists)
+		return
 	} else {
 		var bureauDeptSap string
 		request := userhub.ServiceListUserRequest{
@@ -374,9 +453,10 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
 		c.JSON(http.StatusOK, lists)
+		return
 	}
-	c.JSON(http.StatusOK, []interface{}{})
 }
 
 // GetUserEmp godoc
@@ -513,36 +593,6 @@ func populateSubDepartments(department *models.VmsMasDepartmentTree, levels int)
 	}
 }
 
-// ListDriverVendor godoc
-// @Summary Retrieve the Driver Vendors
-// @Description This endpoint allows a user to retrieve Driver Vendors.
-// @Tags MAS
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Security AuthorizationAuth
-// @Param search query string false "Search by Vendor Code or Vendor Name"
-// @Router /api/mas/driver-vendors [get]
-func (h *MasHandler) ListDriverVendor(c *gin.Context) {
-	search := c.Query("search")
-	var vendors []models.VmsMasDriverVendor
-
-	query := config.DB
-	query = query.Where("is_deleted = ?", "0")
-	// Apply search filter if provided
-	if search != "" {
-		query = query.Where("mas_vendor_code ILIKE ? OR mas_vendor_name ILIKE ?", "%"+search+"%", "%"+search+"%")
-	}
-
-	// Execute query
-	if err := query.Order("mas_vendor_code").Find(&vendors).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve driver vendors", "message": messages.ErrInternalServer.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, vendors)
-}
-
 // ListDriverDepartment godoc
 // @Summary Retrieve the Driver Departments
 // @Description This endpoint allows a user to retrieve Driver Departments.
@@ -580,28 +630,10 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param search query string false "Search by Employee ID or Full Name"
+// @Param emp_id query string false "EmpID"
 // @Router /api/mas/user-confirmer-license-users [get]
 func (h *MasHandler) ListConfirmerLicenseUser(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, "*")
-	var lists []models.MasUserEmp
-	search := c.Query("search")
-
-	request := userhub.ServiceListUserRequest{
-		ServiceCode:   "vms",
-		Search:        search,
-		BureauDeptSap: user.BureauDeptSap,
-		//LevelCodes:    "M1,M2,M3",
-		Role:  "level1-approval",
-		Limit: 100,
-	}
-	lists, err := userhub.GetUserList(request)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, lists)
+	h.ListConfirmerUser(c)
 }
 
 // ListApprovalLicenseUser godoc
@@ -612,27 +644,54 @@ func (h *MasHandler) ListConfirmerLicenseUser(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param search query string false "Search by Employee ID or Full Name"
+// @Param emp_id query string false "EmpID"
 // @Router /api/mas/user-approval-license-users [get]
 func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 	user := funcs.GetAuthenUser(c, "*")
-	var lists []models.MasUserEmp
-	search := c.Query("search")
-
-	request := userhub.ServiceListUserRequest{
-		ServiceCode:  "vms",
-		Search:       search,
-		UpperDeptSap: user.DeptSAP,
-		Role:         "license-approval",
-		Limit:        100,
+	empID := c.Query("emp_id")
+	if empID == "" {
+		empID = user.EmpID
 	}
-	lists, err := userhub.GetUserList(request)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	userInfo := funcs.GetUserEmpInfo(empID)
+	managers := funcs.GetUserManager(userInfo.DeptSAP)
+	list := []models.MasUserEmp{}
+	for _, manager := range managers {
+		if manager.LevelCode == "S1" {
+			list = append(list, models.MasUserEmp{
+				EmpID:        strconv.Itoa(manager.EmpIDLeader),
+				FullName:     manager.EmpName,
+				Position:     manager.PlansTextShort,
+				DeptSAP:      strconv.Itoa(manager.DeptSAP),
+				DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+				DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+				ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+				IsEmployee:   true,
+			})
+		}
 	}
 
-	c.JSON(http.StatusOK, lists)
+	if len(list) == 0 {
+		for _, manager := range managers {
+			if manager.LevelCode == "M6" {
+				list = append(list, models.MasUserEmp{
+					EmpID:        strconv.Itoa(manager.EmpIDLeader),
+					FullName:     manager.EmpName,
+					Position:     manager.PlansTextShort,
+					DeptSAP:      strconv.Itoa(manager.DeptSAP),
+					DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+					DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+					ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+					IsEmployee:   true,
+				})
+			}
+		}
+	}
+	for i := range list {
+		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
+		list[i].TelMobile = empInfo.TelMobile
+		list[i].TelInternal = empInfo.TelInternal
+	}
+	c.JSON(http.StatusOK, list)
 }
 
 // ListHoliday godoc
