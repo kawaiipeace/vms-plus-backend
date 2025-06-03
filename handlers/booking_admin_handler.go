@@ -12,7 +12,6 @@ import (
 	"vms_plus_be/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -470,16 +469,6 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	request.HandoverUID = uuid.New().String()
-	request.ReceiverType = 0
-	request.CreatedBy = user.EmpID
-	request.CreatedAt = time.Now()
-	request.UpdatedBy = user.EmpID
-	request.UpdatedAt = time.Now()
-	if err := config.DB.Save(&request).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
-		return
-	}
 
 	requestStatus := models.VmsTrnRequestUpdateRecieivedKeyStatus{
 		RefRequestStatusCode: "40", //
@@ -914,6 +903,7 @@ func (h *BookingAdminHandler) UpdateVehicle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
