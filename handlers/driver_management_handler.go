@@ -283,7 +283,6 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
-		Preload("DriverVendor").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
