@@ -18,6 +18,7 @@ import (
 type DriverHandler struct {
 	Role string
 }
+//remove driver-vendor
 
 // DriverHandlerInfo godoc
 // @Summary Driver handler information
