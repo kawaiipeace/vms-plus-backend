@@ -252,10 +252,10 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
 	}
 	if carType != "" {
-		query = query.Where("car_type = ?", carType)
+		query = query.Where("CarTypeDetail = ?", carType)
 	}
 	if categoryCode != "" {
-		query = query.Where("ref_vehicle_type_code = ?", categoryCode)
+		query = query.Where("CarTypeDetail = ?", categoryCode)
 	}
 
 	// Count total records
