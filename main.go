@@ -292,7 +292,7 @@ func main() {
 	router.PUT("/api/driver-license-user/resend-license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.ResendDriverLicenseAnnual)
 
 	//DriverLicenseConfirmerHandler
-	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "license-confirmer"}
+	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "level1-approval"}
 	router.GET("/api/driver-license-confirmer/search-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.SearchRequests)
 	router.GET("/api/driver-license-confirmer/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.GetDriverLicenseAnnual)
 	router.PUT("/api/driver-license-confirmer/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualCanceled)
