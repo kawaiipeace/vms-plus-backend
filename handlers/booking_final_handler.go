@@ -466,14 +466,14 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
-			h.UpdateRecievedKeyUser(request.TrnRequestUID)
+
 		} else {
 			// Handle other errors
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to query key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 			return
 		}
 	}
-
+	h.UpdateRecievedKeyUser(request.TrnRequestUID)
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
 		"ผู้อนุมัติ อนุมัติคำขอแล้ว",
@@ -486,7 +486,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 }
 func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
 
-	var trnRequest models.VmsTrnRequestList
+	var trnRequest models.VmsTrnRequestResponse
 	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		return
 	}
@@ -503,7 +503,7 @@ func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
 	request.ReceiverMobilePhone = empUser.TelMobile
 	request.ReceiverDeskPhone = empUser.TelInternal
 
-	if err := config.DB.Updates(&request).Where("trn_request_uid = ?", trnRequestUID).Error; err != nil {
+	if err := config.DB.Save(&request).Error; err != nil {
 		return
 	}
 }
