@@ -485,7 +485,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 }
 func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
 
-	var trnRequest models.VmsTrnRequestResponse
+	var trnRequest models.VmsTrnRequestList
 	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		return
 	}
@@ -502,7 +502,7 @@ func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
 	request.ReceiverMobilePhone = empUser.TelMobile
 	request.ReceiverDeskPhone = empUser.TelInternal
 
-	if err := config.DB.Save(&request).Error; err != nil {
+	if err := config.DB.Updates(&request).Where("trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		return
 	}
 }
