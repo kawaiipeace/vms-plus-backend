@@ -495,7 +495,6 @@ func (VmsTrnRequestVehicle) TableName() string {
 
 // VmsTrnRequestApprovedWithRecieiveKey
 type VmsTrnRequestApprovedWithRecieiveKey struct {
-	HandoverUID              string    `gorm:"column:handover_uid;primaryKey" json:"-"`
 	TrnRequestUID            string    `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	ReceivedKeyPlace         string    `gorm:"column:appointment_location" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime time.Time `gorm:"column:appointment_start" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
@@ -508,7 +507,7 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 }
 
 func (VmsTrnRequestApprovedWithRecieiveKey) TableName() string {
-	return "public.vms_trn_vehicle_key_handover"
+	return "public.vms_trn_request"
 }
 
 // VmsTrnRequestDriver
