@@ -1073,11 +1073,11 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			DriverDeptSapWork:          record["driver_dept_sap_work"],
 			DriverDeptSapShortNameWork: record["driver_dept_sap_short_work"],
 			StartDate: func() time.Time {
-				startDate, _ := time.Parse("2006-01-02 15:04:05", record["start_date"])
+				startDate, _ := time.Parse("2006-01-02", record["start_date"])
 				return startDate
 			}(),
 			EndDate: func() time.Time {
-				endDate, _ := time.Parse("2006-01-02 15:04:05", record["end_date"])
+				endDate, _ := time.Parse("2006-01-02", record["end_date"])
 				return endDate
 			}(),
 			RefOtherUseCode: "0",
@@ -1087,11 +1087,11 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 				DriverLicenseNo:          record["driver_license_no"],
 				RefDriverLicenseTypeCode: record["ref_driver_license_type_code"],
 				DriverLicenseStartDate: func() time.Time {
-					startDate, _ := time.Parse("2006-01-02 15:04:05", record["driver_license_start_date"])
+					startDate, _ := time.Parse("2006-01-02", record["driver_license_start_date"])
 					return startDate
 				}(),
 				DriverLicenseEndDate: func() time.Time {
-					endDate, _ := time.Parse("2006-01-02 15:04:05", record["driver_license_end_date"])
+					endDate, _ := time.Parse("2006-01-02", record["driver_license_end_date"])
 					return endDate
 				}(),
 				CreatedBy: user.EmpID,
@@ -1109,15 +1109,17 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			IsDeleted:     "0",
 			IsActive:      "1",
 		}
+		fmt.Println(driver.DriverIdentificationNo, driver.StartDate)
 		//check if driver already exists
 		if err := config.DB.Where("driver_identification_no = ? AND start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.StartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
 			drivers = append(drivers, driver)
 		}
 	}
-
-	if err := config.DB.Create(&drivers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import drivers", "message": messages.ErrInternalServer.Error()})
-		return
+	if len(drivers) > 0 {
+		if err := config.DB.Create(&drivers).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import drivers", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Drivers imported successfully", "count": len(drivers)})
