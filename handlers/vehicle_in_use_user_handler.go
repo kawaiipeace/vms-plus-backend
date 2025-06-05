@@ -690,7 +690,7 @@ func (h *VehicleInUseUserHandler) GetVehicleAddFuelDetails(c *gin.Context) {
 	queryTrip := config.DB
 	queryTrip = queryTrip.Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUid, "0")
 	if search := c.Query("search"); search != "" {
-		queryTrip = query.Where("tax_invoice_no ILIKE ?", "%"+search+"%")
+		queryTrip = queryTrip.Where("tax_invoice_no ILIKE ?", "%"+search+"%")
 	}
 
 	var fuels []models.VmsTrnAddFuel

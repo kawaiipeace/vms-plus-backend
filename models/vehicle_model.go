@@ -18,6 +18,7 @@ type VmsMasVehicleList struct {
 	VehicleColor                     string `gorm:"column:vehicle_color" json:"vehicle_color"`
 	Seat                             int    `gorm:"column:Seat" json:"seat"`
 	IsAdminChooseDriver              string `json:"is_admin_choose_driver"`
+	CarpoolName                      string `gorm:"column:carpool_name" json:"-"`
 }
 
 func (VmsMasVehicleList) TableName() string {
