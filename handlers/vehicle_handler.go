@@ -238,9 +238,10 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleList
 	var total int64
 
-	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img")
+	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img,cp.carpool_name")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Where("v.mas_vehicle_uid IN (?)", masVehicleUIDs)
 	if searchText != "" {
@@ -266,7 +267,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
-		vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
+		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
+		} else {
+			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
+		}
 	}
 	// Respond with JSON
 	c.JSON(http.StatusOK, gin.H{

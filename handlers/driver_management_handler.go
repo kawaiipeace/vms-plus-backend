@@ -1198,7 +1198,7 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 	// Add header row
 	headerRow := sheet.AddRow()
 	headers := []string{
-		"รหัสพนักงานขับรถ", "ชื่อพนักงานขับรถ", "ชื่อเล่น", "รหัสประจำตัว",
+		"รหัสพนักงานขับรถ", "ชื่อพนักงานขับรถ", "ชื่อเล่น",
 		"หน่วยงาน (ย่อ)", "หน่วยงาน (เต็ม)", "วันเวลาเริ่มงาน", "วันเวลาสิ้นสุดงาน",
 		"ทะเบียนรถ", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)", "ประเภทรถ",
 		"วันเวลาเริ่มต้นการเดินทาง", "วันเวลาสิ้นสุดการเดินทาง", "สถานที่ออกเดินทาง", "สถานที่ถึง",
@@ -1212,10 +1212,9 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 	// Add data rows
 	for _, report := range driverWorkReports {
 		row := sheet.AddRow()
-		row.AddCell().Value = report.MasDriverUID
+		row.AddCell().Value = report.DriverID
 		row.AddCell().Value = report.DriverName
 		row.AddCell().Value = report.DriverNickname
-		row.AddCell().Value = report.DriverID
 		row.AddCell().Value = report.DriverDeptSapShortWork
 		row.AddCell().Value = report.DriverDeptSapFullWork
 		row.AddCell().Value = report.ReserveStartDatetime.Format("2006-01-02 15:04:05")

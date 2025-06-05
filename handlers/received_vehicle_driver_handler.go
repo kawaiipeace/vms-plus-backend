@@ -24,7 +24,7 @@ func (h *ReceivedVehicleDriverHandler) SetQueryRole(user *models.AuthenUserEmp, 
 	if user.EmpID == "" {
 		return query
 	}
-	return query.Where("created_request_emp_id = ? OR vehicle_user_emp_id = ?", user.EmpID, user.EmpID)
+	return query.Where("driver_emp_id = ?", user.EmpID)
 }
 func (h *ReceivedVehicleDriverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('51') and is_deleted = '0'")

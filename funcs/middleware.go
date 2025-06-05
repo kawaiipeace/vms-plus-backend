@@ -3,11 +3,12 @@ package funcs
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 	"vms_plus_be/config"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func ApiKeyMiddleware() gin.HandlerFunc {
@@ -19,13 +20,13 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 		}
 
 		if apiKey == "" {
-			c.JSON(401, gin.H{"error": "Missing API key"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key"})
 			c.Abort()
 			return
 		}
 
 		if apiKey != config.AppConfig.ApiKey {
-			c.JSON(403, gin.H{"error": "Invalid API key"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key"})
 			c.Abort()
 			return
 		}
@@ -45,20 +46,20 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 			apiKey = config.AppConfig.ApiKey
 		}
 		if apiKey == "" {
-			c.JSON(401, gin.H{"error": "Missing API key"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key"})
 			c.Abort()
 			return
 		}
 
 		if apiKey != config.AppConfig.ApiKey {
-			c.JSON(403, gin.H{"error": "Invalid API key"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key"})
 			c.Abort()
 			return
 		}
 
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(401, gin.H{"error": "Missing or invalid Authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
 			c.Abort()
 			return
 		}
@@ -72,7 +73,7 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(401, gin.H{"error": "Invalid JWT token", "message": config.AppConfig.JWTSecret})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token", "message": config.AppConfig.JWTSecret})
 			c.Abort()
 			return
 		}
@@ -83,7 +84,7 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		c.JSON(401, gin.H{"error": "Invalid JWT token claims"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token claims"})
 		c.Abort()
 	}
 }

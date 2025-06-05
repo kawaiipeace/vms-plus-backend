@@ -117,7 +117,7 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.ConfirmedRequestPosition = confirmUser.Position
 
 	request.IsAdminChooseDriver = "0"
-	request.RefRequestTypeCode = 0
+	request.RefRequestTypeCode = 1
 	request.IsHaveSubRequest = "0"
 	request.MasVehicleEvUID = ""
 

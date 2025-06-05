@@ -1516,8 +1516,8 @@ definitions:
   models.VmsTrnSatisfactionSurveyAnswers:
     properties:
       mas_satisfaction_survey_questions_code:
-        example: 1
-        type: integer
+        example: "1"
+        type: string
       survey_answer:
         example: 5
         type: integer

@@ -40,7 +40,7 @@ func (h *ReceivedKeyDriverHandler) SetQueryRole(user *models.AuthenUserEmp, quer
 	if user.EmpID == "" {
 		return query
 	}
-	return query.Where("created_request_emp_id = ?", user.EmpID)
+	return query.Where("driver_emp_id = ?", user.EmpID)
 }
 func (h *ReceivedKeyDriverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('50') and is_deleted = '0'")
