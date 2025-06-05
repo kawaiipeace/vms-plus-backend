@@ -196,6 +196,10 @@ func CheckMainCarpoolApprover(masCarpoolUID string) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/search [get]
 func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 

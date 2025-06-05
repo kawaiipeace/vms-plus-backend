@@ -12427,8 +12427,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "mas_satisfaction_survey_questions_code": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "1"
                 },
                 "survey_answer": {
                     "type": "integer",
