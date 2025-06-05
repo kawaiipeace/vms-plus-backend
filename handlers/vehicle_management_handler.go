@@ -75,8 +75,8 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_ref_vehicle_type AS rt ON rt.ref_vehicle_type_code = v.ref_vehicle_type_code").
 		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = d.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = v.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid").
+		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = v.mas_vehicle_uid AND mcv.is_deleted = '0'").
+		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid AND mc.is_deleted = '0'").
 		Joins("LEFT JOIN vms_ref_vehicle_status AS vs ON vs.ref_vehicle_status_code = d.ref_vehicle_status_code").
 		Where("v.is_deleted = ?", "0")
 
@@ -416,28 +416,22 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
 				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name, 
+				(select max(mc.carpool_name) from vms_mas_carpool mc, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = mc.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail,
 				v.vehicle_brand_name,v.vehicle_model_name,
 				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_detail`).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
 		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
 			startDate, endDate, startDate, endDate, startDate, endDate).
-		Joins("JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND ("+
-			"td.trip_start_datetime BETWEEN ? AND ? "+
-			"OR td.trip_end_datetime BETWEEN ? AND ? "+
-			"OR ? BETWEEN td.trip_start_datetime AND td.trip_end_datetime "+
-			"OR ? BETWEEN td.trip_start_datetime AND td.trip_end_datetime)",
-			startDate, endDate, startDate, endDate, startDate, endDate).
+		Joins("JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND td.is_deleted = '0'").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
-	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
+	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs).Debug()
 
 	if err := query.Find(&tripReports).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Internal server error"})
@@ -466,7 +460,7 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 	// Add data rows
 	for _, report := range tripReports {
 		row := sheet.AddRow()
-		row.AddCell().Value = report.MasVehicleUID
+		row.AddCell().Value = report.VehiclePEAID
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
@@ -535,7 +529,8 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
-				md.dept_short AS vehicle_dept_name, mc.carpool_name AS vehicle_carpool_name, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name, 
+				(select max(mc.carpool_name) from vms_mas_carpool mc, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = mc.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
 				v.vehicle_brand_name,v.vehicle_model_name,
 				af.add_fuel_date_time, af.mile, af.tax_invoice_date, af.tax_invoice_no,af.price_per_liter,af.sum_liter,af.sum_price,
 				(select ref_cost_type_name from vms_ref_cost_type where ref_cost_type_code = af.ref_cost_type_code) as cost_type_name,
@@ -543,11 +538,14 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 				(select ref_fuel_type_name_th from vms_ref_fuel_type where ref_fuel_type_id = af.ref_fuel_type_id) as fuel_type_name,
 				(select ref_payment_type_name from vms_ref_payment_type where ref_payment_type_code = af.ref_payment_type_code) as payment_type_name
 				`).
-		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Joins("LEFT JOIN vms_mas_department md ON md.dept_sap = d.vehicle_owner_dept_sap").
-		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = mc.mas_carpool_uid").
-		Joins("INNER JOIN vms_trn_add_fuel af ON af.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
-			"af.add_fuel_date_time BETWEEN ? AND ?)", startDate, endDate).
+		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+			"r.reserve_start_datetime BETWEEN ? AND ? "+
+			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
+			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
+			startDate, endDate, startDate, endDate, startDate, endDate).
+		Joins("INNER JOIN vms_trn_add_fuel af ON af.is_deleted = '0' AND af.trn_request_uid = r.trn_request_uid").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
 	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
@@ -579,7 +577,7 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	// Add data rows
 	for _, report := range fuelReports {
 		row := sheet.AddRow()
-		row.AddCell().Value = report.MasVehicleUID
+		row.AddCell().Value = report.VehiclePEAID
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull

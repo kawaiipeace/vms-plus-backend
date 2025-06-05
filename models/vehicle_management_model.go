@@ -91,6 +91,7 @@ func (VehicleTrnRequest) TableName() string {
 
 type VehicleReportTripDetail struct {
 	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	VehiclePEAID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
@@ -98,8 +99,8 @@ type VehicleReportTripDetail struct {
 	CarpoolName                      string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	VehicleCarTypeDetail             string    `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	VehicleMileage                   string    `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	TripStartDatetime                time.Time `gorm:"column:trip_start_datetime" json:"trip_start_datetime" example:"2025-03-26T08:00:00Z"`
-	TripEndDatetime                  time.Time `gorm:"column:trip_end_datetime" json:"trip_end_datetime" example:"2025-03-26T10:00:00Z"`
+	TripStartDatetime                time.Time `gorm:"column:trip_start_datetime;type:timestamp" json:"trip_start_datetime" example:"2025-03-26T08:00:00Z"`
+	TripEndDatetime                  time.Time `gorm:"column:trip_end_datetime;type:timestamp" json:"trip_end_datetime" example:"2025-03-26T10:00:00Z"`
 	TripDeparturePlace               string    `gorm:"column:trip_departure_place" json:"trip_departure_place" example:"Changi Airport"`
 	TripDestinationPlace             string    `gorm:"column:trip_destination_place" json:"trip_destination_place" example:"Marina Bay Sands"`
 	TripStartMiles                   int       `gorm:"column:trip_start_miles" json:"trip_start_miles" example:"5000"`
@@ -109,6 +110,7 @@ type VehicleReportTripDetail struct {
 
 type VehicleReportAddFuel struct {
 	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	VehiclePEAID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`

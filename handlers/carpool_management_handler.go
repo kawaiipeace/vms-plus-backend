@@ -77,8 +77,8 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 		(select count(*) from vms_mas_carpool_driver cpd where is_deleted='0' and cpd.mas_carpool_uid=cp.mas_carpool_uid) number_of_drivers,
 		(select count(*) from vms_mas_carpool_vehicle cpv where is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) number_of_vehicles,
 		(select count(*) from vms_mas_carpool_approver cpa where is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) number_of_approvers,
-		(select admin_emp_name from vms_mas_carpool_admin cpa where is_deleted='0' and is_main_admin='1' and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_emp_name,
-		(select dept_short from vms_mas_carpool_admin cpa,vms_mas_department md where cpa.is_deleted='0' and is_main_admin='1' and md.dept_sap=cpa.admin_dept_sap and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_dept_sap,
+		(select max(admin_emp_name) from vms_mas_carpool_admin cpa where is_deleted='0' and is_main_admin='1' and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_emp_name,
+		(select max(dept_short) from vms_mas_carpool_admin cpa,vms_mas_department md where cpa.is_deleted='0' and is_main_admin='1' and md.dept_sap=cpa.admin_dept_sap and cpa.mas_carpool_uid=cp.mas_carpool_uid) carpool_admin_dept_sap,
 		case carpool_type when '01' then 'สำนักงานใหญ่'
 			when '02' then (select dept_short from vms_mas_department md where md.dept_sap=cp.carpool_dept_sap)
 			when '03' then 
@@ -196,6 +196,10 @@ func CheckMainCarpoolApprover(masCarpoolUID string) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/search [get]
 func (h *CarpoolManagementHandler) SearchCarpools(c *gin.Context) {
+	funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))    // Default: page 1
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 
