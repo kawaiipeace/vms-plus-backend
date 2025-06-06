@@ -410,7 +410,7 @@ func main() {
 	router.GET("/api/files/:bucket/:file", uploadHandler.ViewFile)
 
 	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start server
 	port := strconv.Itoa(config.AppConfig.Port)
