@@ -16,3 +16,5 @@ RUN go mod download
 COPY . $APP_PATH
 
 USER 65532
+
+#
