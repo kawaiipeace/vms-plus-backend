@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"vms_plus_be/config"
@@ -14,20 +15,6 @@ import (
 
 type VehicleHandler struct {
 	Role string
-}
-
-// VehicleHandlerInfo godoc
-// @Summary Vehicle handler information
-// @Description This endpoint allows a user to get vehicle handler information.
-// @Tags Vehicle
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Router /api/01-01-vehicle [get]
-func (h *VehicleHandler) VehicleHandlerInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Vehicle handler information",
-	})
 }
 
 // SearchVehicles godoc
@@ -205,11 +192,13 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			adminChooseDriverMasCarpoolUIDs = append(adminChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 		}
 	}
-
+	fmt.Println("masVehicleUIDs", masVehicleUIDs)
+	fmt.Println("masCarpoolUIDs", masCarpoolUIDs)
+	fmt.Println("adminChooseDriverMasCarpoolUIDs", adminChooseDriverMasCarpoolUIDs)
 	//carpool
 	var carpools []models.VmsMasCarpoolCarBooking
 	queryCarpool := config.DB.Model(&models.VmsMasCarpoolCarBooking{})
-	queryCarpool = queryCarpool.Where("mas_carpool_uid IN (?)", masCarpoolUIDs)
+	queryCarpool = queryCarpool.Where("mas_carpool_uid IN (?) AND is_deleted = '0' AND is_active = '1'", masCarpoolUIDs)
 	queryCarpool.Preload("RefCarpoolChooseCar").
 		Table("vms_mas_carpool cp").
 		Find(&carpools)
@@ -243,7 +232,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
-	query = query.Where("v.mas_vehicle_uid IN (?)", masVehicleUIDs)
+	query = query.Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = '0'", masVehicleUIDs)
 	if searchText != "" {
 		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
 	}

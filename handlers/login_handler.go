@@ -25,20 +25,6 @@ import (
 type LoginHandler struct {
 }
 
-// LoginHandlerInfo godoc
-// @Summary Login handler information
-// @Description This endpoint allows a user to get login handler information.
-// @Tags Login
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Router /api/00-login [get]
-func (h *LoginHandler) LoginHandlerInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login handler information",
-	})
-}
-
 // RequestKeyCloak godoc
 // @Summary Request Keycloak authentication token
 // @Description This endpoint allows a user to request an authentication token from Keycloak for secure access.
@@ -147,6 +133,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				MobilePhone:   loginUsr.MobilePhone,
 				DeskPhone:     loginUsr.DeskPhone,
 				BusinessArea:  loginUsr.BusinessArea,
+				LevelCode:     loginUsr.LevelCode,
 				Roles:         loginUsr.Roles,
 				LoginBy:       "otp",
 				IsEmployee:    true,
@@ -306,6 +293,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 				MobilePhone:   loginUsr.MobilePhone,
 				DeskPhone:     loginUsr.DeskPhone,
 				BusinessArea:  loginUsr.BusinessArea,
+				LevelCode:     loginUsr.LevelCode,
 				Roles:         loginUsr.Roles,
 				LoginBy:       "otp",
 			}
@@ -545,6 +533,7 @@ func (h *LoginHandler) VerifyOTP(c *gin.Context) {
 			MobilePhone:   loginUsr.MobilePhone,
 			DeskPhone:     loginUsr.DeskPhone,
 			BusinessArea:  loginUsr.BusinessArea,
+			LevelCode:     loginUsr.LevelCode,
 			Roles:         loginUsr.Roles,
 			LoginBy:       "otp",
 			IsEmployee:    true,
@@ -742,6 +731,7 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 		if levelCodeSpecial.Exists {
 			user.LicenseStatusCode = "40"
 			user.LicenseStatus = "ใบอนุญาตทำหน้าที่ขับรถยนต์"
+			user.AnnualYYYY = time.Now().Year() + 543
 		} else {
 			var licenses []models.VmsDriverLicenseAnnualList
 			annualYear := time.Now().Year() + 543
@@ -770,6 +760,7 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 				}
 			}
 		}
+
 	}
 	c.JSON(http.StatusOK, user)
 }

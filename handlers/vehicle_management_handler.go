@@ -225,6 +225,7 @@ func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 // @Param search query string false "Search by vehicle license plate, brand, or model"
 // @Param vehicle_owner_dept_sap query string false "Filter by vehicle owner department SAP"
 // @Param vehicel_car_type_detail query string false "Filter by Car type"
+// @Param ref_timeline_status_id query string false "Filter by Timeline status (comma-separated, e.g., '1,2')"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/vehicle-management/timeline [get]
@@ -259,7 +260,6 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 	}
 
 	var vehicles []models.VehicleTimeLine
-
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
@@ -271,13 +271,17 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 				v.vehicle_brand_name,v.vehicle_model_name,
 				public.fn_get_vehicle_distance_two_months(v.mas_vehicle_uid, ?) AS vehicle_distance`, startDate).
 		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
-		Where("v.is_deleted = ?", "0").
-		Where("exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
-			"r.reserve_start_datetime BETWEEN ? AND ? "+
-			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
-			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
-			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))",
-			startDate, endDate, startDate, endDate, startDate, endDate)
+		Where("v.is_deleted = ?", "0")
+	if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+		refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+		query = query.Where(`exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND (
+					('1' in (?) AND r.ref_request_status_code < '50') OR
+					('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+					('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+					('4' in (?) AND r.ref_request_status_code = '80')
+				)
+			)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+	}
 
 	if search := c.Query("search"); search != "" {
 		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -321,10 +325,20 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 			vehicles[i].VehicleMileage = parts[3]
 		}
 		// Preload the vehicle requests for each vehicle
-		if err := config.DB.Table("vms_trn_request").
+		query := config.DB.Table("vms_trn_request r").
 			Preload("MasDriver").
 			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
-			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
+			Where("ref_request_status_code != '90'")
+		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+			query = query.Where(`
+					('1' in (?) AND r.ref_request_status_code < '50') OR
+					('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+					('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+					('4' in (?) AND r.ref_request_status_code = '80')
+				`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+		}
+		if err := query.Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}
@@ -346,9 +360,9 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 			}
 			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode == "80" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
-			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode <= "40" {
+			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "50" {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
-			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
+			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 0 {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
 			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 1 {
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ค้างแรม"

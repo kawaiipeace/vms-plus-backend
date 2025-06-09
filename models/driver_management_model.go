@@ -150,7 +150,7 @@ type VmsMasDriverResponse struct {
 	ContractNo                     string                      `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
 	DriverDeptSapHire              string                      `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"CON123456"`
 	DriverDeptSapShortNameHire     string                      `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire" example:"HR"`
-	VendorName                     string                      `gorm:"column:vender_name" json:"vender_name" example:"VENDOR123"`
+	VendorName                     string                      `gorm:"column:vendor_name" json:"vendor_name" example:"VENDOR123"`
 	DriverDeptSapWork              string                      `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_short_work" example:"กยจ."`
 	DriverDeptSapShortNameWork     string                      `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
 	ApprovedJobDriverStartDate     time.Time                   `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00Z"`

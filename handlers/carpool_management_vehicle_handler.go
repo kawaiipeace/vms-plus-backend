@@ -537,13 +537,16 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) d ON v.mas_vehicle_uid = d.mas_vehicle_uid").
 		Where("v.is_deleted = ?", "0").
 		Where("exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0' and cv.mas_carpool_uid = ?)", masCarpoolUID)
-		/*Where("exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND ("+
-		"r.reserve_start_datetime BETWEEN ? AND ? "+
-		"OR r.reserve_end_datetime BETWEEN ? AND ? "+
-		"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
-		"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime))",
-		startDate, endDate, startDate, endDate, startDate, endDate)
-		*/
+	if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+		refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+		query = query.Where(`exists (select 1 from vms_trn_request r where r.mas_vehicle_uid = v.mas_vehicle_uid AND r.ref_request_status_code != '90' AND (
+						('1' in (?) AND r.ref_request_status_code < '50') OR
+						('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+						('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+						('4' in (?) AND r.ref_request_status_code = '80')
+					)
+				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+	}
 
 	if search := c.Query("search"); search != "" {
 		query = query.Where("v.vehicle_license_plate ILIKE ? OR v.vehicle_brand_name ILIKE ? OR v.vehicle_model_name ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
@@ -587,10 +590,20 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 			vehicles[i].VehicleMileage = parts[3]
 		}
 		// Preload the vehicle requests for each vehicle
-		if err := config.DB.Table("vms_trn_request").
+		query := config.DB.Table("vms_trn_request r").
 			Preload("MasDriver").
 			Where("mas_vehicle_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", vehicles[i].MasVehicleUID, "0", startDate, endDate, startDate, endDate).
-			Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
+			Where("ref_request_status_code != '90'")
+		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+			query = query.Where(`
+					('1' in (?) AND r.ref_request_status_code < '50') OR
+					('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+					('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+					('4' in (?) AND r.ref_request_status_code = '80')
+				`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+		}
+		if err := query.Find(&vehicles[i].VehicleTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}
