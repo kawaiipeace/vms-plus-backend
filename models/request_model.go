@@ -513,10 +513,15 @@ func (VmsTrnRequestApprovedWithRecieiveKey) TableName() string {
 
 // VmsTrnRequestDriver
 type VmsTrnRequestDriver struct {
-	TrnRequestUID       string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	MasCarPoolDriverUID string    `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid" example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
-	UpdatedAt           time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy           string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID          string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	MasCarPoolDriverUID    string    `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid" example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
+	DriverEmpID            string    `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+	DriverEmpName          string    `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
+	DriverEmpDeptSAP       string    `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"B0002211"`
+	DriverEmpDeptNameShort string    `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short" example:"B0002211"`
+	DriverEmpDeptNameFull  string    `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full" example:"B0002211"`
+	UpdatedAt              time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy              string    `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnRequestDriver) TableName() string {

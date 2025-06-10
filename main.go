@@ -389,6 +389,7 @@ func main() {
 	router.GET("/api/ref/driver-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverStatus)
 	router.GET("/api/ref/cost-center", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCostCenter)
 	router.GET("/api/ref/vehicle-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleStatus)
+	router.GET("/api/ref/timeline-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListTimelineStatus)
 
 	//NotificationHandler
 	notificationHandler := handlers.NotificationHandler{}
@@ -410,7 +411,8 @@ func main() {
 	router.GET("/api/files/:bucket/:file", uploadHandler.ViewFile)
 
 	// Swagger documentation
-	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
+	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
 
 	// Start server
 	port := strconv.Itoa(config.AppConfig.Port)

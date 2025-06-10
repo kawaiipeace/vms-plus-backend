@@ -15,90 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/00-01-mas": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to get Mas handler information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MAS"
-                ],
-                "summary": "Mas handler information",
-                "responses": {}
-            }
-        },
-        "/api/00-login": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to get login handler information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Login"
-                ],
-                "summary": "Login handler information",
-                "responses": {}
-            }
-        },
-        "/api/01-01-vehicle": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to get vehicle handler information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Vehicle"
-                ],
-                "summary": "Vehicle handler information",
-                "responses": {}
-            }
-        },
-        "/api/01-02-driver": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to get driver handler information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Drivers"
-                ],
-                "summary": "Driver handler information",
-                "responses": {}
-            }
-        },
         "/api/booking-admin/menu-requests": {
             "get": {
                 "security": [
@@ -4142,6 +4058,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Filter by timeline status (comma-separated, e.g., '1,2')",
+                        "name": "ref_timeline_status_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Filter by is_active status (comma-separated, e.g., '1,0')",
                         "name": "is_active",
                         "in": "query"
@@ -5037,38 +4959,6 @@ const docTemplate = `{
                     "Login"
                 ],
                 "summary": "Log out the current user",
-                "responses": {}
-            }
-        },
-        "/api/mas/department-tree": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to retrieve the Department Tree.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MAS"
-                ],
-                "summary": "Retrieve the Department Tree",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by Department Upper",
-                        "name": "dept_upper",
-                        "in": "query"
-                    }
-                ],
                 "responses": {}
             }
         },
@@ -7222,6 +7112,30 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve the status of booking requests",
+                "responses": {}
+            }
+        },
+        "/api/ref/timeline-status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "This endpoint retrieves all timeline statuses.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "REF"
+                ],
+                "summary": "Retrieve all timeline statuses",
                 "responses": {}
             }
         },
@@ -10208,6 +10122,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by Car type",
                         "name": "vehicel_car_type_detail",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Timeline status (comma-separated, e.g., '1,2')",
+                        "name": "ref_timeline_status_id",
                         "in": "query"
                     },
                     {

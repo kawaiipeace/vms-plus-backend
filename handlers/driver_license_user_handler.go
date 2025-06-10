@@ -91,7 +91,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 	annualYear := time.Now().Year() + 543
 
 	var license models.VmsDriverLicenseAnnualResponse
-	query := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear)
+	query := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ? and ref_request_annual_driver_status_code <> ?", user.EmpID, "0", annualYear, "90")
 	err := query.Preload("DriverLicenseType").
 		Preload("DriverCertificateType").
 		Order("ref_request_annual_driver_status_code").
@@ -132,7 +132,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 
 	//next annual
 	var licenseNext models.VmsDriverLicenseAnnualResponse
-	queryNext := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear+1)
+	queryNext := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ? and ref_request_annual_driver_status_code <> ?", user.EmpID, "0", annualYear+1, "90")
 	errNext := queryNext.Order("ref_request_annual_driver_status_code").
 		First(&licenseNext).Error
 
@@ -149,7 +149,7 @@ func (h *DriverLicenseUserHandler) GetLicenseCard(c *gin.Context) {
 
 	//prev annual
 	var licensePrev models.VmsDriverLicenseAnnualResponse
-	queryPrev := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ?", user.EmpID, "0", annualYear-1)
+	queryPrev := config.DB.Where("created_request_emp_id = ? and is_deleted = ? and annual_yyyy = ? and ref_request_annual_driver_status_code <> ?", user.EmpID, "0", annualYear-1, "90")
 	errPrev := queryPrev.Order("ref_request_annual_driver_status_code").
 		First(&licensePrev).Error
 
@@ -251,6 +251,10 @@ func (h *DriverLicenseUserHandler) CreateDriverLicenseAnnual(c *gin.Context) {
 
 	request.RequestAnnualDriverNo = fmt.Sprintf("RAD%09d", nextNumber)
 
+	if user.IsLevelM5 == "1" {
+		request.RefRequestAnnualDriverStatusCode = "20"
+	}
+
 	if err := config.DB.Create(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver license annual record", "message": messages.ErrInternalServer.Error()})
 		return
@@ -330,6 +334,9 @@ func (h *DriverLicenseUserHandler) ResendDriverLicenseAnnual(c *gin.Context) {
 	request.ApprovedRequestPhoneNumber = approveUser.TelInternal
 
 	request.RefRequestAnnualDriverStatusCode = "10"
+	if user.IsLevelM5 == "1" {
+		request.RefRequestAnnualDriverStatusCode = "20"
+	}
 	request.RejectedRequestEmpPosition = existsRequest.RejectedRequestEmpPosition
 	request.CanceledRequestEmpPosition = existsRequest.CanceledRequestEmpPosition
 
@@ -466,6 +473,7 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			MobileNumber: request.ApprovedRequestMobileNumber,
 		}
 	}
+
 	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.CreatedRequestEmpID {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "2", ProgressName: "ยกเลิก", ProgressDatetime: request.CanceledRequestDatetime},
@@ -481,9 +489,7 @@ func (h *DriverLicenseUserHandler) GetDriverLicenseAnnual(c *gin.Context) {
 			PhoneNumber:  request.CreatedRequestPhoneNumber,
 			MobileNumber: request.CreatedRequestMobileNumber,
 		}
-	}
-	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.ConfirmedRequestEmpID {
-
+	} else if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.ConfirmedRequestEmpID {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด", ProgressDatetime: request.CanceledRequestDatetime},
 		}

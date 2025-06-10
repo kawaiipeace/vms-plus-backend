@@ -15,6 +15,7 @@ type MasUserEmp struct {
 	BureauDeptSap string `gorm:"column:bureau_dept_sap" json:"bureau_dept_sap"`
 	BusinessArea  string `gorm:"column:business_area" json:"business_area"`
 	ImageUrl      string `gorm:"column:image_url" json:"image_url"`
+	LevelCode     string `gorm:"column:level_code" json:"level_code"`
 	IsEmployee    bool   `gorm:"column:is_employee" json:"is_employee"`
 }
 
