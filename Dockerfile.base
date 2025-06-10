@@ -1,11 +1,20 @@
 FROM gitlab.pea.co.th:443/developer/vms-plus/api/dependency_proxy/containers/golang:1.24-alpine
 
-WORKDIR /app
+ARG APP_PATH=/app
 
-COPY go.mod .
+WORKDIR $APP_PATH
 
-COPY go.sum .
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# Ensure Go modules are enabled
+ENV GO111MODULE=on
+
+COPY . .
 
 RUN go mod download
 
+COPY . $APP_PATH
+
 USER 65532
+
+#

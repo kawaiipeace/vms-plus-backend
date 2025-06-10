@@ -18,6 +18,7 @@ import (
 type DriverHandler struct {
 	Role string
 }
+//remove driver-vendor
 
 // GetDrivers godoc
 // @Summary Get drivers by name with pagination
