@@ -20,20 +20,6 @@ type DriverHandler struct {
 }
 //remove driver-vendor
 
-// DriverHandlerInfo godoc
-// @Summary Driver handler information
-// @Description This endpoint allows a user to get driver handler information.
-// @Tags Drivers
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Router /api/01-02-driver [get]
-func (h *VehicleHandler) DriverHandlerInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Driver handler information",
-	})
-}
-
 // GetDrivers godoc
 // @Summary Get drivers by name with pagination
 // @Description Get a list of drivers filtered by name with pagination

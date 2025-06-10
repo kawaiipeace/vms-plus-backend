@@ -375,3 +375,34 @@ func (h *RefHandler) ListDriverStatus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, lists)
 }
+
+// ListTimelineStatus godoc
+// @Summary Retrieve all timeline statuses
+// @Description This endpoint retrieves all timeline statuses.
+// @Tags REF
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Router /api/ref/timeline-status [get]
+func (h *RefHandler) ListTimelineStatus(c *gin.Context) {
+	var lists []models.VmsRefTimelineStatus
+	lists = append(lists, models.VmsRefTimelineStatus{
+		RefTimelineStatusID:   "1",
+		RefTimelineStatusName: "รออนุมัติ",
+	})
+	lists = append(lists, models.VmsRefTimelineStatus{
+		RefTimelineStatusID:   "2",
+		RefTimelineStatusName: "ไป-กลับ",
+	})
+	lists = append(lists, models.VmsRefTimelineStatus{
+		RefTimelineStatusID:   "3",
+		RefTimelineStatusName: "ค้างแรม",
+	})
+	lists = append(lists, models.VmsRefTimelineStatus{
+		RefTimelineStatusID:   "4",
+		RefTimelineStatusName: "เสร็จสิ้น",
+	})
+
+	c.JSON(http.StatusOK, lists)
+}

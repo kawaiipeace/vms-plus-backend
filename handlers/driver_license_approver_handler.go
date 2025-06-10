@@ -21,6 +21,7 @@ type DriverLicenseApproverHandler struct {
 
 var LicenseStatusNameMapApprover = map[string]string{
 	"20": "รออนุมัติ",
+	"21": "ตีกลับคำขอ",
 	"30": "อนุมัติ",
 	"90": "ยกเลิกคำขอ",
 }
@@ -59,6 +60,20 @@ func (h *DriverLicenseApproverHandler) MenuRequests(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
+	}
+	for i := range summary {
+		if summary[i].RefRequestStatusCode == "00" {
+			//get count from vms_trn_request_annual_driver
+			var count int64
+			query := h.SetQueryRole(user, config.DB)
+			query = query.Table("vms_trn_request_annual_driver").Where("is_deleted = ?", "0")
+			if err := query.Count(&count).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+			summary[i].Count = int(count)
+			summary[i].RefRequestStatusName = "คำขออนุมัติทำหน้าที่ขับรถยนต์"
+		}
 	}
 	sort.Slice(summary, func(i, j int) bool {
 		return summary[i].RefRequestStatusCode > summary[j].RefRequestStatusCode

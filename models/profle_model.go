@@ -31,6 +31,7 @@ type AuthenUserEmp struct {
 	LoginBy                   string   `gorm:"-" json:"login_by"`
 	IsEmployee                bool     `gorm:"-" json:"is_employee"`
 	LevelCode                 string   `gorm:"-" json:"level_code"`
+	IsLevelM5                 string   `gorm:"-" json:"is_level_m5"`
 }
 
 func (AuthenUserEmp) TableName() string {

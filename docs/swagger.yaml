@@ -1554,58 +1554,6 @@ info:
   title: VMS_PLUS
   version: "1.0"
 paths:
-  /api/00-01-mas:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to get Mas handler information.
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Mas handler information
-      tags:
-      - MAS
-  /api/00-login:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to get login handler information.
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Login handler information
-      tags:
-      - Login
-  /api/01-01-vehicle:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to get vehicle handler information.
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Vehicle handler information
-      tags:
-      - Vehicle
-  /api/01-02-driver:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to get driver handler information.
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Driver handler information
-      tags:
-      - Drivers
   /api/booking-admin/menu-requests:
     get:
       consumes:
@@ -4160,6 +4108,10 @@ paths:
         in: query
         name: ref_driver_status_code
         type: string
+      - description: Filter by timeline status (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_timeline_status_id
+        type: string
       - description: Filter by is_active status (comma-separated, e.g., '1,0')
         in: query
         name: is_active
@@ -4738,25 +4690,6 @@ paths:
       summary: Log out the current user
       tags:
       - Login
-  /api/mas/department-tree:
-    get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to retrieve the Department Tree.
-      parameters:
-      - description: Filter by Department Upper
-        in: query
-        name: dept_upper
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Retrieve the Department Tree
-      tags:
-      - MAS
   /api/mas/driver-departments:
     get:
       consumes:
@@ -6095,6 +6028,20 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Retrieve the status of booking requests
+      tags:
+      - REF
+  /api/ref/timeline-status:
+    get:
+      consumes:
+      - application/json
+      description: This endpoint retrieves all timeline statuses.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Retrieve all timeline statuses
       tags:
       - REF
   /api/ref/vehicle-img-side:
@@ -7954,6 +7901,10 @@ paths:
       - description: Filter by Car type
         in: query
         name: vehicel_car_type_detail
+        type: string
+      - description: Filter by Timeline status (comma-separated, e.g., '1,2')
+        in: query
+        name: ref_timeline_status_id
         type: string
       - description: 'Page number (default: 1)'
         in: query

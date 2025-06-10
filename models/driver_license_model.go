@@ -72,6 +72,7 @@ type VmsDriverLicenseAnnualList struct {
 	AnnualYYYY                       int       `gorm:"column:annual_yyyy" json:"annual_yyyy" example:"2568"`
 	CreatedRequestDatetime           time.Time `gorm:"column:created_request_datetime" json:"created_request_datetime"`
 	CreatedRequestEmpID              string    `gorm:"column:created_request_emp_id" json:"created_request_emp_id"`
+	CreatedRequestEmpPosition        string    `gorm:"column:created_request_emp_position" json:"created_request_emp_position"`
 	CreatedRequestEmpName            string    `gorm:"column:created_request_emp_name" json:"created_request_emp_name"`
 	CreatedRequestDeptSapNameShort   string    `gorm:"column:created_request_dept_sap_name_short" json:"created_request_dept_sap_name_short"`
 	CreatedRequestDeptSapNameFull    string    `gorm:"column:created_request_dept_sap_name_full" json:"created_request_dept_sap_name_full"`
