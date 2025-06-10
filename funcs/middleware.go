@@ -20,13 +20,13 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 		}
 
 		if apiKey == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key", "message": "กรุณาระบุ API key"})
 			c.Abort()
 			return
 		}
 
 		if apiKey != config.AppConfig.ApiKey {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key", "message": "API key ไม่ถูกต้อง"})
 			c.Abort()
 			return
 		}
@@ -46,20 +46,20 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 			apiKey = config.AppConfig.ApiKey
 		}
 		if apiKey == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing API key", "message": "กรุณาระบุ API key"})
 			c.Abort()
 			return
 		}
 
 		if apiKey != config.AppConfig.ApiKey {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid API key", "message": "API key ไม่ถูกต้อง"})
 			c.Abort()
 			return
 		}
 
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header", "message": "กรุณาระบุ Authorization header"})
 			c.Abort()
 			return
 		}
@@ -73,7 +73,7 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token", "message": config.AppConfig.JWTSecret})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token", "message": "token ไม่ถูกต้อง"})
 			c.Abort()
 			return
 		}
@@ -84,7 +84,7 @@ func ApiKeyAuthenMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token claims"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid JWT token claims", "message": "token ไม่ถูกต้อง"})
 		c.Abort()
 	}
 }

@@ -54,6 +54,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 		Model(&models.VmsMasCarpoolDriverDetail{}).
 		Select(
 			`d.mas_driver_uid,
+			cpd.mas_carpool_driver_uid,
+			cpd.mas_carpool_uid,
 			d.driver_image,
 			d.driver_name,
 			d.driver_nickname,
@@ -76,7 +78,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 			l.driver_license_no
 	`).
 		Joins("LEFT JOIN vms_mas_driver_license l ON l.mas_driver_uid = d.mas_driver_uid").
-		Where("d.is_deleted = ? AND exists(select 1 from vms_mas_carpool_driver cpd where cpd.mas_driver_uid = d.mas_driver_uid AND cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?)", "0", masCarpoolUID, "0")
+		Joins("INNER JOIN vms_mas_carpool_driver cpd ON cpd.mas_driver_uid = d.mas_driver_uid and cpd.mas_carpool_uid = ? AND cpd.is_deleted = ?", masCarpoolUID, "0").
+		Where("d.is_deleted = ?", "0")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -113,6 +116,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 	}
 	for i := range drivers {
 		funcs.TrimStringFields(&drivers[i])
+		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 	}
 	if len(drivers) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -494,6 +498,16 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
 		Where("d.is_deleted = ?", "0")
 
+	if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+		refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+		query = query.Where(`exists (select 1 from vms_trn_request r where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90' AND (
+							('1' in (?) AND r.ref_request_status_code < '50') OR
+							('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+							('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+							('4' in (?) AND r.ref_request_status_code = '80')
+						)
+					)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+	}
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
 		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
@@ -538,9 +552,20 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayLastMonth, drivers[i].JobCountLastMonth)
 		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
-		if err := config.DB.Table("vms_trn_request").
-			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
-			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
+		query := config.DB.Table("vms_trn_request r").
+			Where("mas_carpool_driver_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
+
+		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+			query = query.Where(`
+							('1' in (?) AND r.ref_request_status_code < '50') OR
+							('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR
+							('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+							('4' in (?) AND r.ref_request_status_code = '80')
+						`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+		}
+
+		if err := query.Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}

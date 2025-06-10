@@ -866,11 +866,9 @@ func (h *VehicleInspectionAdminHandler) UpdateReturnedVehicleImages(c *gin.Conte
 		request.VehicleImages[i].IsDeleted = "0"
 	}
 
-	if len(request.VehicleImages) > 0 {
-		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
-			return
-		}
+	if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
+		return
 	}
 
 	if err := config.DB.Save(&request).Error; err != nil {
@@ -1096,11 +1094,9 @@ func (h *VehicleInspectionAdminHandler) UpdateInspectVehicleImages(c *gin.Contex
 		request.VehicleImages[i].IsDeleted = "0"
 	}
 
-	if len(request.VehicleImages) > 0 {
-		if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageReturned{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
-			return
-		}
+	if err := config.DB.Where("trn_request_uid = ?", request.TrnRequestUID).Delete(&models.VehicleImageInspect{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vehicle images", "message": messages.ErrInternalServer.Error()})
+		return
 	}
 
 	if err := config.DB.Save(&request).Error; err != nil {

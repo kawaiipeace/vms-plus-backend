@@ -176,3 +176,8 @@ type VmsRefCostCenter struct {
 func (VmsRefCostCenter) TableName() string {
 	return "vms_mas_department"
 }
+
+type VmsRefTimelineStatus struct {
+	RefTimelineStatusID   string `gorm:"primaryKey;column:ref_timeline_status_id" json:"ref_timeline_status_id"`
+	RefTimelineStatusName string `gorm:"column:ref_timeline_status_name" json:"ref_timeline_status_name"`
+}

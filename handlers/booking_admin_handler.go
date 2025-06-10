@@ -856,7 +856,14 @@ func (h *BookingAdminHandler) UpdateDriver(c *gin.Context) {
 	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
-
+	var driver models.VmsMasDriver
+	if err := config.DB.First(&driver, "mas_driver_uid = ? AND is_deleted = '0'", request.MasCarPoolDriverUID).Error; err == nil {
+		request.DriverEmpID = driver.DriverID
+		request.DriverEmpName = driver.DriverName
+		request.DriverEmpDeptSAP = driver.DriverDeptSAP
+		request.DriverEmpDeptNameShort = funcs.GetDeptSAPShort(driver.DriverDeptSAP)
+		request.DriverEmpDeptNameFull = funcs.GetDeptSAPFull(driver.DriverDeptSAP)
+	}
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return

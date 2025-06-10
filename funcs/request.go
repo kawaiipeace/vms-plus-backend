@@ -46,7 +46,7 @@ func MenuRequests(statusMenuMap map[string]string, query *gorm.DB) ([]models.Vms
 		statusCodes := strings.Split(key, ",")
 		querySummary := query.Table("vms_trn_request").Session(&gorm.Session{})
 		var count int64
-		if err := querySummary.Where("vms_trn_request.ref_request_status_code IN ?", statusCodes).Debug().Count(&count).Error; err != nil {
+		if err := querySummary.Where("vms_trn_request.ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
 			return nil, err
 		}
 		groupedSummary[key] += int(count)
@@ -120,13 +120,6 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		request.MasVehicle.VehicleImgs = make([]string, 0)
 		for _, img := range vehicleImgs {
 			request.MasVehicle.VehicleImgs = append(request.MasVehicle.VehicleImgs, img.VehicleImgFile)
-		}
-	}
-	if len(request.MasVehicle.VehicleImgs) == 0 {
-		request.MasVehicle.VehicleImgs = []string{
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
 		}
 	}
 

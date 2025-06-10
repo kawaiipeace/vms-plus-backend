@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -19,20 +18,6 @@ import (
 type MasHandler struct {
 }
 
-// MasHandlerInfo godoc
-// @Summary Mas handler information
-// @Description This endpoint allows a user to get Mas handler information.
-// @Tags MAS
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Router /api/00-01-mas [get]
-func (h *MasHandler) MasHandlerInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Mas handler information",
-	})
-}
-
 // ListVehicleUser godoc
 // @Summary Retrieve the Vehicle Users
 // @Description This endpoint allows a user to retrieve Vehicle Users.
@@ -44,7 +29,7 @@ func (h *MasHandler) MasHandlerInfo(c *gin.Context) {
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/mas/user-vehicle-users [get]
 func (h *MasHandler) ListVehicleUser(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, "*")
+	funcs.GetAuthenUser(c, "*")
 	var lists []models.MasUserEmp
 	search := c.Query("search")
 
@@ -56,16 +41,6 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
-	// Sort lists to put the current user's emp_id first
-	sort.SliceStable(lists, func(i, j int) bool {
-		if lists[i].EmpID == user.EmpID {
-			return true
-		}
-		if lists[j].EmpID == user.EmpID {
-			return false
-		}
-		return false
-	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -425,7 +400,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch carpool admins", "message": err.Error()})
 			return
 		}
-		fmt.Println("empIDs", empIDs)
+
 		request := userhub.ServiceListUserRequest{
 			ServiceCode: "vms",
 			Search:      search,
@@ -549,16 +524,6 @@ func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-// ListDepartment godoc
-// @Summary Retrieve the Department Tree
-// @Description This endpoint allows a user to retrieve the Department Tree.
-// @Tags MAS
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Security AuthorizationAuth
-// @Param dept_upper query string false "Filter by Department Upper"
-// @Router /api/mas/department-tree [get]
 func (h *MasHandler) GetDepartmentTree(c *gin.Context) {
 	deptUpper := c.Query("dept_upper")
 

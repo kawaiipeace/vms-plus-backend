@@ -244,6 +244,12 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		CheckAdminApprovalRole(&empUser)
 		CheckFinalApprovalRole(&empUser)
 		//empUser.Roles = append(empUser.Roles, "license-approval")
+		if empUser.LevelCode == "M5" {
+			empUser.IsLevelM5 = "1"
+		} else {
+			empUser.IsLevelM5 = "0"
+		}
+
 		if roles == "*" {
 			return &empUser
 		}
@@ -281,10 +287,24 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		IsEmployee:    jwt.IsEmployee,
 		LevelCode:     jwt.LevelCode,
 	}
+	if roles == "level1-approval" {
+		CheckConfirmerRole(&empUser)
+	}
+	if roles == "license-approval" {
+		CheckApproverRole(&empUser)
+	}
+	if roles == "admin-approval" {
+		CheckAdminApprovalRole(&empUser)
+	}
+	if roles == "final-approval" {
+		CheckFinalApprovalRole(&empUser)
+	}
 
-	//empUser.Roles = []string{"vehicle-user", "level1-approval", "admin-approval", "admin-dept-approval", "final-approval", "license-confirmer",
-	//	"license-approval", "driver", "admin-super"}
-
+	if empUser.LevelCode == "M5" {
+		empUser.IsLevelM5 = "1"
+	} else {
+		empUser.IsLevelM5 = "0"
+	}
 	if roles == "*" {
 		return &empUser
 	}
@@ -296,6 +316,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 
 	c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 	c.Abort()
+
 	return &empUser
 }
 

@@ -883,6 +883,7 @@ func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 // @Param end_date query string true "End date (YYYY-MM-DD)" default(2025-05-31)
 // @Param work_type query string false "work type 1: ค้างคืน, 2: ไป-กลับ Filter by multiple work_type (comma-separated, e.g., '1,2')"
 // @Param ref_driver_status_code query string false "Filter by driver status code (comma-separated, e.g., '1,2')"
+// @Param ref_timeline_status_id query string false "Filter by timeline status (comma-separated, e.g., '1,2')"
 // @Param is_active query string false "Filter by is_active status (comma-separated, e.g., '1,0')"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
@@ -916,6 +917,17 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = d.driver_id AND w_thismth.is_deleted = ?", startDate.Year(), startDate.Month(), "0").
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
 		Where("d.is_deleted = ?", "0")
+
+	if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+		refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+		query = query.Where(`exists (select 1 from vms_trn_request r where r.mas_carpool_driver_uid = d.mas_driver_uid AND r.ref_request_status_code != '90' AND (
+						('1' in (?) AND r.ref_request_status_code < '50') OR
+						('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
+						('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+						('4' in (?) AND r.ref_request_status_code = '80')
+					)
+				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+	}
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -958,16 +970,29 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+
 	for i := range drivers {
 		drivers[i].WorkLastMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayLastMonth, drivers[i].JobCountLastMonth)
 		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
-		if err := config.DB.Table("vms_trn_request").
-			Where("mas_carpool_driver_uid = ? AND  is_pea_employee_driver = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", "0", startDate, endDate, startDate, endDate).
-			Find(&drivers[i].DriverTrnRequests).Error; err != nil {
+		query := config.DB.Table("vms_trn_request r").
+			Where("mas_carpool_driver_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
+
+		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
+			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")
+			query = query.Where(`
+							('1' in (?) AND r.ref_request_status_code < '50') OR
+							('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR
+							('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
+							('4' in (?) AND r.ref_request_status_code = '80')
+						`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+		}
+
+		if err := query.Find(&drivers[i].DriverTrnRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}
+
 		// Preload the driver status for each driver
 
 		for j := range drivers[i].DriverTrnRequests {

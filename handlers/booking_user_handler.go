@@ -44,9 +44,6 @@ var StatusNameMapUser = map[string]string{
 }
 
 func (h *BookingUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query.Where("created_request_emp_id = ?", user.EmpID)
 }
 
@@ -54,7 +51,7 @@ func (h *BookingUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('21','31','41') and is_deleted = '0'")
 }
 func (h *BookingUserHandler) SetQueryStatusCanCancel(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('20','21','31','41') and is_deleted = '0'")
+	return query.Where("ref_request_status_code in ('20','21','31','30','41') and is_deleted = '0'")
 }
 
 // CreateRequest godoc
@@ -146,6 +143,15 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		request.DriverEmpDeskPhone = driverUser.TelInternal
 		request.DriverEmpMobilePhone = driverUser.TelMobile
 		request.DriverEmpPosition = driverUser.Position
+	} else if request.MasCarPoolDriverUID != nil && *request.MasCarPoolDriverUID != "" {
+		var driver models.VmsMasDriver
+		if err := config.DB.First(&driver, "mas_driver_uid = ? AND is_deleted = '0'", request.MasCarPoolDriverUID).Error; err == nil {
+			request.DriverEmpID = driver.DriverID
+			request.DriverEmpName = driver.DriverName
+			request.DriverEmpDeptSAP = driver.DriverDeptSAP
+			request.DriverEmpDeptNameShort = funcs.GetDeptSAPShort(driver.DriverDeptSAP)
+			request.DriverEmpDeptNameFull = funcs.GetDeptSAPFull(driver.DriverDeptSAP)
+		}
 	}
 
 	//request.MasVehicleDepartmentUID = funcs.DefaultUUID()
