@@ -10,6 +10,7 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"gorm.io/gorm"
 
@@ -99,8 +100,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.TelInternal
-	request.VehicleUserMobilePhone = vehicleUser.TelMobile
+	//request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	//request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	confirmUser := funcs.GetUserEmpInfo(request.ConfirmedRequestEmpID)
@@ -118,18 +119,62 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.IsHaveSubRequest = "0"
 	request.MasVehicleEvUID = ""
 
-	if request.MasCarpoolUID == "" {
-		request.MasCarpoolUID = funcs.DefaultUUID()
+	if request.MasVehicleUID != nil && *request.MasVehicleUID != "" {
+		var vehicle models.VmsMasVehicleDepartment
+		if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
+			request.MasVehicleDepartmentUID = &vehicle.MasVehicleDepartmentUID
+		}
+		var carpool models.VmsMasCarpoolVehicle
+		if err := config.DB.First(&carpool, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
+			request.MasCarpoolUID = &carpool.MasCarpoolUID
+		}
+	}
+
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.MasCarpoolUID = nil
+	} else {
+		var carpool models.VmsMasCarpoolRequest
+		if err := config.DB.First(&carpool, "mas_carpool_uid = ? AND is_deleted = '0'", request.MasCarpoolUID).Error; err == nil {
+			request.MasCarpoolUID = &carpool.MasCarpoolUID
+			vehicleUser, _ := userhub.GetUserInfo(request.VehicleUserEmpID)
+
+			if carpool.RefCarpoolChooseCarID == 3 {
+				query := config.DB.Raw(`SELECT mas_vehicle_uid FROM fn_get_available_vehicles_view (?, ?, ?, ?) where mas_carpool_uid = ? and "CarTypeDetail" = ?`,
+					request.ReserveStartDatetime, request.ReserveEndDatetime, vehicleUser.BureauDeptSap, vehicleUser.BusinessArea, request.MasCarpoolUID, request.RequestedVehicleType)
+
+				var vehicle models.VmsMasVehicle
+				if err := query.First(&vehicle).
+					Select("mas_vehicle_uid").
+					Order("vehicle_mileage").
+					Limit(1).Error; err == nil && vehicle.MasVehicleUID != "" {
+					request.MasVehicleUID = &vehicle.MasVehicleUID
+				}
+			}
+			if carpool.RefCarpoolChooseDriverID == 3 {
+				query := config.DB.Raw(`SELECT mas_driver_uid FROM fn_get_available_drivers_view (?, ?, ?, ?,?) where mas_carpool_uid = ?`,
+					request.ReserveStartDatetime,
+					request.ReserveEndDatetime,
+					vehicleUser.BureauDeptSap,
+					vehicleUser.BusinessArea,
+					request.RefTripTypeCode,
+					request.MasCarpoolUID)
+
+				var driver models.VmsMasDriver
+				if err := query.Scan(&driver).
+					Select("mas_driver_uid, w_thismth.job_count, w_thismth.total_days").
+					Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = d.driver_id AND w_thismth.is_deleted = ?", request.ReserveStartDatetime.Year(), request.ReserveStartDatetime.Month(), "0").
+					Order("total_days, job_count").
+					Limit(1).Error; err == nil && driver.MasDriverUID != "" {
+					request.MasCarPoolDriverUID = &driver.MasDriverUID
+				}
+			}
+		}
 	}
 
 	if request.MasVehicleUID != nil && *request.MasVehicleUID != "" {
 		var vehicle models.VmsMasVehicleDepartment
 		if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
-			request.MasVehicleDepartmentUID = vehicle.MasVehicleDepartmentUID
-		}
-		var carpool models.VmsMasCarpoolVehicle
-		if err := config.DB.First(&carpool, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
-			request.MasCarpoolUID = carpool.MasCarpoolUID
+			request.MasVehicleDepartmentUID = &vehicle.MasVehicleDepartmentUID
 		}
 	}
 
@@ -138,11 +183,12 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		request.DriverEmpID = driverUser.EmpID
 		request.DriverEmpName = driverUser.FullName
 		request.DriverEmpDeptSAP = driverUser.DeptSAP
-		request.DriverEmpDeptNameShort = driverUser.DeptSAPShort
-		request.DriverEmpDeptNameShort = driverUser.DeptSAPFull
-		request.DriverEmpDeskPhone = driverUser.TelInternal
-		request.DriverEmpMobilePhone = driverUser.TelMobile
 		request.DriverEmpPosition = driverUser.Position
+		request.DriverEmpDeptNameShort = funcs.GetDeptSAPShort(driverUser.DeptSAP)
+		request.DriverEmpDeptNameFull = funcs.GetDeptSAPFull(driverUser.DeptSAP)
+		//request.DriverEmpDeskPhone = driverUser.TelInternal
+		//request.DriverEmpMobilePhone = driverUser.TelMobile
+
 	} else if request.MasCarPoolDriverUID != nil && *request.MasCarPoolDriverUID != "" {
 		var driver models.VmsMasDriver
 		if err := config.DB.First(&driver, "mas_driver_uid = ? AND is_deleted = '0'", request.MasCarPoolDriverUID).Error; err == nil {
@@ -154,7 +200,15 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		}
 	}
 
-	//request.MasVehicleDepartmentUID = funcs.DefaultUUID()
+	if request.MasVehicleDepartmentUID == nil || *request.MasVehicleDepartmentUID == "" {
+		request.MasVehicleDepartmentUID = nil
+	}
+	if request.MasVehicleUID == nil || *request.MasVehicleUID == "" {
+		request.MasVehicleUID = nil
+	}
+	if request.MasCarPoolDriverUID == nil || *request.MasCarPoolDriverUID == "" {
+		request.MasCarPoolDriverUID = nil
+	}
 
 	YY := time.Now().Year() + 543
 	BCode := vehicleUser.BusinessArea[0:1]
@@ -167,7 +221,9 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	//'V' + BCode + 'YY' + 'RA' + Running 6 หลัก เช่น VZ68RA000001
 	request.RequestNo = "V" + BCode + fmt.Sprintf("%02d", YY%100) + "RA" + fmt.Sprintf("%06d", running)
 	request.RefRequestStatusCode = "20" // รออนุมัติจากต้นสังกัด
-	if err := config.DB.Create(&request).Error; err != nil {
+
+	if err := config.DB.Create(&request).
+		Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request", "message": messages.ErrCreateRequest.Error()})
 		return
 	}
@@ -256,8 +312,12 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
-		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full").
+		Select(`req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name
+		`).
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=req.mas_vehicle_department_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)
@@ -597,8 +657,8 @@ func (h *BookingUserHandler) UpdateVehicleUser(c *gin.Context) {
 	request.VehicleUserDeptSAP = vehicleUser.DeptSAP
 	request.VehicleUserDeptNameShort = vehicleUser.DeptSAPShort
 	request.VehicleUserDeptNameFull = vehicleUser.DeptSAPFull
-	request.VehicleUserDeskPhone = vehicleUser.TelInternal
-	request.VehicleUserMobilePhone = vehicleUser.TelMobile
+	//request.VehicleUserDeskPhone = vehicleUser.TelInternal
+	//request.VehicleUserMobilePhone = vehicleUser.TelMobile
 	request.VehicleUserPosition = vehicleUser.Position
 
 	request.UpdatedAt = time.Now()

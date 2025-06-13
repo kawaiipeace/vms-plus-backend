@@ -118,11 +118,12 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param name query string false "Driver name to search"
 // @Param work_type query string false "work type to search (0: ไป-กลับ,1: ค้างคืน)" default(0)
+// @Param mas_carpool_uid query string false "MasCarpoolUID (mas_carpool_uid)"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search-booking [get]
@@ -137,7 +138,7 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default: 10 items per page
 	offset := (page - 1) * limit
 
-	empID := c.Param("emp_id")
+	empID := c.Query("emp_id")
 	bureauDeptSap := user.BureauDeptSap
 	businessArea := user.BusinessArea
 
@@ -158,6 +159,8 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	tripTypeCode := 0
 	if workType == "1" {
 		tripTypeCode = 1
+	} else {
+		tripTypeCode = 0
 	}
 	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_drivers_view (?, ?, ?, ?, ?)`,
 		startDate, endDate, bureauDeptSap, businessArea, tripTypeCode)
@@ -178,6 +181,10 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	query = query.Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = vms_mas_driver.driver_id AND w_thismth.is_deleted = ?", date.Year(), date.Month(), "0")
 	query = query.Where("vms_mas_driver.is_deleted = ? AND vms_mas_driver.is_replacement = ?", "0", "0")
 	query = query.Where("vms_mas_driver.mas_driver_uid IN (?)", masDriverUIDs)
+
+	if masCarpoolUID := c.Query("mas_carpool_uid"); masCarpoolUID != "" {
+		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
+	}
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"
@@ -185,9 +192,6 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
             driver_name ILIKE ? OR 
             driver_id ILIKE ?`,
 			searchTerm, searchTerm)
-	}
-	if workType := c.Query("work_type"); workType != "" {
-		query = query.Where("work_type = ?", workType)
 	}
 
 	var total int64
