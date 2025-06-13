@@ -5,22 +5,25 @@ import "time"
 // VmsTrnRequestAdminList
 type VmsTrnRequestAdminList struct {
 	VmsTrnRequestList
-	RefVehicleTypeName      string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
-	DriverEmpId             string    `gorm:"column:driver_emp_id" json:"driver_emp_id"`
-	MasVehicleUID           string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	MasCarpoolDriverUID     string    `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
-	DriverName              string    `gorm:"column:driver_name" json:"driver_name"`
-	DriverDeptName          string    `gorm:"column:driver_dept_name" json:"driver_dept_name"`
-	VehicleDeptName         string    `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
-	VehicleCarpoolName      string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
-	IsAdminChooseDriver     int       `gorm:"column:is_admin_choose_driver" json:"is_admin_choose_driver"`
-	IsAdminChooseVehicle    int       `gorm:"column:is_admin_choose_vehicle" json:"is_admin_choose_vehicle"`
-	IsPEAEmployeeDriver     int       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
-	TripType                int       `gorm:"column:trip_type" json:"trip_type" example:"1"`
-	TripTypeName            string    `gorm:"-" json:"trip_type_name" example:"1"`
-	Can_Choose_Vehicle      bool      `gorm:"-" json:"can_choose_vehicle"`
-	Can_Choose_Driver       bool      `gorm:"-" json:"can_choose_driver"`
-	CanceledRequestDatetime time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	RefVehicleTypeName       string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
+	DriverEmpId              string    `gorm:"column:driver_emp_id" json:"driver_emp_id"`
+	MasVehicleUID            *string   `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	MasCarpoolDriverUID      *string   `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
+	DriverName               string    `gorm:"column:driver_name" json:"driver_name"`
+	DriverDeptName           string    `gorm:"column:driver_dept_name" json:"driver_dept_name"`
+	VehicleDeptName          string    `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
+	VehicleCarpoolName       string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	IsAdminChooseDriver      int       `gorm:"column:is_admin_choose_driver" json:"-"`
+	IsAdminChooseVehicle     int       `gorm:"column:is_admin_choose_vehicle" json:"-"`
+	IsPEAEmployeeDriver      int       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
+	TripType                 int       `gorm:"column:trip_type" json:"trip_type" example:"1"`
+	TripTypeName             string    `gorm:"-" json:"trip_type_name" example:"1"`
+	CanChooseVehicle         bool      `gorm:"-" json:"can_choose_vehicle"`
+	CanChooseDriver          bool      `gorm:"-" json:"can_choose_driver"`
+	CanceledRequestDatetime  time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	DriverCarpoolName        string    `gorm:"column:driver_carpool_name" json:"-"`
+	RefCarpoolChooseCarID    int       `gorm:"column:ref_carpool_choose_car_id" json:"-"`
+	RefCarpoolChooseDriverID int       `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -32,6 +35,7 @@ type VmsTrnRequestList struct {
 	TrnRequestUid                    string    `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
 	RequestNo                        string    `gorm:"column:request_no" json:"request_no"`
 	VehicleUserEmpID                 string    `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
+	VehicleUserPosition              string    `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
 	VehicleUserEmpName               string    `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptNameShort         string    `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short" example:"Finance"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
@@ -49,6 +53,7 @@ type VmsTrnRequestList struct {
 	ReceivedKeyEndDatetime           time.Time `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
 	CanceledRequestDatetime          time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
+	CarpoolName                      string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 }
 
 func (VmsTrnRequestList) TableName() string {
@@ -109,8 +114,8 @@ type VmsTrnRequestRequest struct {
 	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
 	//Step 2
-	MasCarpoolUID           string  `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
-	MasVehicleDepartmentUID string  `gorm:"column:mas_vehicle_department_uid" json:"-" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
+	MasCarpoolUID           *string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
+	MasVehicleDepartmentUID *string `gorm:"column:mas_vehicle_department_uid" json:"-" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
 	RequestedVehicleType    string  `gorm:"column:requested_vehicle_type" json:"requested_vehicle_type" example:"Sedan"`
 	MasVehicleUID           *string `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid" example:"21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"`
 
@@ -251,6 +256,10 @@ type VmsTrnRequestResponse struct {
 	CanceledRequestReason    string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
 	ProgressRequestStatus    []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
 	ProgressRequestStatusEmp `gorm:"-" json:"progress_request_status_emp"`
+	MasCarpoolUID            *string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"389b0f63-4195-4ece-bf35-0011c2f5f28c"`
+	CarpoolName              string  `gorm:"column:carpool_name" json:"carpool_name"`
+	CanChooseVehicle         bool    `gorm:"-" json:"can_choose_vehicle"`
+	CanChooseDriver          bool    `gorm:"-" json:"can_choose_driver"`
 }
 
 func (VmsTrnRequestResponse) TableName() string {
@@ -341,14 +350,16 @@ func (VmsTrnRequestDocument) TableName() string {
 
 // VmsTrnRequestCost
 type VmsTrnRequestCost struct {
-	TrnRequestUID   string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	RefCostTypeCode int       `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
-	CostCenter      string    `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
-	WbsNo           string    `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
-	NetworkNo       string    `gorm:"column:network_no" json:"network_no" example:"NET12345"`
-	ActivityNo      string    `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
-	UpdatedAt       time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy       string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID   string `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	RefCostTypeCode int    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
+	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
+	WbsNo           string `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
+	NetworkNo       string `gorm:"column:network_no" json:"network_no" example:"NET12345"`
+	ActivityNo      string `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
+	PmOrderNo       string `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
+
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy string    `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnRequestCost) TableName() string {
@@ -480,13 +491,11 @@ func (VmsTrnRequestCanceled) TableName() string {
 
 // VmsTrnRequestVehicle
 type VmsTrnRequestVehicle struct {
-	TrnRequestUID                    string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"  example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
-	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"-"`
-	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"-"`
-	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"-"`
-	UpdatedAt                        time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy                        string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID           string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	MasVehicleUID           string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"  example:"a6c8a34b-9245-49c8-a12b-45fae77a4e7d"`
+	MasVehicleDepartmentUID string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
+	UpdatedAt               time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy               string    `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnRequestVehicle) TableName() string {

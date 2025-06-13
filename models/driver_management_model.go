@@ -167,6 +167,7 @@ type VmsMasDriverResponse struct {
 	IsActive                       string                      `gorm:"column:is_active" json:"-"`
 
 	IsReplacement         string             `gorm:"column:is_replacement" json:"is_replacement"`
+	ReplacementDriverUID  string             `gorm:"column:replaced_mas_driver_uid" json:"replacement_driver_uid"`
 	RefOtherUseCode       string             `gorm:"column:ref_other_use_code" json:"ref_other_use_code"`
 	RefDriverStatusCode   int                `gorm:"column:ref_driver_status_code" json:"-"`
 	DriverStatus          VmsRefDriverStatus `gorm:"foreignKey:RefDriverStatusCode;references:RefDriverStatusCode" json:"driver_status"`
@@ -328,7 +329,7 @@ func (VmsMasDriverDelete) TableName() string {
 type VmsMasDriverLayoffStatusUpdate struct {
 	MasDriverUID         string    `gorm:"primaryKey;column:mas_driver_uid" json:"mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
 	RefDriverStatusCode  int       `gorm:"column:ref_driver_status_code" json:"-"`
-	ReplacedMasDriverUid string    `gorm:"column:replaced_mas_driver_uid" json:"replaced_mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
+	ReplacedMasDriverUID string    `gorm:"column:replaced_mas_driver_uid" json:"replaced_mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
 	UpdatedAt            time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 }
@@ -341,7 +342,7 @@ func (VmsMasDriverLayoffStatusUpdate) TableName() string {
 type VmsMasDriverResignStatusUpdate struct {
 	MasDriverUID         string    `gorm:"primaryKey;column:mas_driver_uid" json:"mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
 	RefDriverStatusCode  int       `gorm:"column:ref_driver_status_code" json:"-"`
-	ReplacedMasDriverUid string    `gorm:"column:replaced_mas_driver_uid" json:"replaced_mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
+	ReplacedMasDriverUID string    `gorm:"column:replaced_mas_driver_uid" json:"replaced_mas_driver_uid" example:"8d14e6df-5d65-486e-b079-393d9c817a09"`
 	UpdatedAt            time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 }
@@ -384,22 +385,25 @@ type DriverTimeLine struct {
 }
 
 type DriverTrnRequest struct {
-	TrnRequestUID          string             `gorm:"column:trn_request_uid" json:"trn_request_uid"`
-	MasDriverUID           string             `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
-	RequestNo              string             `gorm:"column:request_no" json:"request_no"`
-	ReserveStartDatetime   time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime     time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
-	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatusName   string             `json:"ref_request_status_name"`
-	WorkPlace              string             `gorm:"column:work_place" json:"work_place"`
-	RefTripTypeCode        int                `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
-	VehicleUserEmpID       string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
-	VehicleUserEmpName     string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
-	VehicleUserDeptSAP     string             `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
-	VehicleUserDeskPhone   string             `gorm:"column:vehicle_user_desk_phone" json:"car_user_internal_contact_number" example:"1122"`
-	VehicleUserMobilePhone string             `gorm:"column:vehicle_user_mobile_phone" json:"car_user_mobile_contact_number" example:"0987654321"`
-	TripDetails            []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
-	TimeLineStatus         string             `gorm:"-" json:"time_line_status"`
+	TrnRequestUID            string             `gorm:"column:trn_request_uid" json:"trn_request_uid"`
+	MasDriverUID             string             `gorm:"column:mas_carpool_driver_uid" json:"mas_carpool_driver_uid"`
+	RequestNo                string             `gorm:"column:request_no" json:"request_no"`
+	ReserveStartDatetime     time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime       time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	RefRequestStatusCode     string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName     string             `json:"ref_request_status_name"`
+	WorkPlace                string             `gorm:"column:work_place" json:"work_place"`
+	RefTripTypeCode          int                `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
+	VehicleUserEmpID         string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
+	VehicleUserEmpName       string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserPosition      string             `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserDeptSAP       string             `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
+	VehicleUserDeptNameShort string             `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
+	VehicleUserDeptNameFull  string             `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_name_full"`
+	VehicleUserDeskPhone     string             `gorm:"column:vehicle_user_desk_phone" json:"car_user_internal_contact_number" example:"1122"`
+	VehicleUserMobilePhone   string             `gorm:"column:vehicle_user_mobile_phone" json:"car_user_mobile_contact_number" example:"0987654321"`
+	TripDetails              []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
+	TimeLineStatus           string             `gorm:"-" json:"time_line_status"`
 }
 
 func (DriverTrnRequest) TableName() string {

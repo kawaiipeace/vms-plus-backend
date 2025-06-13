@@ -463,35 +463,41 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	request.UpdatedBy = user.EmpID
 	request.MasDriverUID = driver.MasDriverUID
 	request.MasDriverLicenseUID = driverLicense.MasDriverLicenseUID
-
-	//if exists driver_license_no update else create
-	if err := config.DB.Where("driver_license_no = ?", request.DriverLicenseNo).First(&models.VmsMasDriverLicense{}).Error; err != nil {
-		if err := config.DB.Save(&request).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
-			return
-		}
-	} else {
-		createRequest := models.VmsMasDriverLicenseRequest{
-			MasDriverLicenseUID:      uuid.New().String(),
-			CreatedAt:                time.Now(),
-			CreatedBy:                user.EmpID,
-			UpdatedAt:                time.Now(),
-			UpdatedBy:                user.EmpID,
-			IsDeleted:                "0",
-			IsActive:                 "1",
-			MasDriverUID:             driver.MasDriverUID,
-			DriverLicenseNo:          request.DriverLicenseNo,
-			DriverLicenseStartDate:   request.DriverLicenseStartDate,
-			DriverLicenseEndDate:     request.DriverLicenseEndDate,
-			RefDriverLicenseTypeCode: request.RefDriverLicenseTypeCode,
-		}
-		if err := config.DB.Save(&createRequest).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
-			return
-		}
+	if err := config.DB.Save(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+		return
 	}
+	/*
+		//if exists driver_license_no update else create
+		if err := config.DB.Where("driver_license_no = ?", request.DriverLicenseNo).First(&models.VmsMasDriverLicense{}).Error; err != nil {
+			if err := config.DB.Save(&request).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+		} else {
+			createRequest := models.VmsMasDriverLicenseRequest{
+				MasDriverLicenseUID:      uuid.New().String(),
+				CreatedAt:                time.Now(),
+				CreatedBy:                user.EmpID,
+				UpdatedAt:                time.Now(),
+				UpdatedBy:                user.EmpID,
+				IsDeleted:                "0",
+				IsActive:                 "1",
+				MasDriverUID:             driver.MasDriverUID,
+				DriverLicenseNo:          request.DriverLicenseNo,
+				DriverLicenseStartDate:   request.DriverLicenseStartDate,
+				DriverLicenseEndDate:     request.DriverLicenseEndDate,
+				RefDriverLicenseTypeCode: request.RefDriverLicenseTypeCode,
+			}
+			if err := config.DB.Save(&createRequest).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+		}
+	*/
 
-	if err := config.DB.Find(&result).Error; err != nil {
+	if err := config.DB.First(&result).
+		Order("updated_at desc").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
@@ -773,7 +779,20 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	// update ReplacedMasDriverUID is_replacement to 0
+	if request.ReplacedMasDriverUID != "" {
+		if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid = ?", request.ReplacedMasDriverUID).
+			Update("is_replacement", "0").Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+	if request.RefDriverStatusCode == 4 {
+		if err := config.DB.Model(&driver).Update("is_active", "0").Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -826,6 +845,14 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 		return
 	}
 
+	// update ReplacedMasDriverUID is_replacement to 0
+	if request.ReplacedMasDriverUID != "" {
+		if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid = ?", request.ReplacedMasDriverUID).
+			Update("is_replacement", "0").Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
