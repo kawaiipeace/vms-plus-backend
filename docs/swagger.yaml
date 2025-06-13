@@ -990,6 +990,9 @@ definitions:
       network_no:
         example: NET12345
         type: string
+      pm_order_no:
+        example: PM123456
+        type: string
       ref_cost_type_code:
         example: 1
         type: integer
@@ -1014,6 +1017,21 @@ definitions:
     type: object
   models.VmsTrnRequestDriver:
     properties:
+      driver_emp_dept_name_full:
+        example: B0002211
+        type: string
+      driver_emp_dept_name_short:
+        example: B0002211
+        type: string
+      driver_emp_dept_sap:
+        example: B0002211
+        type: string
+      driver_emp_id:
+        example: "700001"
+        type: string
+      driver_emp_name:
+        example: John Doe
+        type: string
       mas_carpool_driver_uid:
         example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
         type: string
@@ -4203,9 +4221,8 @@ paths:
       parameters:
       - default: "700001"
         description: Employee ID (emp_id) default(700001)
-        in: path
+        in: query
         name: emp_id
-        required: true
         type: string
       - default: "2025-05-30 08:00:00"
         description: Start Date (YYYY-MM-DD HH:mm:ss)
@@ -4225,6 +4242,10 @@ paths:
         description: 'work type to search (0: ไป-กลับ,1: ค้างคืน)'
         in: query
         name: work_type
+        type: string
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: query
+        name: mas_carpool_uid
         type: string
       - description: 'Page number (default: 1)'
         in: query
@@ -7072,16 +7093,47 @@ paths:
       summary: Update Vehicle Travel List for a booking request
       tags:
       - Vehicle-in-use-user
-  /api/vehicle-info/{mas_vehicle_uid}:
+  /api/vehicle-info:
     get:
       consumes:
       - application/json
       description: Get vehicle info
       parameters:
       - description: MasVehicleUID (mas_vehicle_uid)
-        in: path
+        in: query
         name: mas_vehicle_uid
-        required: true
+        type: string
+      - description: Filter by MasCarpoolUID
+        in: query
+        name: mas_carpool_uid
+        type: string
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: query
+        name: emp_id
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
+      - default: "0"
+        description: 'work type to search (0: ไป-กลับ,1: ค้างคืน)'
+        in: query
+        name: work_type
+        type: string
+      - description: Search text (Vehicle Brand Name or License Plate)
+        in: query
+        name: search
+        type: string
+      - description: Filter by Vehicle Owner Department
+        in: query
+        name: vehicle_owner_dept
         type: string
       produces:
       - application/json
@@ -7785,9 +7837,8 @@ paths:
       parameters:
       - default: "700001"
         description: Employee ID (emp_id) default(700001)
-        in: path
+        in: query
         name: emp_id
-        required: true
         type: string
       - default: "2025-05-30 08:00:00"
         description: Start Date (YYYY-MM-DD HH:mm:ss)
@@ -7861,9 +7912,8 @@ paths:
       parameters:
       - default: "700001"
         description: Employee ID (emp_id) default(700001)
-        in: path
+        in: query
         name: emp_id
-        required: true
         type: string
       - default: "2025-05-30 08:00:00"
         description: Start Date (YYYY-MM-DD HH:mm:ss)
@@ -7908,6 +7958,61 @@ paths:
       summary: Search vehicles by brand, license plate, and filters
       tags:
       - Vehicle
+  /api/vehicle/search-booking-carpool:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves vehicles from carpools based on search text, department,
+        and car type filters
+      parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: query
+        name: emp_id
+        type: string
+      - default: "2025-05-30 08:00:00"
+        description: Start Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: start_date
+        type: string
+      - default: "2025-05-30 16:00:00"
+        description: End Date (YYYY-MM-DD HH:mm:ss)
+        in: query
+        name: end_date
+        type: string
+      - description: Search text (Vehicle Brand Name or License Plate)
+        in: query
+        name: search
+        type: string
+      - description: Filter by Vehicle Owner Department
+        in: query
+        name: vehicle_owner_dept
+        type: string
+      - description: Filter by MasCarpoolUID
+        in: query
+        name: mas_carpool_uid
+        type: string
+      - description: Filter by Car Type
+        in: query
+        name: car_type
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of records per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Search vehicel from carpools by brand, license plate, and filters
+      tags:
+      - Vehicle
   /api/vehicle/types:
     get:
       consumes:
@@ -7916,9 +8021,8 @@ paths:
       parameters:
       - default: "700001"
         description: Vehicle User EmpID (emp_id)
-        in: path
+        in: query
         name: emp_id
-        required: true
         type: string
       - default: "2025-05-30 08:00:00"
         description: Start Date (YYYY-MM-DD HH:mm:ss)
@@ -7933,6 +8037,10 @@ paths:
       - description: Filter by vehicle type name (partial match)
         in: query
         name: name
+        type: string
+      - description: Filter by mas_carpool_uid
+        in: query
+        name: mas_carpool_uid
         type: string
       produces:
       - application/json

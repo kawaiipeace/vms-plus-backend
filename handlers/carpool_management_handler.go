@@ -398,6 +398,13 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		}
 	}
 
+	//check exist carpool name
+	var existingCarpool models.VmsMasCarpoolList
+	if err := config.DB.Where("carpool_name = ? AND is_deleted = ?", carpool.CarpoolName, "0").First(&existingCarpool).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Carpool name already exists", "message": messages.ErrNotfound.Error() + " ชื่อกลุ่มรถที่ต้องการสร้างระบบมีอยู่ในระบบแล้ว"})
+		return
+	}
+
 	carpool.MasCarpoolUID = uuid.New().String()
 	carpool.IsHaveDriverForCarpool = "0"
 	if carpool.CarpoolType == "01" {
@@ -526,6 +533,17 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 	if len(carpool.CarPoolDrivers) > 0 {
 		if err := config.DB.Create(&carpool.CarPoolDrivers).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver: " + err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		//update vms_mas_driver set mas_carpool_uid
+		masDriverUIDs := []string{}
+		for i := range carpool.CarPoolDrivers {
+			masDriverUIDs = append(masDriverUIDs, carpool.CarPoolDrivers[i].MasDriverUID)
+		}
+		query := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid in (?)", masDriverUIDs).
+			Update("mas_carpool_uid", carpool.MasCarpoolUID)
+		if err := query.Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	}

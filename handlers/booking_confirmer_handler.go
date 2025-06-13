@@ -115,8 +115,12 @@ func (h *BookingConfirmerHandler) SearchRequests(c *gin.Context) {
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
-		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full").
+		Select(`req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+		fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
+		(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name
+		`).
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=req.mas_vehicle_department_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
 	query = query.Where("req.is_deleted = ?", "0")
 	// Apply additional filters (search, date range, etc.)

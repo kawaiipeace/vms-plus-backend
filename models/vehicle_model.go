@@ -11,14 +11,18 @@ type VmsMasVehicleList struct {
 	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 	VehicleBrandName                 string `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
 	VehicleModelName                 string `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	CarType                          string `gorm:"column:car_type" json:"car_type"`
+	CarType                          string `gorm:"column:CarTypeDetail" json:"car_type"`
+	VehiclePeaID                     string `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleOwnerDeptSAP              string `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
 	VehicleOwnerDeptShort            string `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
 	VehicleImg                       string `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
 	VehicleColor                     string `gorm:"column:vehicle_color" json:"vehicle_color"`
+	VehicleMileage                   int    `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	LastMonthMileage                 int    `gorm:"column:last_month_mileage" json:"last_month_mileage"`
 	Seat                             int    `gorm:"column:Seat" json:"seat"`
-	IsAdminChooseDriver              string `json:"is_admin_choose_driver"`
+	IsAdminChooseDriver              bool   `json:"is_admin_choose_driver"`
 	CarpoolName                      string `gorm:"column:carpool_name" json:"-"`
+	FleetCardNo                      string `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 }
 
 func (VmsMasVehicleList) TableName() string {
@@ -32,7 +36,8 @@ type VmsMasVehicleCarpoolList struct {
 	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 	VehicleBrandName                 string    `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
 	VehicleModelName                 string    `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	CarType                          string    `gorm:"column:car_type" json:"car_type"`
+	VehiclePeaID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	CarType                          string    `gorm:"column:CarTypeDetail" json:"car_type"`
 	VehicleOwnerDeptSAP              string    `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
 	VehicleOwnerDeptShort            string    `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
 	VehicleImg                       string    `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
@@ -45,7 +50,7 @@ type VmsMasVehicleCarpoolList struct {
 	RefVehicleStatusName             string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
 	Seat                             int       `gorm:"column:Seat" json:"seat"`
 	VehicleRegistrationDate          time.Time `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"`
-	IsAdminChooseDriver              string    `json:"is_admin_choose_driver"`
+	IsAdminChooseDriver              bool      `json:"is_admin_choose_driver"`
 }
 
 func (VmsMasVehicleCarpoolList) TableName() string {
@@ -75,10 +80,25 @@ type VmsMasCarpoolCarBooking struct {
 	CarpoolName           string                 `gorm:"column:carpool_name" json:"carpool_name"`
 	RefCarpoolChooseCarID int                    `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
 	RefCarpoolChooseCar   VmsRefCarpoolChooseCar `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"ref_carpool_choose_car"`
-	IsAdminChooseDriver   string                 `json:"is_admin_choose_driver"`
+	IsAdminChooseDriver   bool                   `json:"is_admin_choose_driver"`
 }
 
 func (VmsMasCarpoolCarBooking) TableName() string {
+	return "vms_mas_carpool"
+}
+
+// VmsMasCarpoolList
+type VmsMasCarpoolCarBookingResponse struct {
+	MasCarpoolUID            string                    `gorm:"primaryKey;column:mas_carpool_uid" json:"mas_carpool_uid"`
+	CarpoolName              string                    `gorm:"column:carpool_name" json:"carpool_name"`
+	RefCarpoolChooseCarID    int                       `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
+	RefCarpoolChooseCar      VmsRefCarpoolChooseCar    `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"ref_carpool_choose_car"`
+	RefCarpoolChooseDriverID int                       `gorm:"column:ref_carpool_choose_driver_id" json:"ref_carpool_choose_driver_id" example:"1"`
+	RefCarpoolChooseDriver   VmsRefCarpoolChooseDriver `gorm:"foreignKey:RefCarpoolChooseDriverID;references:RefCarpoolChooseDriverID" json:"ref_carpool_choose_driver"`
+	IsAdminChooseDriver      bool                      `json:"is_admin_choose_driver"`
+}
+
+func (VmsMasCarpoolCarBookingResponse) TableName() string {
 	return "vms_mas_carpool"
 }
 

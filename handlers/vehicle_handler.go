@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"vms_plus_be/config"
@@ -132,7 +131,7 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param search query string false "Search text (Vehicle Brand Name or License Plate)"
@@ -148,7 +147,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		return
 	}
 
-	empID := c.Param("emp_id")
+	empID := c.Query("emp_id")
 	bureauDeptSap := user.BureauDeptSap
 	businessArea := user.BusinessArea
 
@@ -182,6 +181,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	masVehicleUIDs := make([]string, 0)
 	masCarpoolUIDs := make([]string, 0)
 	adminChooseDriverMasCarpoolUIDs := make([]string, 0)
+	adminChooseDriverMasVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
 		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
 			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
@@ -190,11 +190,10 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		}
 		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 || vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
 			adminChooseDriverMasCarpoolUIDs = append(adminChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
+			adminChooseDriverMasVehicleUIDs = append(adminChooseDriverMasVehicleUIDs, vehicleCanBooking.MasVehicleUID)
 		}
 	}
-	fmt.Println("masVehicleUIDs", masVehicleUIDs)
-	fmt.Println("masCarpoolUIDs", masCarpoolUIDs)
-	fmt.Println("adminChooseDriverMasCarpoolUIDs", adminChooseDriverMasCarpoolUIDs)
+
 	//carpool
 	var carpools []models.VmsMasCarpoolCarBooking
 	queryCarpool := config.DB.Model(&models.VmsMasCarpoolCarBooking{})
@@ -205,9 +204,9 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 
 	for i := range carpools {
 		if funcs.Contains(adminChooseDriverMasCarpoolUIDs, carpools[i].MasCarpoolUID) {
-			carpools[i].IsAdminChooseDriver = "1"
+			carpools[i].IsAdminChooseDriver = true
 		} else {
-			carpools[i].IsAdminChooseDriver = "0"
+			carpools[i].IsAdminChooseDriver = false
 		}
 	}
 
@@ -227,7 +226,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleList
 	var total int64
 
-	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img,cp.carpool_name")
+	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,vd.vehicle_pea_id,vd.fleet_card_no,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img,cp.carpool_name")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
@@ -255,6 +254,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 
 	for i := range vehicles {
+		if funcs.Contains(adminChooseDriverMasVehicleUIDs, vehicles[i].MasVehicleUID) {
+			vehicles[i].IsAdminChooseDriver = true
+		} else {
+			vehicles[i].IsAdminChooseDriver = false
+		}
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
 			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
@@ -273,6 +277,116 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		},
 		"vehicles": vehicles,
 		"carpools": carpools,
+	})
+}
+
+// SearchBookingVehiclesCarpool godoc
+// @Summary Search vehicel from carpools by brand, license plate, and filters
+// @Description Retrieves vehicles from carpools based on search text, department, and car type filters
+// @Tags Vehicle
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
+// @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
+// @Param search query string false "Search text (Vehicle Brand Name or License Plate)"
+// @Param vehicle_owner_dept query string false "Filter by Vehicle Owner Department"
+// @Param mas_carpool_uid query string false "Filter by MasCarpoolUID"
+// @Param car_type query string false "Filter by Car Type"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of records per page (default: 10)"
+// @Router /api/vehicle/search-booking-carpool [get]
+func (h *VehicleHandler) SearchBookingVehiclesCarpool(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+
+	empID := c.Query("emp_id")
+	bureauDeptSap := user.BureauDeptSap
+	businessArea := user.BusinessArea
+
+	if empID != "" {
+		empUser := funcs.GetUserEmpInfo(empID)
+		bureauDeptSap = empUser.BureauDeptSap
+		businessArea = empUser.BusinessArea
+	}
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
+		return
+	}
+	var vehicleCanBookings []models.VmsMasVehicleCanBooking
+	masCarpoolUID := c.Query("mas_carpool_uid")
+	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?) where mas_carpool_uid = ?`,
+		startDate, endDate, bureauDeptSap, businessArea, masCarpoolUID)
+	err := queryCanBooking.Scan(&vehicleCanBookings).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	masVehicleUIDs := make([]string, 0)
+	for _, vehicleCanBooking := range vehicleCanBookings {
+		masVehicleUIDs = append(masVehicleUIDs, vehicleCanBooking.MasVehicleUID)
+	}
+	searchText := c.Query("search")            // Text search for brand name & license plate
+	ownerDept := c.Query("vehicle_owner_dept") // Filter by vehicle owner department
+	carType := c.Query("car_type")             // Filter by car type
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))        // Default page = 1
+	pageLimit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Default limit = 10
+	offset := (page - 1) * pageLimit                            // Calculate offset
+	limit := pageLimit
+
+	var vehicles []models.VmsMasVehicleList
+	var total int64
+
+	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,vd.vehicle_mileage,0 as last_month_mileage,vd.vehicle_pea_id,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img,cp.carpool_name")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
+	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
+	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
+	query = query.Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = '0'", masVehicleUIDs)
+	if searchText != "" {
+		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
+	}
+
+	// Apply filters if provided
+	if ownerDept != "" {
+		query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+	}
+	if carType != "" {
+		query = query.Where("\"CarTypeDetail\" = ?", carType)
+	}
+
+	// Count total records
+	query.Count(&total)
+	query = query.Model(&models.VmsMasVehicleList{})
+	// Execute query with pagination
+	query.Offset(offset).Limit(limit).Find(&vehicles)
+
+	for i := range vehicles {
+		funcs.TrimStringFields(&vehicles[i])
+		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
+		} else {
+			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
+		}
+	}
+	// Respond with JSON
+	c.JSON(http.StatusOK, gin.H{
+		"pagination": gin.H{
+			"total":      total,
+			"page":       page,
+			"limit":      pageLimit,
+			"totalPages": (total + int64(limit) - 1) / int64(limit), // Calculate total pages
+		},
+		"vehicles": vehicles,
 	})
 }
 
@@ -367,10 +481,11 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 // @Tags Vehicle
 // @Accept json
 // @Produce json
-// @Param emp_id path string true "Vehicle User EmpID (emp_id)" default(700001)
+// @Param emp_id query string false "Vehicle User EmpID (emp_id)" default(700001)
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Param name query string false "Filter by vehicle type name (partial match)"
+// @Param mas_carpool_uid query string false "Filter by mas_carpool_uid"
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
 // @Router /api/vehicle/types [get]
@@ -379,7 +494,7 @@ func (h *VehicleHandler) GetTypes(c *gin.Context) {
 	var vehicleTypes []models.VmsRefVehicleType
 	name := c.Query("name") // Get the 'name' query parameter
 
-	empID := c.Param("emp_id")
+	empID := c.Query("emp_id")
 	bureauDeptSap := user.BureauDeptSap
 	businessArea := user.BusinessArea
 
@@ -395,11 +510,14 @@ func (h *VehicleHandler) GetTypes(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
 		return
 	}
+	masCarpoolUID := c.Query("mas_carpool_uid")
+	query := config.DB.Raw(`SELECT "CarTypeDetail" ref_vehicle_type_name,count(*) AS available_units FROM fn_get_available_vehicles_view (?, ?, ?, ?)
+		WHERE "CarTypeDetail" ILIKE ? AND (? = '' OR mas_carpool_uid::text = ?)
+		group by "CarTypeDetail"`,
+		startDate, endDate, bureauDeptSap, businessArea, "%"+name+"%", masCarpoolUID, masCarpoolUID)
 
-	query := config.DB.Raw(`SELECT "CarTypeDetail" ref_vehicle_type_name,count(*) AS available_units FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by "CarTypeDetail"`,
-		startDate, endDate, bureauDeptSap, businessArea)
-	if name != "" {
-		query = query.Where("\"CarTypeDetail\" ILIKE ?", "%"+name+"%")
+	if masCarpoolUID != "" {
+		query = query.Where("mas_carpool_uid = ?", masCarpoolUID)
 	}
 	err := query.Scan(&vehicleTypes).Error
 
@@ -409,7 +527,9 @@ func (h *VehicleHandler) GetTypes(c *gin.Context) {
 	}
 
 	vehicleTypes = models.AssignTypeImageFromIndex(vehicleTypes)
-
+	if len(vehicleTypes) == 0 {
+		vehicleTypes = []models.VmsRefVehicleType{}
+	}
 	// Respond with JSON
 	c.JSON(http.StatusOK, vehicleTypes)
 }
@@ -455,7 +575,7 @@ func (h *VehicleHandler) GetCarTypeDetails(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param emp_id path string true "Employee ID (emp_id) default(700001)"
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
 // @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
 // @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
 // @Router /api/vehicle/departments [get]
@@ -466,7 +586,7 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
 		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
-	empID := c.Param("emp_id")
+	empID := c.Query("emp_id")
 	bureauDeptSap := user.BureauDeptSap
 	businessArea := user.BusinessArea
 
@@ -507,8 +627,57 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
-// @Param mas_vehicle_uid path string true "MasVehicleUID (mas_vehicle_uid)"
-// @Router /api/vehicle-info/{mas_vehicle_uid} [get]
+// @Param mas_vehicle_uid query string false "MasVehicleUID (mas_vehicle_uid)"
+// @Param mas_carpool_uid query string false "Filter by MasCarpoolUID"
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
+// @Param start_date query string false "Start Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 08:00:00)
+// @Param end_date query string false "End Date (YYYY-MM-DD HH:mm:ss)" default(2025-05-30 16:00:00)
+// @Param work_type query string false "work type to search (0: ไป-กลับ,1: ค้างคืน)" default(0)
+// @Param search query string false "Search text (Vehicle Brand Name or License Plate)"
+// @Param vehicle_owner_dept query string false "Filter by Vehicle Owner Department"
+// @Router /api/vehicle-info [get]
 func (h *VehicleHandler) GetVehicleInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"number_of_available_drivers": 2})
+	user := funcs.GetAuthenUser(c, "*")
+	if c.IsAborted() {
+		return
+	}
+	masVehicleUID := c.Query("mas_vehicle_uid")
+	masCarpoolUID := c.Query("mas_carpool_uid")
+	empID := c.Query("emp_id")
+	bureauDeptSap := user.BureauDeptSap
+	businessArea := user.BusinessArea
+
+	if empID != "" {
+		empUser := funcs.GetUserEmpInfo(empID)
+		bureauDeptSap = empUser.BureauDeptSap
+		businessArea = empUser.BusinessArea
+	}
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	workType := c.Query("work_type")
+	tripTypeCode := 0
+	if workType == "1" {
+		tripTypeCode = 1
+	} else {
+		tripTypeCode = 0
+	}
+	if masCarpoolUID == "" {
+		var carpoolVehicle models.VmsMasCarpoolVehicle
+		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = '0' AND is_active = '1'", masVehicleUID).First(&carpoolVehicle).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+		masCarpoolUID = carpoolVehicle.MasCarpoolUID
+	}
+	var count int64
+	query := config.DB.Raw(`SELECT count(mas_driver_uid) FROM fn_get_available_drivers_view (?, ?, ?, ?, ?) where mas_carpool_uid = ?`,
+		startDate, endDate, bureauDeptSap, businessArea, tripTypeCode, masCarpoolUID)
+	if err := query.Scan(&count).Error; err == nil {
+		c.JSON(http.StatusOK, gin.H{"number_of_available_drivers": int(count)})
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 }

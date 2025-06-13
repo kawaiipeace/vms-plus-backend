@@ -6,25 +6,27 @@ import (
 
 // VmsMasVehicleManagementList
 type VmsMasVehicleManagementList struct {
-	MasVihicleUID             string              `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	VehicleLicensePlate       string              `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
-	VehicleBrandName          string              `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
-	VehicleModelName          string              `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	RefVehicleTypeCode        string              `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
-	RefVehicleTypeName        string              `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
-	VehicleOwnerDeptSAP       string              `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
-	FleetCardNo               string              `gorm:"column:fleet_card_no" json:"fleet_card_no"`
-	IsTaxCredit               bool                `gorm:"column:is_tax_credit" json:"is_tax_credit"`
-	VehicleMileage            float64             `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	VehicleGetDate            time.Time           `gorm:"column:vehicle_get_date" json:"vehicle_get_date"` // Changed to time.Time
-	RefVehicleStatusCode      int                 `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
-	RefVehicleStatus          VmsRefVehicleStatus `gorm:"foreignKey:RefVehicleStatusCode;references:RefVehicleStatusCode" json:"vms_ref_vehicle_status"`
-	RefVehicleStatusShortName string              `gorm:"column:ref_vehicle_status_short_name" json:"-"`
-	VehicleCarpoolName        string              `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
-	IsAcictive                string              `gorm:"column:is_active" json:"is_active"`
-	RefFuelTypeID             int                 `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
-	RefFuelType               VmsRefFuelType      `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"vms_ref_fuel_type"`
-	Age                       string              `json:"age"`
+	MasVihicleUID                    string              `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	VehicleLicensePlate              string              `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string              `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string              `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleBrandName                 string              `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string              `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
+	RefVehicleTypeCode               string              `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
+	RefVehicleTypeName               string              `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
+	VehicleOwnerDeptSAP              string              `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
+	FleetCardNo                      string              `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+	IsTaxCredit                      bool                `gorm:"column:is_tax_credit" json:"is_tax_credit"`
+	VehicleMileage                   float64             `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	VehicleGetDate                   time.Time           `gorm:"column:vehicle_get_date" json:"vehicle_get_date"` // Changed to time.Time
+	RefVehicleStatusCode             int                 `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
+	RefVehicleStatus                 VmsRefVehicleStatus `gorm:"foreignKey:RefVehicleStatusCode;references:RefVehicleStatusCode" json:"vms_ref_vehicle_status"`
+	RefVehicleStatusShortName        string              `gorm:"column:ref_vehicle_status_short_name" json:"-"`
+	VehicleCarpoolName               string              `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	IsAcictive                       string              `gorm:"column:is_active" json:"is_active"`
+	RefFuelTypeID                    int                 `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	RefFuelType                      VmsRefFuelType      `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"vms_ref_fuel_type"`
+	Age                              string              `json:"age"`
 }
 
 func (VmsMasVehicleManagementList) TableName() string {
@@ -59,18 +61,22 @@ type VehicleTimeLine struct {
 }
 
 type VehicleTrnRequest struct {
-	MasVehicleUID          string             `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	TrnRequestUID          string             `gorm:"column:trn_request_uid" json:"trn_request_uid"`
-	RequestNo              string             `gorm:"column:request_no" json:"request_no"`
-	ReserveStartDatetime   time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime     time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
-	RefRequestStatusCode   string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatusName   string             `json:"ref_request_status_name"`
-	RefTripTypeCode        int                `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
-	WorkPlace              string             `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	VehicleUserEmpID       string             `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
-	VehicleUserEmpName     string             `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
-	VehicleUserDeptSAP     string             `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
+	MasVehicleUID            string    `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	TrnRequestUID            string    `gorm:"column:trn_request_uid" json:"trn_request_uid"`
+	RequestNo                string    `gorm:"column:request_no" json:"request_no"`
+	ReserveStartDatetime     time.Time `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime       time.Time `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	RefRequestStatusCode     string    `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName     string    `json:"ref_request_status_name"`
+	RefTripTypeCode          int       `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
+	WorkPlace                string    `gorm:"column:work_place" json:"work_place" example:"Head Office"`
+	VehicleUserEmpID         string    `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
+	VehicleUserEmpName       string    `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserPosition      string    `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserDeptSAP       string    `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
+	VehicleUserDeptNameShort string    `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
+	VehicleUserDeptNameFull  string    `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_name_full"`
+
 	VehicleUserDeskPhone   string             `gorm:"column:vehicle_user_desk_phone" json:"car_user_internal_contact_number" example:"1122"`
 	VehicleUserMobilePhone string             `gorm:"column:vehicle_user_mobile_phone" json:"car_user_mobile_contact_number" example:"0987654321"`
 	IsPEAEmployeeDriver    string             `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
