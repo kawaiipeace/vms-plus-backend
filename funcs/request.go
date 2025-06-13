@@ -84,7 +84,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		Preload("MasVehicle.RefFuelType").
 		Preload("MasVehicle.VehicleDepartment",
 			func(db *gorm.DB) *gorm.DB {
-				return db.Select("*, fn_get_vehicle_distance_two_months(mas_vehicle_uid, ?) AS vehicle_distance", time.Now())
+				return db.Select("*, fn_get_vehicle_distance_two_months(mas_vehicle_uid, ?) AS vehicle_distance,public.fn_get_oil_station_eng_by_fleetcard(fleet_card_no) as fleet_card_oil_stations", time.Now())
 			},
 		).
 		Preload("RefCostType").
@@ -100,11 +100,35 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	if request.MasDriver.DriverBirthdate != (time.Time{}) {
 		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
 	}
+	var carpool models.VmsMasCarpoolCarBookingResponse
+	if err := config.DB.First(&carpool, "mas_carpool_uid = ?", request.MasCarpoolUID).Error; err == nil {
+		request.CarpoolName = carpool.CarpoolName
+		if carpool.RefCarpoolChooseCarID == 2 {
+			request.IsAdminChooseVehicle = "1"
+		}
+		if carpool.RefCarpoolChooseDriverID == 2 {
+			request.IsAdminChooseDriver = "1"
+			var count int64
+			vehicleUser, _ := userhub.GetUserInfo(request.VehicleUserEmpID)
+			query := config.DB.Raw(`SELECT count(mas_driver_uid) FROM fn_get_available_drivers_view (?, ?, ?, ?, ?) where mas_carpool_uid = ?`,
+				request.ReserveStartDatetime, request.ReserveEndDatetime, vehicleUser.BureauDeptSap, vehicleUser.BusinessArea, request.RefTripType.RefTripTypeCode, request.MasCarpoolUID)
+			if err := query.Scan(&count).Error; err == nil {
+				request.NumberOfAvailableDrivers = int(count)
+			}
+		}
+		if carpool.RefCarpoolChooseDriverID == 2 && request.IsPEAEmployeeDriver == "0" && request.MasCarpoolDriverUID == "" {
+			request.CanChooseDriver = true
+		}
+		if carpool.RefCarpoolChooseCarID == 2 && request.MasVehicleUID == "" {
+			request.CanChooseVehicle = true
+		}
+
+	}
+
 	request.VehicleUserImageUrl = GetEmpImage(request.VehicleUserEmpID)
 	request.ConfirmedRequestImageUrl = GetEmpImage(request.ConfirmedRequestEmpID)
 	request.DriverEmpImageUrl = GetEmpImage(request.DriverEmpID)
 
-	request.NumberOfAvailableDrivers = 2
 	request.DriverImageURL = config.DefaultAvatarURL
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""

@@ -63,10 +63,11 @@ func main() {
 	vehicleHandler := handlers.VehicleHandler{Role: "*"}
 	router.GET("/api/vehicle/search", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchVehicles)
 	router.GET("/api/vehicle/search-booking", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchBookingVehicles)
+	router.GET("/api/vehicle/search-booking-carpool", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchBookingVehiclesCarpool)
 	router.GET("/api/vehicle/types", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetTypes)
 	router.GET("/api/vehicle/departments", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetDepartments)
 	router.GET("/api/vehicle/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicle)
-	router.GET("/api/vehicle-info/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
+	router.GET("/api/vehicle-info", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
 	router.GET("/api/vehicle/car-types-by-detail", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetCarTypeDetails)
 
 	//DriverHandler

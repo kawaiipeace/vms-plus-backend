@@ -4499,8 +4499,7 @@ const docTemplate = `{
                         "default": "700001",
                         "description": "Employee ID (emp_id) default(700001)",
                         "name": "emp_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -4527,6 +4526,12 @@ const docTemplate = `{
                         "default": "0",
                         "description": "work type to search (0: ไป-กลับ,1: ค้างคืน)",
                         "name": "work_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolUID (mas_carpool_uid)",
+                        "name": "mas_carpool_uid",
                         "in": "query"
                     },
                     {
@@ -9115,7 +9120,7 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/vehicle-info/{mas_vehicle_uid}": {
+        "/api/vehicle-info": {
             "get": {
                 "security": [
                     {
@@ -9141,8 +9146,53 @@ const docTemplate = `{
                         "type": "string",
                         "description": "MasVehicleUID (mas_vehicle_uid)",
                         "name": "mas_vehicle_uid",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by MasCarpoolUID",
+                        "name": "mas_carpool_uid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "0",
+                        "description": "work type to search (0: ไป-กลับ,1: ค้างคืน)",
+                        "name": "work_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text (Vehicle Brand Name or License Plate)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Vehicle Owner Department",
+                        "name": "vehicle_owner_dept",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -10232,8 +10282,7 @@ const docTemplate = `{
                         "default": "700001",
                         "description": "Employee ID (emp_id) default(700001)",
                         "name": "emp_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -10348,8 +10397,7 @@ const docTemplate = `{
                         "default": "700001",
                         "description": "Employee ID (emp_id) default(700001)",
                         "name": "emp_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -10405,6 +10453,89 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/vehicle/search-booking-carpool": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Retrieves vehicles from carpools based on search text, department, and car type filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Vehicle"
+                ],
+                "summary": "Search vehicel from carpools by brand, license plate, and filters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 08:00:00",
+                        "description": "Start Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "2025-05-30 16:00:00",
+                        "description": "End Date (YYYY-MM-DD HH:mm:ss)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text (Vehicle Brand Name or License Plate)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Vehicle Owner Department",
+                        "name": "vehicle_owner_dept",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by MasCarpoolUID",
+                        "name": "mas_carpool_uid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Car Type",
+                        "name": "car_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/vehicle/types": {
             "get": {
                 "security": [
@@ -10432,8 +10563,7 @@ const docTemplate = `{
                         "default": "700001",
                         "description": "Vehicle User EmpID (emp_id)",
                         "name": "emp_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -10453,6 +10583,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by vehicle type name (partial match)",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by mas_carpool_uid",
+                        "name": "mas_carpool_uid",
                         "in": "query"
                     }
                 ],
@@ -11926,6 +12062,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "NET12345"
                 },
+                "pm_order_no": {
+                    "type": "string",
+                    "example": "PM123456"
+                },
                 "ref_cost_type_code": {
                     "type": "integer",
                     "example": 1
@@ -11960,6 +12100,26 @@ const docTemplate = `{
         "models.VmsTrnRequestDriver": {
             "type": "object",
             "properties": {
+                "driver_emp_dept_name_full": {
+                    "type": "string",
+                    "example": "B0002211"
+                },
+                "driver_emp_dept_name_short": {
+                    "type": "string",
+                    "example": "B0002211"
+                },
+                "driver_emp_dept_sap": {
+                    "type": "string",
+                    "example": "B0002211"
+                },
+                "driver_emp_id": {
+                    "type": "string",
+                    "example": "700001"
+                },
+                "driver_emp_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
                 "mas_carpool_driver_uid": {
                     "type": "string",
                     "example": "a6c8a34b-9245-49c8-a12b-45fae77a4e7d"

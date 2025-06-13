@@ -123,12 +123,16 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 			`vms_trn_request.*,
 			v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
 			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name,
-			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_hire from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,
-			(select max(md.dept_short) from vms_mas_vehicle_department mvd,vms_mas_department md where md.dept_sap=mvd.vehicle_owner_dept_sap and mvd.mas_vehicle_uid=vms_trn_request.mas_vehicle_uid) vehicle_dept_name,       
-			(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_vehicle mcv where mc.mas_carpool_uid=mc.mas_carpool_uid and mcv.mas_vehicle_uid=vms_trn_request.mas_vehicle_uid) vehicle_carpool_name
+			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_short_work from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,
+			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
+			mc.carpool_name vehicle_carpool_name,ref_carpool_choose_car_id,ref_carpool_choose_driver_id,
+			(select max(md.vendor_name) from vms_mas_driver md where md.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) driver_vendor_name,
+			(select max(mc.carpool_name) from vms_mas_carpool mc,vms_mas_carpool_driver mcd where mc.mas_carpool_uid=mcd.mas_carpool_uid and mcd.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) driver_carpool_name
 		`).
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
 		Joins("LEFT JOIN vms_mas_vehicle AS v ON v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
 		Joins("LEFT JOIN public.vms_ref_request_status AS status ON vms_trn_request.ref_request_status_code = status.ref_request_status_code").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_trn_request.mas_carpool_uid").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
 	query = query.Where("vms_trn_request.is_deleted = ?", "0")
@@ -191,16 +195,19 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
-		if requests[i].IsAdminChooseDriver == 1 && requests[i].IsPEAEmployeeDriver == 0 && (requests[i].MasCarpoolDriverUID == "" || requests[i].MasCarpoolDriverUID == funcs.DefaultUUID()) {
-			requests[i].Can_Choose_Driver = true
+		if requests[i].RefCarpoolChooseDriverID == 2 && requests[i].IsPEAEmployeeDriver == 0 && requests[i].MasCarpoolDriverUID == nil {
+			requests[i].CanChooseDriver = true
 		}
-		if requests[i].IsAdminChooseVehicle == 1 && (requests[i].MasVehicleUID == "" || requests[i].MasVehicleUID == funcs.DefaultUUID()) {
-			requests[i].Can_Choose_Vehicle = true
+		if requests[i].RefCarpoolChooseCarID == 2 && requests[i].MasVehicleUID == nil {
+			requests[i].CanChooseVehicle = true
 		}
 		if requests[i].TripType == 0 {
 			requests[i].TripTypeName = "ไป-กลับ"
 		} else if requests[i].TripType == 1 {
 			requests[i].TripTypeName = "ค้างแรม"
+		}
+		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
+			requests[i].DriverDeptName = requests[i].DriverCarpoolName
 		}
 	}
 
@@ -425,7 +432,7 @@ func (h *BookingAdminHandler) UpdateRejected(c *gin.Context) {
 		return
 	}
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
-		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
@@ -496,6 +503,13 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
+
+	var trnRequestList models.VmsTrnRequestList
+	if err := config.DB.First(&trnRequestList, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
+		return
+	}
+	result.RequestNo = trnRequestList.RequestNo
 
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
@@ -907,13 +921,11 @@ func (h *BookingAdminHandler) UpdateVehicle(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
-	var vehicle models.VmsMasVehicle
-	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
-		request.VehicleLicensePlate = strings.TrimSpace(vehicle.VehicleLicensePlate)
-		request.VehicleLicensePlateProvinceShort = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceShort)
-		request.VehicleLicensePlateProvinceFull = strings.TrimSpace(vehicle.VehicleLicensePlateProvinceFull)
-	}
 
+	var vehicle models.VmsMasVehicleDepartment
+	if err := config.DB.First(&vehicle, "mas_vehicle_uid = ? AND is_deleted = '0'", request.MasVehicleUID).Error; err == nil {
+		request.MasVehicleDepartmentUID = vehicle.MasVehicleDepartmentUID
+	}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
