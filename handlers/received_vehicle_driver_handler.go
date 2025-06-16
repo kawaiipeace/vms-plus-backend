@@ -21,9 +21,6 @@ type ReceivedVehicleDriverHandler struct {
 }
 
 func (h *ReceivedVehicleDriverHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query.Where("driver_emp_id = ?", user.EmpID)
 }
 func (h *ReceivedVehicleDriverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {

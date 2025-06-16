@@ -37,7 +37,7 @@ type VmsTrnSatisfactionSurveyAnswersResponse struct {
 	TrnSatisfactionSurveyAnswersUID   string                            `gorm:"column:trn_satisfaction_survey_answers_uid;primaryKey" json:"-"`
 	TrnRequestUID                     string                            `gorm:"column:trn_request_uid" json:"-"`
 	MasSatisfactionSurveyQuestionsUID string                            `gorm:"column:mas_satisfaction_survey_questions_uid" json:"mas_satisfaction_survey_questions_uid" example:"1"`
-	SurveyAnswer                      int                               `gorm:"column:survey_answer" json:"survey_answer" example:"5"`
+	SurveyAnswer                      int                               `gorm:"column:survey_answer_score" json:"survey_answer" example:"5"`
 	SatisfactionSurveyQuestions       VmsMasSatisfactionSurveyQuestions `gorm:"foreignKey:MasSatisfactionSurveyQuestionsUID;references:MasSatisfactionSurveyQuestionsUID" json:"satisfaction_survey_questions"`
 }
 

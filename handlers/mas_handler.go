@@ -182,6 +182,7 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 			TelInternal:  user.TelInternal,
 			ImageUrl:     user.ImageUrl,
 			AnnualDriver: annualDriverMap[user.EmpID],
+			Position:     user.Position,
 		}
 	}
 	// Sort lists to put the current user's emp_id first

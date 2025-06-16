@@ -314,6 +314,7 @@ func main() {
 	carpoolManagementHandler := handlers.CarpoolManagementHandler{Role: "admin-super,admin-region,admin-dept"}
 	router.GET("/api/carpool-management/search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpools)
 	router.GET("/api/carpool-management/export", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.ExportCarpools)
+	router.GET("/api/carpool-management/check-carpool-name-is-exist", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CheckCarpoolNameIsExist)
 	router.POST("/api/carpool-management/create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpool)
 	router.GET("/api/carpool-management/carpool/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpool)
 	router.PUT("/api/carpool-management/update/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpool)
