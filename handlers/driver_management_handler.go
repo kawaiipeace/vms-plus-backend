@@ -952,8 +952,9 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 						('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
 						('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
 						('4' in (?) AND r.ref_request_status_code = '80')
-					)
-				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+					)AND
+						 (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)
+				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, startDate, endDate, startDate, endDate)
 	}
 
 	search := strings.ToUpper(c.Query("search"))
@@ -1003,7 +1004,9 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
 		query := config.DB.Table("vms_trn_request r").
-			Where("mas_carpool_driver_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
+			Select("r.*, v.vehicle_license_plate, v.vehicle_license_plate_province_short").
+			Joins("LEFT JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = r.mas_vehicle_uid AND v.is_deleted = ?", "0").
+			Where("r.mas_carpool_driver_uid = ? AND r.is_deleted = ? AND r.ref_request_status_code != '90' AND (r.reserve_start_datetime BETWEEN ? AND ? OR r.reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
 
 		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
 			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")

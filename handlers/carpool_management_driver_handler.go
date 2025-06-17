@@ -70,7 +70,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 			d.driver_total_satisfaction_review,
 			d.ref_driver_status_code,
 			(select max(s.ref_driver_status_desc) from vms_ref_driver_status s WHERE s.ref_driver_status_code = d.ref_driver_status_code) AS driver_status_name,
-			d.is_active,
+			cpd.is_active,
 			d.contract_no,
 			d.end_date,
 			d.vendor_name,
@@ -166,8 +166,9 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		return
 
 	}
+	var existingCarpool models.VmsMasCarpoolRequest
+
 	for i := range requests {
-		var existingCarpool models.VmsMasCarpoolRequest
 		queryRole := h.SetQueryRole(user, config.DB)
 		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
@@ -201,7 +202,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		requests[i].UpdatedAt = time.Now()
 		requests[i].UpdatedBy = user.EmpID
 		requests[i].IsDeleted = "0"
-		requests[i].IsActive = "1"
+		requests[i].IsActive = existingCarpool.IsActive
 
 		requests[i].StartDate = time.Now()
 		requests[i].EndDate = time.Now().AddDate(1, 0, 0)
@@ -453,8 +454,13 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolDriver(c *gin.Context) {
 	driver.UpdatedAt = time.Now()
 	driver.UpdatedBy = user.EmpID
 
-	if err := config.DB.Save(&driver).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update active status: %v", err), "message": messages.ErrInternalServer.Error()})
+	//update is_active to 1 in carpool_driver
+	if err := config.DB.Model(&models.VmsMasCarpoolDriver{}).Where("mas_carpool_driver_uid = ?", driver.MasCarpoolDriverUID).UpdateColumns(map[string]interface{}{
+		"is_active":  request.IsActive,
+		"updated_at": time.Now(),
+		"updated_by": user.EmpID,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update carpool driver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -518,8 +524,9 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 							('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
 							('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
 							('4' in (?) AND r.ref_request_status_code = '80')
-						)
-					)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+						)AND
+						 (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)
+					)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, startDate, endDate, startDate, endDate)
 	}
 	name := strings.ToUpper(c.Query("name"))
 	if name != "" {
@@ -566,7 +573,9 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 		drivers[i].WorkThisMonth = fmt.Sprintf("%d วัน/%d งาน", drivers[i].TotalDayThisMonth, drivers[i].JobCountThisMonth)
 		// Preload the driver requests for each driver
 		query := config.DB.Table("vms_trn_request r").
-			Where("mas_carpool_driver_uid = ? AND is_deleted = ? AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
+			Select("r.*, v.vehicle_license_plate, v.vehicle_license_plate_province_short").
+			Joins("LEFT JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = r.mas_vehicle_uid AND v.is_deleted = ?", "0").
+			Where("mas_carpool_driver_uid = ? AND r.is_deleted = ? AND r.ref_request_status_code != '90' AND (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)", drivers[i].MasDriverUID, "0", startDate, endDate, startDate, endDate)
 
 		if refTimelineStatusID := c.Query("ref_timeline_status_id"); refTimelineStatusID != "" {
 			refTimelineStatusIDList := strings.Split(refTimelineStatusID, ",")

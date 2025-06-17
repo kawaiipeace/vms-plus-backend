@@ -221,12 +221,13 @@ type VmsTrnRequestResponse struct {
 	IsUseDriver            bool         `gorm:"-" json:"is_use_driver"`
 	DriverEmpID            string       `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string       `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
+	DriverEmpPosition      string       `gorm:"column:driver_emp_position" json:"driver_emp_position" example:""`
 	DriverEmpDeptSAP       string       `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"DPT001"`
 	DriverEmpDeptNameShort string       `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short"`
 	DriverEmpDeptNameFull  string       `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full"`
 	DriverEmpImageUrl      string       `gorm:"-" json:"driver_emp_image_url"`
-	DriverInternalContact  string       `gorm:"column:driver_internal_contact_number" json:"driver_internal_contact_number" example:"1234567890"`
-	DriverMobileContact    string       `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
+	DriverInternalContact  string       `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1234567890"`
+	DriverMobileContact    string       `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverImageURL         string       `gorm:"-" json:"driver_image_url"`
 	PickupPlace            string       `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
 	PickupDateTime         time.Time    `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
