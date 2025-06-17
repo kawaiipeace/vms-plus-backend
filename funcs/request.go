@@ -212,15 +212,10 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 
 	}
 	request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = GetDeptSAPShort(request.MasVehicle.VehicleDepartment.VehicleOwnerDeptSap)
-	//check if vehicle is carpool
-	var carpoolVehicle models.VmsMasCarpoolVehicle
-	masCarpoolUID := ""
-	if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasVehicle.MasVehicleUID).First(&carpoolVehicle).Error; err == nil {
-		masCarpoolUID = carpoolVehicle.MasCarpoolUID
-	}
-	if masCarpoolUID != "" {
+
+	if request.MasCarpoolUID != "" {
 		var carpoolAdmin models.VmsMasCarpoolAdmin
-		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", masCarpoolUID).
+		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasCarpoolUID).
 			Select("admin_emp_no,admin_emp_name,admin_dept_sap,admin_position,mobile_contact_number,internal_contact_number").
 			Order("is_main_admin DESC").
 			First(&carpoolAdmin).Error; err == nil {
@@ -253,6 +248,22 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 	request.IsReturnOverDue = false
 	if time.Now().Truncate(24 * time.Hour).After(request.ReserveEndDatetime.Truncate(24 * time.Hour)) {
 		request.IsReturnOverDue = true
+	}
+
+	//VmsTrnSatisfactionSurveyAnswersResponse
+
+	var satisfactionSurveyAnswers []models.VmsTrnSatisfactionSurveyAnswersResponse
+	if err := config.DB.Table("vms_trn_satisfaction_survey_answers").
+		Where("trn_request_uid = ?", request.TrnRequestUID).
+		Find(&satisfactionSurveyAnswers).Error; err == nil {
+		for i := range request.SatisfactionSurveyAnswers {
+			for j := range satisfactionSurveyAnswers {
+				if request.SatisfactionSurveyAnswers[i].MasSatisfactionSurveyQuestionsUID == satisfactionSurveyAnswers[j].MasSatisfactionSurveyQuestionsUID {
+					request.SatisfactionSurveyAnswers[i].SurveyAnswer = satisfactionSurveyAnswers[j].SurveyAnswer
+				}
+			}
+
+		}
 	}
 
 	//c.JSON(http.StatusOK, request)
@@ -363,4 +374,40 @@ func GetProgressRequestStatusEmp(trnRequestUID, refRequestStatusCode, actionRole
 	}
 
 	return progressRequestStatusEmp
+}
+
+func UpdateVehicleMileage(trnRequestUID string, mileage int) error {
+	var masVehicleUID string
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Select("mas_vehicle_uid").
+		Scan(&masVehicleUID).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Table("vms_mas_vehicle_department").
+		Where("mas_vehicle_uid = ?", masVehicleUID).
+		Update("vehicle_mileage", mileage).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateVehicleParkingPlace(trnRequestUID string, parkingPlace string) error {
+	var masVehicleUID string
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Select("mas_vehicle_uid").
+		Scan(&masVehicleUID).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Table("vms_mas_vehicle_department").
+		Where("mas_vehicle_uid = ?", masVehicleUID).
+		Update("parking_place", parkingPlace).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -298,7 +298,6 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-
 	statusNameMap := StatusNameMapUser
 
 	var requests []models.VmsTrnRequestList

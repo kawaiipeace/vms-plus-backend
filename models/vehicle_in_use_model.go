@@ -10,6 +10,7 @@ type VmsTrnRequestVehicleInUseList struct {
 	VehicleUserEmpID                 string    `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
 	VehicleUserEmpName               string    `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptSAPShort          string    `gorm:"column:vehicle_user_dept_sap_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
+	VehicleUserPosition              string    `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string    `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
@@ -38,6 +39,7 @@ type VmsTrnRequestVehicleInUseList struct {
 type VmsTrnRequestVehicleInUseResponse struct {
 	TrnRequestUID            string `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
 	RequestNo                string `gorm:"column:request_no" json:"request_no"`
+	MasCarpoolUID            string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid"`
 	VehicleUserEmpID         string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
 	VehicleUserEmpName       string `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
 	VehicleUserDeptSAP       string `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap"`
@@ -155,6 +157,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RefRequestStatus            VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
 	RefRequestStatusName        string                  `json:"ref_request_status_name"`
 	SendedBackRequestReason     string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
+	RejectedRequestReason       string                  `gorm:"column:rejected_request_reason;" json:"rejected_request_reason" example:"Test Send Back"`
 	CanceledRequestReason       string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
 	CanceledRequestDatetime     time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
 	ProgressRequestStatus       []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`

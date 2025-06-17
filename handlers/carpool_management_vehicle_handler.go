@@ -55,6 +55,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			cpv.mas_carpool_uid,
 			cpv.mas_vehicle_uid,
 			v.vehicle_license_plate,
+			v.vehicle_license_plate_province_short,
 			v.vehicle_brand_name,
 			v.vehicle_model_name,
 			v.ref_vehicle_type_code,
@@ -180,8 +181,8 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		return
 
 	}
+	var existingCarpool models.VmsMasCarpoolRequest
 	for i := range requests {
-		var existingCarpool models.VmsMasCarpoolRequest
 		queryRole := h.SetQueryRole(user, config.DB)
 		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
@@ -203,7 +204,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 	//check vehicle is not duplicate in another carpool
 	for i := range requests {
 		var existingVehicle models.VmsMasCarpoolVehicle
-		if err := config.DB.Where("mas_vehicle_uid = ? AND mas_carpool_uid != ? AND is_deleted = ?", requests[i].MasVehicleUID, requests[i].MasCarpoolUID, "0").First(&existingVehicle).Error; err == nil {
+		if err := config.DB.Where("mas_vehicle_uid = ? AND is_deleted = ?", requests[i].MasVehicleUID, requests[i].MasCarpoolUID, "0").First(&existingVehicle).Error; err == nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   fmt.Sprintf("Vehicle with MasVehicleUID %s already exists in another carpool", requests[i].MasVehicleUID),
 				"message": "ข้อมูลรถที่ระบุมีอยู่ในกลุ่มรถอื่นแล้ว",
@@ -217,7 +218,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		requests[i].UpdatedAt = time.Now()
 		requests[i].UpdatedBy = user.EmpID
 		requests[i].IsDeleted = "0"
-		requests[i].IsActive = "1"
+		requests[i].IsActive = existingCarpool.IsActive
 		requests[i].StartDate = time.Now()
 		requests[i].EndDate = time.Now().AddDate(10, 0, 0)
 		var masVehicleDepartmentUID string
@@ -464,12 +465,13 @@ func (h *CarpoolManagementHandler) SetActiveCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
-	vehicle.IsActive = request.IsActive
-	vehicle.UpdatedAt = time.Now()
-	vehicle.UpdatedBy = user.EmpID
-
-	if err := config.DB.Save(&vehicle).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update active status: %v", err), "message": messages.ErrInternalServer.Error()})
+	//update is_active to 1 in carpool_vehicle
+	if err := config.DB.Model(&models.VmsMasCarpoolVehicle{}).Where("mas_carpool_vehicle_uid = ?", vehicle.MasCarpoolVehicleUID).UpdateColumns(map[string]interface{}{
+		"is_active":  request.IsActive,
+		"updated_at": time.Now(),
+		"updated_by": user.EmpID,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update carpool vehicle", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 
@@ -545,8 +547,9 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 						('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
 						('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
 						('4' in (?) AND r.ref_request_status_code = '80')
-					)
-				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+					) AND
+						 (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)
+				)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, startDate, endDate, startDate, endDate)
 	}
 
 	if search := c.Query("search"); search != "" {
@@ -615,8 +618,8 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 					TrnTripDetailUID: uuid.New().String(),
 					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
 						TrnRequestUID:        vehicles[i].VehicleTrnRequests[j].TrnRequestUID,
-						TripStartDatetime:    vehicles[i].VehicleTrnRequests[j].ReserveEndDatetime,
-						TripEndDatetime:      vehicles[i].VehicleTrnRequests[j].ReserveStartDatetime,
+						TripStartDatetime:    vehicles[i].VehicleTrnRequests[j].ReserveStartDatetime,
+						TripEndDatetime:      vehicles[i].VehicleTrnRequests[j].ReserveEndDatetime,
 						TripDeparturePlace:   vehicles[i].VehicleTrnRequests[j].WorkPlace,
 						TripDestinationPlace: vehicles[i].VehicleTrnRequests[j].WorkPlace,
 						TripStartMiles:       0,
