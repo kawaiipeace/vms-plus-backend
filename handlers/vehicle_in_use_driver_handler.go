@@ -35,7 +35,7 @@ func (h *VehicleInUseDriverHandler) SetQueryRole(user *models.AuthenUserEmp, que
 	return query.Where("driver_emp_id = ?", user.EmpID)
 }
 func (h *VehicleInUseDriverHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('60') and is_deleted = '0'")
+	return query.Where("ref_request_status_code in ('60','71') and is_deleted = '0'")
 }
 
 // SearchRequests godoc
@@ -302,7 +302,7 @@ func (h *VehicleInUseDriverHandler) CreateVehicleTripDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.UpdateVehicleMileage(request.TrnRequestUID, request.TripEndMiles)
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": request})
 }
@@ -354,7 +354,7 @@ func (h *VehicleInUseDriverHandler) UpdateVehicleTripDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.UpdateVehicleMileage(request.TrnRequestUID, request.TripEndMiles)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": request})
 }
 
@@ -398,6 +398,13 @@ func (h *VehicleInUseDriverHandler) DeleteVehicleTripDetail(c *gin.Context) {
 		"updated_at": time.Now(),
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete", "message": messages.ErrInternalServer.Error()})
+	}
+
+	//max tripendmiles
+	var maxTripEndMiles int
+	if err := query.Table("public.vms_trn_trip_detail").Where("trn_request_uid = ? AND is_deleted = ?", existing.TrnRequestUID, "0").
+		Select("MAX(trip_end_miles) as max_trip_end_miles").First(&maxTripEndMiles).Error; err == nil {
+		funcs.UpdateVehicleMileage(existing.TrnRequestUID, maxTripEndMiles)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
@@ -553,7 +560,7 @@ func (h *VehicleInUseDriverHandler) CreateVehicleAddFuel(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.UpdateVehicleMileage(request.TrnRequestUID, request.Mile)
 	c.JSON(http.StatusCreated, gin.H{"message": "Created successfully", "data": request})
 }
 
@@ -651,7 +658,12 @@ func (h *VehicleInUseDriverHandler) DeleteVehicleAddFuel(c *gin.Context) {
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete", "message": messages.ErrInternalServer.Error()})
 	}
-
+	//max tripendmiles
+	var maxMiles int
+	if err := query.Table("public.vms_trn_trip_detail").Where("trn_request_uid = ? AND is_deleted = ?", existing.TrnRequestUID, "0").
+		Select("MAX(trip_end_miles) as max_trip_end_miles").First(&maxMiles).Error; err == nil {
+		funcs.UpdateVehicleMileage(existing.TrnRequestUID, maxMiles)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Deleted successfully"})
 }
 
@@ -849,6 +861,7 @@ func (h *VehicleInUseDriverHandler) ReturnedVehicle(c *gin.Context) {
 			"",
 		)
 	}
+	funcs.UpdateVehicleMileage(request.TrnRequestUID, request.MileEnd)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 

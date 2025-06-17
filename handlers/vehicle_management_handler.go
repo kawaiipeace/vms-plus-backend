@@ -279,8 +279,9 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 					('2' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 0) OR 
 					('3' in (?) AND r.ref_request_status_code >= '50' AND r.ref_request_status_code < '80' AND r.ref_trip_type_code = 1) OR
 					('4' in (?) AND r.ref_request_status_code = '80')
-				)
-			)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList)
+				) AND
+				 (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)	
+			)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, startDate, endDate, startDate, endDate)
 	}
 
 	if search := c.Query("search"); search != "" {

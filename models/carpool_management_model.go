@@ -7,21 +7,23 @@ import (
 
 // VmsMasCarpoolList
 type VmsMasCarpoolList struct {
-	MasCarpoolUID          string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid"`
-	CarpoolName            string `gorm:"column:carpool_name" json:"carpool_name"`
-	CarpoolDeptSap         string `gorm:"column:carpool_dept_sap" json:"carpool_dept_sap"`
-	CarpoolType            string `gorm:"column:carpool_type" json:"carpool_type"`
-	CarpoolTypeName        string `gorm:"-" json:"carpool_type_name"`
-	CarpoolAuthorizedDepts string `gorm:"carpool_authorized_depts" json:"carpool_authorized_depts"`
-	CarpoolAdminEmpName    string `gorm:"carpool_admin_emp_name" json:"carpool_admin_emp_name"`
-	CarpoolAdminDeptSap    string `gorm:"carpool_admin_dept_sap" json:"carpool_admin_dept_sap"`
-	CarpoolContactPlace    string `gorm:"column:carpool_contact_place" json:"carpool_contact_place"`
-	CarpoolContactNumber   string `gorm:"column:carpool_contact_number" json:"carpool_contact_number" `
-	NumberOfDrivers        int    `gorm:"number_of_drivers" json:"number_of_drivers" `
-	NumberOfVehicles       int    `gorm:"number_of_vehicles" json:"number_of_vehicles" `
-	NumberOfApprovers      int    `gorm:"numberOfApprovers" json:"numberOfApprovers" `
-	IsActive               string `gorm:"column:is_active" json:"is_active"`
-	CarpoolStatus          string `gorm:"-" json:"carpool_status"`
+	MasCarpoolUID            string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid"`
+	CarpoolName              string `gorm:"column:carpool_name" json:"carpool_name"`
+	CarpoolDeptSap           string `gorm:"column:carpool_dept_sap" json:"carpool_dept_sap"`
+	CarpoolType              string `gorm:"column:carpool_type" json:"carpool_type"`
+	CarpoolTypeName          string `gorm:"-" json:"carpool_type_name"`
+	CarpoolAuthorizedDepts   string `gorm:"carpool_authorized_depts" json:"carpool_authorized_depts"`
+	CarpoolAdminEmpName      string `gorm:"carpool_admin_emp_name" json:"carpool_admin_emp_name"`
+	CarpoolAdminDeptSapShort string `gorm:"carpool_admin_dept_sap_short" json:"carpool_admin_dept_sap_short"`
+	AdminDeptSapShort        string `gorm:"column:admin_dept_sap_short" json:"admin_dept_sap_short"`
+	AdminPosition            string `gorm:"column:admin_position" json:"admin_position"`
+	CarpoolContactPlace      string `gorm:"column:carpool_contact_place" json:"carpool_contact_place"`
+	CarpoolContactNumber     string `gorm:"column:carpool_contact_number" json:"carpool_contact_number" `
+	NumberOfDrivers          int    `gorm:"number_of_drivers" json:"number_of_drivers" `
+	NumberOfVehicles         int    `gorm:"number_of_vehicles" json:"number_of_vehicles" `
+	NumberOfApprovers        int    `gorm:"numberOfApprovers" json:"numberOfApprovers" `
+	IsActive                 string `gorm:"column:is_active" json:"is_active"`
+	CarpoolStatus            string `gorm:"-" json:"carpool_status"`
 }
 
 func (VmsMasCarpoolList) TableName() string {
@@ -293,29 +295,30 @@ func (VmsMasCarpoolVehicleList) TableName() string {
 
 // VmsMasCarpoolVehicleDetail
 type VmsMasCarpoolVehicleDetail struct {
-	MasVehicleUID        string    `gorm:"column:mas_vehicle_uid;primary" json:"mas_vehicle_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
-	IsActive             string    `gorm:"column:is_active" json:"is_active"`
-	VehicleLicensePlate  string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
-	VehicleBrandName     string    `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
-	VehicleModelName     string    `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	RefVehicleTypeCode   string    `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
-	RefVehicleTypeName   string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
-	VehicleOwnerDeptSAP  string    `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
-	FleetCardNo          string    `gorm:"column:fleet_card_no" json:"fleet_card_no"`
-	IsTaxCredit          bool      `gorm:"column:is_tax_credit" json:"is_tax_credit"`
-	VehicleMileage       float64   `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	VehicleGetDate       time.Time `gorm:"column:vehicle_get_date" json:"vehicle_get_date"` // Changed to time.Time
-	RefVehicleStatusCode string    `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
-	RefVehicleStatusName string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
-	Age                  string    `json:"age"`
-	Seat                 int       `gorm:"column:Seat" json:"seat"`
-	VehicleColor         string    `gorm:"column:vehicle_color" json:"vehicle_color"`
-	VehicleGear          string    `gorm:"column:vehicle_gear" json:"vehicle_gear"`
-	RefFuelTypeID        int       `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
-	FuelTypeName         string    `gorm:"column:fuel_type_name" json:"fuel_type_name"`
-	VehiclePeaID         string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
-	ParkingPlace         string    `gorm:"column:parking_place" json:"parking_place"`
-	VehicleImgs          []string  `gorm:"-" json:"vehicle_imgs"`
+	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid;primary" json:"mas_vehicle_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
+	IsActive                         string    `gorm:"column:is_active" json:"is_active"`
+	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleBrandName                 string    `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string    `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
+	RefVehicleTypeCode               string    `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
+	RefVehicleTypeName               string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
+	VehicleOwnerDeptSAP              string    `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
+	FleetCardNo                      string    `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+	IsTaxCredit                      bool      `gorm:"column:is_tax_credit" json:"is_tax_credit"`
+	VehicleMileage                   float64   `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	VehicleGetDate                   time.Time `gorm:"column:vehicle_get_date" json:"vehicle_get_date"` // Changed to time.Time
+	RefVehicleStatusCode             string    `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
+	RefVehicleStatusName             string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
+	Age                              string    `json:"age"`
+	Seat                             int       `gorm:"column:Seat" json:"seat"`
+	VehicleColor                     string    `gorm:"column:vehicle_color" json:"vehicle_color"`
+	VehicleGear                      string    `gorm:"column:vehicle_gear" json:"vehicle_gear"`
+	RefFuelTypeID                    int       `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	FuelTypeName                     string    `gorm:"column:fuel_type_name" json:"fuel_type_name"`
+	VehiclePeaID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	ParkingPlace                     string    `gorm:"column:parking_place" json:"parking_place"`
+	VehicleImgs                      []string  `gorm:"-" json:"vehicle_imgs"`
 }
 
 // VmsMasCarpoolVehicleCreate
@@ -404,7 +407,7 @@ type VmsMasCarpoolDriverDetail struct {
 	EndDate                        time.Time `gorm:"column:end_date" json:"end_date"`
 	DriverLicenseNo                string    `gorm:"column:driver_license_no" json:"driver_license_no"`
 	DriverLicenseEndDate           time.Time `gorm:"column:driver_license_end_date" json:"driver_license_end_date"`
-	IsActive                       string    `gorm:"column:is_active" json:"-"`
+	IsActive                       string    `gorm:"column:is_active" json:"is_active"`
 	VendorName                     string    `gorm:"column:vendor_name" json:"vendor_name"`
 }
 

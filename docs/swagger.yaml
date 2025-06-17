@@ -2573,6 +2573,11 @@ paths:
         in: query
         name: search
         type: string
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: query
+        name: mas_carpool_uid
+        required: true
+        type: string
       produces:
       - application/json
       responses: {}
@@ -2747,6 +2752,11 @@ paths:
         in: query
         name: search
         type: string
+      - description: MasCarpoolUID (mas_carpool_uid)
+        in: query
+        name: mas_carpool_uid
+        required: true
+        type: string
       produces:
       - application/json
       responses: {}
@@ -2862,6 +2872,26 @@ paths:
       - application/json
       responses: {}
       summary: Retrieve a specific carpool
+      tags:
+      - Carpool-management
+  /api/carpool-management/check-carpool-name-is-exist:
+    get:
+      consumes:
+      - application/json
+      description: Check carpool name is exist
+      parameters:
+      - description: Carpool Name
+        in: query
+        name: carpool_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Check carpool name is exist
       tags:
       - Carpool-management
   /api/carpool-management/create:

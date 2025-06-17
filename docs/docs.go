@@ -1608,6 +1608,13 @@ const docTemplate = `{
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolUID (mas_carpool_uid)",
+                        "name": "mas_carpool_uid",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {}
@@ -1888,6 +1895,13 @@ const docTemplate = `{
                         "description": "Search by Employee ID or Full Name",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "MasCarpoolUID (mas_carpool_uid)",
+                        "name": "mas_carpool_uid",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {}
@@ -2056,6 +2070,39 @@ const docTemplate = `{
                         "description": "MasCarpoolUID (mas_carpool_uid)",
                         "name": "mas_carpool_uid",
                         "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/carpool-management/check-carpool-name-is-exist": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Check carpool name is exist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Carpool-management"
+                ],
+                "summary": "Check carpool name is exist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Carpool Name",
+                        "name": "carpool_name",
+                        "in": "query",
                         "required": true
                     }
                 ],
