@@ -69,8 +69,8 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
-		rt.ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
-		v.vehicle_registration_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, d.is_active, mc.carpool_name vehicle_carpool_name, vs.ref_vehicle_status_short_name
+		"CarTypeDetail" AS ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
+		v.vehicle_registration_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, v.is_active, mc.carpool_name vehicle_carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
 		Joins("LEFT JOIN vms_ref_vehicle_type AS rt ON rt.ref_vehicle_type_code = v.ref_vehicle_type_code").
@@ -78,7 +78,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = v.mas_vehicle_uid AND mcv.is_deleted = '0'").
 		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid AND mc.is_deleted = '0'").
 		Joins("LEFT JOIN vms_ref_vehicle_status AS vs ON vs.ref_vehicle_status_code = d.ref_vehicle_status_code").
-		Where("v.is_deleted = ?", "0").Debug()
+		Where("v.is_deleted = ?", "0")
 
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
@@ -125,7 +125,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	case "age":
 		query = query.Order("age " + orderDir)
 	case "is_active":
-		query = query.Order("is_active " + orderDir)
+		query = query.Order("v.is_active " + orderDir)
 	default:
 		query = query.Order("vehicle_license_plate " + orderDir) // Default ordering by license plate
 	}
@@ -437,13 +437,13 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 				v.vehicle_brand_name,v.vehicle_model_name,
 				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_detail`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
-		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+		Joins("LEFT JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
 			startDate, endDate, startDate, endDate, startDate, endDate).
-		Joins("JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND td.is_deleted = '0'").
+		Joins("LEFT JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND td.is_deleted = '0'").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
 	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs).Debug()
@@ -554,13 +554,13 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 				(select ref_payment_type_name from vms_ref_payment_type where ref_payment_type_code = af.ref_payment_type_code) as payment_type_name
 				`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
-		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+		Joins("LEFT JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
 			startDate, endDate, startDate, endDate, startDate, endDate).
-		Joins("INNER JOIN vms_trn_add_fuel af ON af.is_deleted = '0' AND af.trn_request_uid = r.trn_request_uid").
+		Joins("LEFT JOIN vms_trn_add_fuel af ON af.is_deleted = '0' AND af.trn_request_uid = r.trn_request_uid").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
 	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)

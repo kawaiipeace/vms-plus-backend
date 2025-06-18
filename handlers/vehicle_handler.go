@@ -231,7 +231,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
-	query = query.Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = '0'", masVehicleUIDs)
+	query = query.Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = '0' AND v.is_active = '1'", masVehicleUIDs)
 	if searchText != "" {
 		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
 	}

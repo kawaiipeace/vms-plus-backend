@@ -944,5 +944,6 @@ func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
 		)
 	}
 	funcs.UpdateVehicleMileage(request.TrnRequestUID, request.MileEnd)
+	funcs.UpdateVehicleParkingPlace(request.TrnRequestUID, request.ReturnedParkingPlace)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

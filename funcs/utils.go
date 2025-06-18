@@ -88,6 +88,8 @@ func GetEmpImage(empID string) string {
 func GetDuration(createdAt time.Time) string {
 	duration := time.Since(createdAt)
 	switch {
+	case duration.Minutes() < 1:
+		return "ตอนนี้"
 	case duration.Hours() < 1:
 		return fmt.Sprintf("%d นาทีที่แล้ว", int(duration.Minutes()))
 	case duration.Hours() < 24:

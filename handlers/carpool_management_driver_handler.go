@@ -528,9 +528,9 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 						 (reserve_start_datetime BETWEEN ? AND ? OR reserve_end_datetime BETWEEN ? AND ?)
 					)`, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, refTimelineStatusIDList, startDate, endDate, startDate, endDate)
 	}
-	name := strings.ToUpper(c.Query("name"))
-	if name != "" {
-		query = query.Where("UPPER(driver_name) ILIKE ? OR UPPER(driver_nickname) ILIKE ? OR UPPER(driver_dept_sap_short_name_work) ILIKE ?", "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	search := strings.ToUpper(c.Query("search"))
+	if search != "" {
+		query = query.Where("driver_name ILIKE ? OR driver_nickname ILIKE ? OR driver_nickname ILIKE ? OR driver_dept_sap_short_work ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if workType := c.Query("work_type"); workType != "" {
 		workTypes := strings.Split(workType, ",")
