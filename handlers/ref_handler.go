@@ -59,9 +59,9 @@ func (h *RefHandler) ListVehicleStatus(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
+// @Param emp_id query string false "Employee ID (emp_id) default(700001)"
 // @Router /api/ref/cost-type [get]
 func (h *RefHandler) ListCostType(c *gin.Context) {
-	user := funcs.GetAuthenUser(c, "*")
 	var lists []models.VmsRefCostType
 	if err := config.DB.
 		Find(&lists).Error; err != nil {
@@ -70,9 +70,15 @@ func (h *RefHandler) ListCostType(c *gin.Context) {
 	}
 	for i := range lists {
 		if lists[i].RefCostTypeCode == "1" {
+			empID := c.Query("emp_id")
+			empUser := funcs.GetUserEmpInfo(empID)
+			if empUser.DeptSAP == "" {
+				lists[i].CostCenter = ""
+				continue
+			}
 			var department models.VmsMasDepartment
 			if err := config.DB.
-				Where("dept_sap = ?", user.DeptSAP).
+				Where("dept_sap = ?", empUser.DeptSAP).
 				First(&department).Error; err == nil {
 				lists[i].CostCenter = department.CostCenterCode + "  " + department.CostCenterName
 			} else {

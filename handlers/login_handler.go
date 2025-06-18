@@ -274,7 +274,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 				DeskPhone:     "",
 				BusinessArea:  "",
 				Roles:         []string{"driver"},
-				LoginBy:       "otp",
+				LoginBy:       "thaiid",
 				IsEmployee:    false,
 			}
 
@@ -295,7 +295,7 @@ func (h *LoginHandler) AuthenThaiID(c *gin.Context) {
 				BusinessArea:  loginUsr.BusinessArea,
 				LevelCode:     loginUsr.LevelCode,
 				Roles:         loginUsr.Roles,
-				LoginBy:       "otp",
+				LoginBy:       "thaiid",
 			}
 		}
 		user.LoginBy = "thaiid"

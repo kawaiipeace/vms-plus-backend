@@ -16,7 +16,7 @@ type VmsTrnRequestAdminList struct {
 	IsAdminChooseDriver      int       `gorm:"column:is_admin_choose_driver" json:"-"`
 	IsAdminChooseVehicle     int       `gorm:"column:is_admin_choose_vehicle" json:"-"`
 	IsPEAEmployeeDriver      int       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
-	TripType                 int       `gorm:"column:trip_type" json:"trip_type" example:"1"`
+	TripType                 int       `gorm:"column:ref_trip_type_code" json:"trip_type" example:"1"`
 	TripTypeName             string    `gorm:"-" json:"trip_type_name" example:"1"`
 	CanChooseVehicle         bool      `gorm:"-" json:"can_choose_vehicle"`
 	CanChooseDriver          bool      `gorm:"-" json:"can_choose_driver"`

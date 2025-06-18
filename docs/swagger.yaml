@@ -1281,6 +1281,9 @@ definitions:
       returned_cleanliness_level:
         example: 1
         type: integer
+      returned_parking_place:
+        example: Parking Lot 1
+        type: string
       returned_vehicle_datetime:
         example: "2025-04-16T14:30:00Z"
         type: string
@@ -5722,6 +5725,12 @@ paths:
       - application/json
       description: This endpoint allows a user to retrieve a list of available cost
         types for booking requests.
+      parameters:
+      - default: "700001"
+        description: Employee ID (emp_id) default(700001)
+        in: query
+        name: emp_id
+        type: string
       produces:
       - application/json
       responses: {}

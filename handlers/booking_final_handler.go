@@ -182,11 +182,14 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		if requests[i].RefCarpoolChooseCarID == 2 && requests[i].MasVehicleUID == nil {
 			requests[i].CanChooseVehicle = true
 		}
-		if requests[i].TripType == 0 {
+		//use switch case
+		switch requests[i].TripType {
+		case 0:
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 1 {
+		case 1:
 			requests[i].TripTypeName = "ค้างแรม"
 		}
+
 		if requests[i].IsPEAEmployeeDriver != 1 {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
 		}
