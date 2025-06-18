@@ -130,6 +130,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReceivedVehicleRemark       string                 `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
 
 	ReturnedVehicleDatetime     time.Time              `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
+	ReturnedParkingPlace        string                 `gorm:"column:returned_parking_place" json:"returned_parking_place" example:"Parking Lot 1"`
 	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	MileUsed                    int                    `gorm:"-" json:"mile_used" example:"200"`
@@ -291,6 +292,7 @@ type VmsTrnReturnedVehicle struct {
 	MileEnd                      int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                      int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	ReturnedCleanlinessLevel     int                    `gorm:"column:ref_cleanliness_code" json:"returned_cleanliness_level" example:"1"`
+	ReturnedParkingPlace         string                 `gorm:"column:returned_parking_place" json:"returned_parking_place" example:"Parking Lot 1"`
 	ReturnedVehicleRemark        string                 `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 	VehicleImages                []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
 	ReturnedVehicleEmpID         string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
