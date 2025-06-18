@@ -6915,6 +6915,15 @@ const docTemplate = `{
                     "REF"
                 ],
                 "summary": "Retrieve available cost types",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "700001",
+                        "description": "Employee ID (emp_id) default(700001)",
+                        "name": "emp_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -12509,6 +12518,10 @@ const docTemplate = `{
                 "returned_cleanliness_level": {
                     "type": "integer",
                     "example": 1
+                },
+                "returned_parking_place": {
+                    "type": "string",
+                    "example": "Parking Lot 1"
                 },
                 "returned_vehicle_datetime": {
                     "type": "string",

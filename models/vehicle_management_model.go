@@ -42,7 +42,7 @@ type VmsMasVehicleIsActiveUpdate struct {
 }
 
 func (VmsMasVehicleIsActiveUpdate) TableName() string {
-	return "vms_mas_vehicle_department"
+	return "vms_mas_vehicle"
 }
 
 type VehicleTimeLine struct {
