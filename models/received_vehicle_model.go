@@ -56,8 +56,8 @@ type VmsTrnTravelCard struct {
 	VehicleUserEmpID        string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"700001"`
 	VehicleUserEmpName      string `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name" example:"John Smith"`
 	VehicleUserDeptSAP      string `gorm:"column:vehicle_user_dept_sap" json:"vehicle_user_dept_sap" example:"HR"`
-	VehicleUserDeptSAPShort string `gorm:"column:vehicle_user_dept_sap_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
-	VehicleUserDeptSAPFull  string `gorm:"column:vehicle_user_dept_sap_name_full" json:"vehicle_user_dept_sap_full" example:"Finance"`
+	VehicleUserDeptSAPShort string `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
+	VehicleUserDeptSAPFull  string `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_sap_full" example:"Finance"`
 	VehicleUserImageURL     string `gorm:"-" json:"vehicle_user_image_url"`
 
 	ApprovedRequestEmpID        string `gorm:"column:approved_request_emp_id" json:"approved_request_emp_id" example:"EMP67890"`
