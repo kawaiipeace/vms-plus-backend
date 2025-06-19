@@ -610,12 +610,16 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 			}
 
 			if drivers[i].DriverTrnRequests[j].RefRequestStatusCode == "80" {
+				drivers[i].DriverTrnRequests[j].RefTimelineStatusID = "4"
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
-			} else if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "40" {
+			} else if drivers[i].DriverTrnRequests[j].RefRequestStatusCode < "50" {
+				drivers[i].DriverTrnRequests[j].RefTimelineStatusID = "1"
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "รออนุมัติ"
-			} else if drivers[i].DriverTrnRequests[j].TrnRequestUID == "0" {
+			} else if drivers[i].DriverTrnRequests[j].RefTripTypeCode == 0 {
+				drivers[i].DriverTrnRequests[j].RefTimelineStatusID = "2"
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ไป-กลับ"
 			} else if drivers[i].DriverTrnRequests[j].RefTripTypeCode == 1 {
+				drivers[i].DriverTrnRequests[j].RefTimelineStatusID = "3"
 				drivers[i].DriverTrnRequests[j].TimeLineStatus = "ค้างแรม"
 			}
 			drivers[i].DriverTrnRequests[j].RefRequestStatusName = StatusNameMapUser[drivers[i].DriverTrnRequests[j].RefRequestStatusCode]

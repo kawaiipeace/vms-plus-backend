@@ -110,7 +110,7 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 
 	// Generate API URL for viewing the file
 	apiHost := c.Request.Host // Get the host address from the incoming request
-	fileURL := "http://" + apiHost + "/api/files/" + bucketName + "/" + fileName
+	fileURL := "https://" + apiHost + "/api/files/" + bucketName + "/" + fileName
 
 	// Respond with success
 	c.JSON(http.StatusOK, gin.H{
