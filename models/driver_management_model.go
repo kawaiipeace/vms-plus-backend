@@ -406,6 +406,7 @@ type DriverTrnRequest struct {
 	VehicleUserMobilePhone           string             `gorm:"column:vehicle_user_mobile_phone" json:"car_user_mobile_contact_number" example:"0987654321"`
 	TripDetails                      []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
 	TimeLineStatus                   string             `gorm:"-" json:"time_line_status"`
+	RefTimelineStatusID              string             `gorm:"-" json:"ref_timeline_status_id"`
 }
 
 func (DriverTrnRequest) TableName() string {

@@ -88,7 +88,9 @@ type VehicleTrnRequest struct {
 	DriverMobileContact    string             `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
 	MasDriver              VmsMasDriverShort  `gorm:"foreignKey:MasCarpoolDriverUID;references:MasDriverUID" json:"driver"`
 	TripDetails            []VmsTrnTripDetail `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"trip_details"`
+	RefTimelineStatusID    string             `gorm:"-" json:"ref_timeline_status_id"`
 	TimeLineStatus         string             `gorm:"-" json:"time_line_status"`
+	TimeLineStatusShort    string             `gorm:"-" json:"time_line_status_short"`
 }
 
 func (VehicleTrnRequest) TableName() string {
