@@ -9,7 +9,7 @@ type VmsTrnRequestVehicleInUseList struct {
 	RequestNo                        string    `gorm:"column:request_no" json:"request_no"`
 	VehicleUserEmpID                 string    `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
 	VehicleUserEmpName               string    `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
-	VehicleUserDeptSAPShort          string    `gorm:"column:vehicle_user_dept_sap_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
+	VehicleUserDeptSAPShort          string    `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_sap_short" example:"Finance"`
 	VehicleUserPosition              string    `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
