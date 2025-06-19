@@ -628,12 +628,16 @@ func (h *CarpoolManagementHandler) GetCarpoolVehicleTimeLine(c *gin.Context) {
 				},
 			}
 			if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode == "80" {
+				vehicles[i].VehicleTrnRequests[j].RefTimelineStatusID = "4"
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "เสร็จสิ้น"
-			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode <= "40" {
+			} else if vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode < "50" {
+				vehicles[i].VehicleTrnRequests[j].RefTimelineStatusID = "1"
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "รออนุมัติ"
-			} else if vehicles[i].VehicleTrnRequests[j].TrnRequestUID == "0" {
+			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 0 {
+				vehicles[i].VehicleTrnRequests[j].RefTimelineStatusID = "2"
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ไป-กลับ"
 			} else if vehicles[i].VehicleTrnRequests[j].RefTripTypeCode == 1 {
+				vehicles[i].VehicleTrnRequests[j].RefTimelineStatusID = "3"
 				vehicles[i].VehicleTrnRequests[j].TimeLineStatus = "ค้างแรม"
 			}
 			vehicles[i].VehicleTrnRequests[j].RefRequestStatusName = StatusNameMapUser[vehicles[i].VehicleTrnRequests[j].RefRequestStatusCode]
