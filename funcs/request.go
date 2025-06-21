@@ -411,3 +411,87 @@ func UpdateVehicleParkingPlace(trnRequestUID string, parkingPlace string) error 
 
 	return nil
 }
+
+func CheckMustPassStatus30(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_30 = '1' AND
+        vms_trn_request.ref_request_status_code = '20' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='30'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus40(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_40 = '1' AND
+        vms_trn_request.ref_request_status_code = '30' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='40'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "40").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus50(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_50 = '1' AND
+        vms_trn_request.ref_request_status_code = '40' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='50'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "50").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus(trnRequestUID string) {
+	CheckMustPassStatus30(trnRequestUID)
+	CheckMustPassStatus40(trnRequestUID)
+	CheckMustPassStatus50(trnRequestUID)
+}

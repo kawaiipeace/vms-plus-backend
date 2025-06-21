@@ -64,3 +64,9 @@ type RequestAnnualLicenseNotification struct {
 func (RequestAnnualLicenseNotification) TableName() string {
 	return "vms_trn_request_annual_driver"
 }
+
+type NotificationRequestBodyPEA struct {
+	EmployeeId    string `json:"EmployeeId"`
+	MessageTypeID string `json:"MessageTypeID"`
+	Message       string `json:"Message"`
+}
