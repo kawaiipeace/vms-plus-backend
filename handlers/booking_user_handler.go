@@ -244,6 +244,8 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 		"",
 	)
 
+	funcs.CheckMustPassStatus(request.TrnRequestUID)
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Request created successfully",
 		"data":            result,
 		"request_no":      request.RequestNo,
@@ -1017,7 +1019,7 @@ func (h *BookingUserHandler) UpdateResend(c *gin.Context) {
 		"vehicle-user",
 		"",
 	)
-
+	funcs.CheckMustPassStatus(request.TrnRequestUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
