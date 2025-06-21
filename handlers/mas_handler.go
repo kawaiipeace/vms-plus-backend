@@ -217,9 +217,22 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 	userInfo := funcs.GetUserEmpInfo(empID)
 	managers := funcs.GetUserManager(userInfo.DeptSAP)
 	list := []models.MasUserEmp{}
+	listA := []models.MasUserEmp{}
 	for _, manager := range managers {
 		if manager.Type == "L" && manager.LevelCode >= "M5" {
 			list = append(list, models.MasUserEmp{
+				EmpID:        strconv.Itoa(manager.EmpIDLeader),
+				FullName:     manager.EmpName,
+				Position:     manager.PlansTextShort,
+				DeptSAP:      strconv.Itoa(manager.DeptSAP),
+				DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+				DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+				ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+				IsEmployee:   true,
+			})
+		}
+		if manager.Type == "A" && manager.LevelCode >= "M5" {
+			listA = append(listA, models.MasUserEmp{
 				EmpID:        strconv.Itoa(manager.EmpIDLeader),
 				FullName:     manager.EmpName,
 				Position:     manager.PlansTextShort,
@@ -283,6 +296,7 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 			}
 		}
 	}
+	list = append(list, listA...)
 	for i := range list {
 		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
 		list[i].TelMobile = empInfo.TelMobile

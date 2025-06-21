@@ -497,7 +497,7 @@ func (h *BookingConfirmerHandler) UpdateApproved(c *gin.Context) {
 		"level1-approval",
 		"",
 	)
-
+	funcs.CheckMustPassStatus(request.TrnRequestUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
