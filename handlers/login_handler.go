@@ -135,7 +135,7 @@ func (h *LoginHandler) AuthenKeyCloak(c *gin.Context) {
 				BusinessArea:  loginUsr.BusinessArea,
 				LevelCode:     loginUsr.LevelCode,
 				Roles:         loginUsr.Roles,
-				LoginBy:       "otp",
+				LoginBy:       "keycloak",
 				IsEmployee:    true,
 			}
 			user.LoginBy = "keycloak"
