@@ -461,6 +461,24 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			Update("ref_request_status_code", "40").Error; err != nil {
 			return
 		}
+
+		request := models.VmsTrnRequestApprovedWithRecieiveKey{
+			HandoverUID:              uuid.New().String(),
+			TrnRequestUID:            trnRequestUID,
+			ReceiverType:             0,
+			CreatedBy:                "system",
+			CreatedAt:                time.Now(),
+			UpdatedBy:                "system",
+			UpdatedAt:                time.Now(),
+			ReceivedKeyStartDatetime: time.Now(),
+			ReceivedKeyEndDatetime:   time.Now(),
+			ReceivedKeyPlace:         "-",
+		}
+
+		if err := config.DB.Save(&request).Error; err != nil {
+			return
+		}
+
 	}
 }
 
