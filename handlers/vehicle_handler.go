@@ -429,13 +429,6 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 			vehicle.VehicleImgs = append(vehicle.VehicleImgs, img.VehicleImgFile)
 		}
 	}
-	if len(vehicle.VehicleImgs) == 0 {
-		vehicle.VehicleImgs = []string{
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
-		}
-	}
 
 	// Get vehicle department details
 	if err := config.DB.Where("mas_vehicle_uid = ?", parsedID).
