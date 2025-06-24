@@ -1290,6 +1290,36 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 		row.AddCell().Value = fmt.Sprintf("%f", report.TripEndMiles)
 	}
 
+	// Add style to the header row (bold, background color)
+	headerStyle := xlsx.NewStyle()
+	font := xlsx.DefaultFont()
+	font.Bold = true
+	headerStyle.Font = *font
+	headerStyle.ApplyFont = true
+	headerStyle.Font.Color = "FFFFFF"
+	headerStyle.Fill = *xlsx.NewFill("solid", "4F81BD", "4F81BD")
+	headerStyle.ApplyFill = true
+	headerStyle.Alignment.Horizontal = "center"
+	headerStyle.Alignment.Vertical = "center"
+	headerStyle.ApplyAlignment = true
+	headerStyle.Border = xlsx.Border{
+		Left:   "thin",
+		Top:    "thin",
+		Bottom: "thin",
+		Right:  "thin",
+	}
+	headerStyle.ApplyBorder = true
+
+	// Apply style and auto-size columns for header row
+	for i, cell := range headerRow.Cells {
+		cell.SetStyle(headerStyle)
+		// Auto-size columns (set a default width)
+		col := sheet.Col(i)
+		if col != nil {
+			col.Width = 20
+		}
+	}
+
 	// Write the file to response
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", "attachment; filename=driver_work_reports.xlsx")
