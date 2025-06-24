@@ -105,13 +105,13 @@ type VmsDriverLicenseAnnualRequest struct {
 	DriverLicenseNo                  string    `gorm:"column:driver_license_no" json:"driver_license_no" example:"DL12345678"`
 	RefDriverLicenseTypeCode         string    `gorm:"column:ref_driver_license_type_code" json:"ref_driver_license_type_code" example:"1"`
 	DriverLicenseExpireDate          time.Time `gorm:"column:driver_license_expire_date" json:"driver_license_expire_date" example:"2025-12-31T00:00:00Z"`
-	DriverLicenseImg                 string    `gorm:"column:driver_license_img" json:"driver_license_img" example:"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/license.png"`
+	DriverLicenseImg                 string    `gorm:"column:driver_license_img" json:"driver_license_img" example:"http://vms-plus.pea.co.th/images/license.png"`
 	DriverCertificateNo              string    `gorm:"column:driver_certificate_no" json:"driver_certificate_no" example:"CERT12345"`
 	DriverCertificateName            string    `gorm:"column:driver_certificate_name" json:"driver_certificate_name" example:"Safety Certificate"`
 	DriverCertificateTypeCode        *int      `gorm:"column:driver_certificate_type_code" json:"driver_certificate_type_code" example:"1"`
 	DriverCertificateIssueDate       time.Time `gorm:"column:driver_certificate_issue_date" json:"driver_certificate_issue_date" example:"2023-01-01T00:00:00Z"`
 	DriverCertificateExpireDate      time.Time `gorm:"column:driver_certificate_expire_date" json:"driver_certificate_expire_date" example:"2024-12-31T00:00:00Z"`
-	DriverCertificateImg             string    `gorm:"column:driver_certificate_img" json:"driver_certificate_img" example:"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cert.png"`
+	DriverCertificateImg             string    `gorm:"column:driver_certificate_img" json:"driver_certificate_img" example:"http://vms-plus.pea.co.th/images/cert.png"`
 	RequestIssueDate                 time.Time `gorm:"column:request_issue_date" json:"-"`
 	RequestExpireDate                time.Time `gorm:"column:request_expire_date" json:"-"`
 	UpdatedAt                        time.Time `gorm:"column:updated_at" json:"-"`
