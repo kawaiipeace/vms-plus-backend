@@ -276,9 +276,9 @@ func (h *CarpoolManagementHandler) ExportCarpools(c *gin.Context) {
 		"สถานะ",
 	}
 
-	row := sheet.AddRow()
+	headerRow := sheet.AddRow()
 	for _, header := range headers {
-		cell := row.AddCell()
+		cell := headerRow.AddCell()
 		cell.Value = header
 	}
 
@@ -294,7 +294,35 @@ func (h *CarpoolManagementHandler) ExportCarpools(c *gin.Context) {
 		row.AddCell().Value = strconv.Itoa(carpool.NumberOfApprovers) + " คน"
 		row.AddCell().Value = carpool.CarpoolStatus
 	}
+	// Add style to the header row (bold, background color)
+	headerStyle := xlsx.NewStyle()
+	font := xlsx.DefaultFont()
+	font.Bold = true
+	headerStyle.Font = *font
+	headerStyle.ApplyFont = true
+	headerStyle.Font.Color = "FFFFFF"
+	headerStyle.Fill = *xlsx.NewFill("solid", "4F81BD", "4F81BD")
+	headerStyle.ApplyFill = true
+	headerStyle.Alignment.Horizontal = "center"
+	headerStyle.Alignment.Vertical = "center"
+	headerStyle.ApplyAlignment = true
+	headerStyle.Border = xlsx.Border{
+		Left:   "thin",
+		Top:    "thin",
+		Bottom: "thin",
+		Right:  "thin",
+	}
+	headerStyle.ApplyBorder = true
 
+	// Apply style and auto-size columns for header row
+	for i, cell := range headerRow.Cells {
+		cell.SetStyle(headerStyle)
+		// Auto-size columns (set a default width)
+		col := sheet.Col(i)
+		if col != nil {
+			col.Width = 20
+		}
+	}
 	c.Header("Content-Disposition", "attachment; filename=carpools.xlsx")
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("File-Name", fmt.Sprintf("carpools_%s.xlsx", time.Now().Format("2006-01-02")))

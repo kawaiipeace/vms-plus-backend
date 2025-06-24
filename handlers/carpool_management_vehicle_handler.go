@@ -125,12 +125,6 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			for _, img := range vehicleImgs {
 				vehicles[i].VehicleImgs = append(vehicles[i].VehicleImgs, img.VehicleImgFile)
 			}
-		} else {
-			vehicles[i].VehicleImgs = []string{
-				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-				"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
-			}
 		}
 	}
 	if len(vehicles) == 0 {
@@ -420,11 +414,6 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	for i := range vehicles {
 		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
 		funcs.TrimStringFields(&vehicles[i])
-		vehicles[i].VehicleImgs = []string{
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-			"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
-		}
 	}
 
 	c.JSON(http.StatusOK, vehicles)

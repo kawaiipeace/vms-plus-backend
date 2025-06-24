@@ -58,19 +58,6 @@ func (VmsMasVehicleCarpoolList) TableName() string {
 }
 
 func AssignVehicleImageFromIndex(vehicles []VmsMasVehicleList) []VmsMasVehicleList {
-	// List of random URLs
-	imageUrls := []string{
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-1.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-2.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-3.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cars/Vehicle-4.svg",
-	}
-
-	// Seed the random generator
-	for i := range vehicles {
-		vehicles[i].VehicleImg = imageUrls[i%len(imageUrls)]
-
-	}
 	return vehicles
 }
 
@@ -122,18 +109,6 @@ func (VmsRefCarTypeDetail) TableName() string {
 }
 
 func AssignTypeImageFromIndex(vehicle_types []VmsRefVehicleType) []VmsRefVehicleType {
-	// List of random URLs
-	imageUrls := []string{
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cartype/EV.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cartype/VAN.svg",
-		"http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cartype/SUV.svg",
-	}
-
-	// Seed the random generator
-	for i := range vehicle_types {
-		vehicle_types[i].VehicleTypeImage = imageUrls[i%len(imageUrls)]
-	}
-
 	return vehicle_types
 }
 

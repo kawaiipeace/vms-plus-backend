@@ -60,7 +60,7 @@ var AppConfig Config
 var DefaultAvatarURL string
 
 func InitConfig() {
-	DefaultAvatarURL = "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/user-avatar.jpg"
+	DefaultAvatarURL = "https://vms-plus.pea.co.th/images/user-avatar.jpg"
 	// Load the configuration from config.json
 	err := godotenv.Load()
 	if err != nil {
