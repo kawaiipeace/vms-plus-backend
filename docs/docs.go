@@ -10909,7 +10909,7 @@ const docTemplate = `{
                 },
                 "driver_certificate_img": {
                     "type": "string",
-                    "example": "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/cert.png"
+                    "example": "http://vms-plus.pea.co.th/images/cert.png"
                 },
                 "driver_certificate_issue_date": {
                     "type": "string",
@@ -10933,7 +10933,7 @@ const docTemplate = `{
                 },
                 "driver_license_img": {
                     "type": "string",
-                    "example": "http://pntdev.ddns.net:28089/VMS_PLUS/PIX/license.png"
+                    "example": "http://vms-plus.pea.co.th/images/license.png"
                 },
                 "driver_license_no": {
                     "type": "string",
