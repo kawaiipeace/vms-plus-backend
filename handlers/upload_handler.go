@@ -83,20 +83,7 @@ func (h *UploadHandler) UploadFile(c *gin.Context) {
 
 	// Create bucket if it doesn't exist
 	ctx := context.Background()
-	/*
-		exists, err := minioClient.BucketExists(ctx, bucketName)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check bucket existence", "details": err.Error(), "bucket_name": bucketName})
-			return
-		}
-		if !exists {
-			err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create bucket"})
-				return
-			}
-		}
-	*/
+
 	// Upload the file to MinIO
 	fileExt := filepath.Ext(file.Filename)
 	fileName := GenerateFileName(fileExt)
@@ -138,12 +125,11 @@ func determineContentType(fileName string) string {
 	}
 }
 
-func (h *UploadHandler) ViewFile(c *gin.Context) {
+func (h *UploadHandler) GetFile(c *gin.Context) {
 	// Extract bucket name and file name from the route parameters
 	bucketName := c.Param("bucket")
 	fileName := c.Param("file")
-	fmt.Println(bucketName)
-	fmt.Println(fileName)
+
 	// Get the object from MinIO
 	object, err := minioClient.GetObject(context.Background(), bucketName, fileName, minio.GetObjectOptions{})
 	if err != nil {

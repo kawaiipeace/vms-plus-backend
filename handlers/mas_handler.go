@@ -589,7 +589,7 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 	query := config.DB
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
 	if search != "" {
-		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	if err := query.
 		Order("dept_sap").
