@@ -410,7 +410,7 @@ func main() {
 	uploadHandler := handlers.UploadHandler{}
 	router.POST("/api/upload", funcs.ApiKeyMiddleware(), uploadHandler.UploadFile)
 	router.GET("/api/upload/files/:bucket", uploadHandler.ListFiles)
-	router.GET("/api/files/:bucket/:file", uploadHandler.ViewFile)
+	router.GET("/api/files/:bucket/:file", uploadHandler.GetFile)
 
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
