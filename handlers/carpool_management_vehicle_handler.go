@@ -321,13 +321,12 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	// Count total records
 	query.Count(&total)
-
-	// Execute query with pagination
-	query.Offset(offset).Limit(limit).Find(&vehicles)
-
 	deptSAPWork := user.DeptSAP
 	//order by vehicle_owner_dept_sap=deptSAPWork first
 	query = query.Order(fmt.Sprintf("CASE WHEN d.vehicle_owner_dept_sap = '%s' THEN 0 ELSE 1 END", deptSAPWork))
+
+	// Execute query with pagination
+	query.Offset(offset).Limit(limit).Find(&vehicles)
 
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
