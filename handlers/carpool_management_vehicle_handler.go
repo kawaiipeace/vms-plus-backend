@@ -287,7 +287,7 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/vehicle-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -315,11 +315,15 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 	query = query.Where("not exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0')")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)
 	if searchText != "" {
-		query = query.Where("v.vehicle_brand_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%")
+		query = query.Where("v.vehicle_brand_name ILIKE ? OR v.vehicle_license_plate ILIKE ? OR fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) ILIKE ?",
+			"%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
 	}
 
 	// Count total records
 	query.Count(&total)
+	deptSAPWork := user.DeptSAP
+	//order by vehicle_owner_dept_sap=deptSAPWork first
+	query = query.Order(fmt.Sprintf("CASE WHEN d.vehicle_owner_dept_sap = '%s' THEN 0 ELSE 1 END", deptSAPWork))
 
 	// Execute query with pagination
 	query.Offset(offset).Limit(limit).Find(&vehicles)

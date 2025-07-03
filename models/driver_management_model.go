@@ -17,7 +17,7 @@ type VmsMasDriverList struct {
 	WorkType                       int                `gorm:"column:work_type" json:"work_type"`
 	IsActive                       int                `gorm:"column:is_active" json:"is_active"`
 	DriverLicenseEndDate           string             `gorm:"column:driver_license_end_date" json:"driver_license_end_date"`
-	ApprovedJobDriverEndDate       time.Time          `gorm:"column:end_date" json:"approved_job_driver_end_date"`
+	ApprovedJobDriverEndDate       time.Time          `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date"`
 	RefDriverStatusCode            int                `gorm:"column:ref_driver_status_code" json:"-"`
 	DriverStatus                   VmsRefDriverStatus `gorm:"foreignKey:RefDriverStatusCode;references:RefDriverStatusCode" json:"driver_status"`
 }
