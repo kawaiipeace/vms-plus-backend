@@ -79,8 +79,8 @@ type VmsMasDriverImport struct {
 	VendorName                 string                     `gorm:"column:vendor_name" json:"vendor_name"`
 	DriverDeptSapWork          string                     `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work" example:"กยจ."`
 	DriverDeptSapShortNameWork string                     `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	StartDate                  time.Time                  `gorm:"column:start_date" json:"start_date" example:"2023-01-01T00:00:00Z"`
-	EndDate                    time.Time                  `gorm:"column:end_date" json:"end_date" example:"2023-12-31T23:59:59Z"`
+	ApprovedJobDriverStartDate time.Time                  `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00Z"`
+	ApprovedJobDriverEndDate   time.Time                  `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
 	RefOtherUseCode            string                     `gorm:"column:ref_other_use_code" json:"ref_other_use_code" example:"1"`
 	DriverLicense              VmsMasDriverLicenseRequest `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	CreatedAt                  time.Time                  `gorm:"column:created_at" json:"-"`
