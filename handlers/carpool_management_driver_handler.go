@@ -286,7 +286,7 @@ func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/carpool-management/driver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
-	funcs.GetAuthenUser(c, h.Role)
+	user := funcs.GetAuthenUser(c, h.Role)
 	if c.IsAborted() {
 		return
 	}
@@ -306,8 +306,11 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 		searchTerm := "%" + name + "%"
 		query = query.Where(`
             driver_name ILIKE ? OR 
-            driver_id ILIKE ?`,
-			searchTerm, searchTerm)
+            driver_id ILIKE ? OR
+			driver_nickname ILIKE ? OR
+			driver_dept_sap_short_work ILIKE ? OR
+			driver_dept_sap_full_work ILIKE ?`,
+			searchTerm, searchTerm, searchTerm, searchTerm, searchTerm)
 	}
 
 	var total int64
@@ -317,6 +320,10 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 	}
 	query = query.Limit(limit).
 		Offset(offset)
+
+	orderDeptSAP := user.DeptSAP
+	//order by driver_dept_sap_short_work=deptSAPWork first
+	query = query.Order(fmt.Sprintf("CASE WHEN driver_dept_sap_short_work = '%s' THEN 0 ELSE 1 END", orderDeptSAP))
 
 	if err := query.
 		Preload("DriverStatus").

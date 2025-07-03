@@ -64,8 +64,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	var drivers []models.VmsMasDriverList
 	query := h.SetQueryRole(user, config.DB).
 		Model(&models.VmsMasDriverList{}).
-		Select("vms_mas_driver.*, dl.driver_license_end_date").
-		Joins("LEFT JOIN LATERAL (SELECT mas_driver_uid, driver_license_end_date FROM vms_mas_driver_license ORDER BY driver_license_end_date DESC LIMIT 1) dl ON vms_mas_driver.mas_driver_uid = dl.mas_driver_uid").
+		Select("vms_mas_driver.*, (select max(driver_license_end_date) from vms_mas_driver_license where vms_mas_driver.mas_driver_uid = vms_mas_driver_license.mas_driver_uid and vms_mas_driver_license.is_deleted = '0') as driver_license_end_date").
 		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
 
 	if search := strings.ToUpper(c.Query("search")); search != "" {
