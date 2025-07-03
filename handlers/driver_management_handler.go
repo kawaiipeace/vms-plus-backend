@@ -1167,9 +1167,9 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			IsDeleted:     "0",
 			IsActive:      "1",
 		}
-		fmt.Println(driver.DriverIdentificationNo, driver.StartDate)
+		fmt.Println(driver.DriverIdentificationNo, driver.ApprovedJobDriverStartDate)
 		//check if driver already exists
-		if err := config.DB.Where("driver_identification_no = ? AND start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.StartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
+		if err := config.DB.Where("driver_identification_no = ? AND approved_job_driver_start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.ApprovedJobDriverStartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
 			drivers = append(drivers, driver)
 		}
 	}
