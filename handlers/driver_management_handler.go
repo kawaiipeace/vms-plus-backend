@@ -1130,12 +1130,12 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			DriverDeptSapShortNameHire: record["driver_dept_sap_short_name_hire"],
 			DriverDeptSapWork:          record["driver_dept_sap_work"],
 			DriverDeptSapShortNameWork: record["driver_dept_sap_short_work"],
-			StartDate: func() time.Time {
-				startDate, _ := time.Parse("2006-01-02", record["start_date"])
+			ApprovedJobDriverStartDate: func() time.Time {
+				startDate, _ := time.Parse("2006-01-02", record["approved_job_driver_start_date"])
 				return startDate
 			}(),
-			EndDate: func() time.Time {
-				endDate, _ := time.Parse("2006-01-02", record["end_date"])
+			ApprovedJobDriverEndDate: func() time.Time {
+				endDate, _ := time.Parse("2006-01-02", record["approved_job_driver_end_date"])
 				return endDate
 			}(),
 			RefOtherUseCode: "0",
@@ -1167,9 +1167,9 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			IsDeleted:     "0",
 			IsActive:      "1",
 		}
-		fmt.Println(driver.DriverIdentificationNo, driver.StartDate)
+		fmt.Println(driver.DriverIdentificationNo, driver.ApprovedJobDriverStartDate)
 		//check if driver already exists
-		if err := config.DB.Where("driver_identification_no = ? AND start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.StartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
+		if err := config.DB.Where("driver_identification_no = ? AND approved_job_driver_start_date = ? AND is_deleted = ?", driver.DriverIdentificationNo, driver.ApprovedJobDriverStartDate, "0").First(&models.VmsMasDriver{}).Error; err != nil {
 			drivers = append(drivers, driver)
 		}
 	}

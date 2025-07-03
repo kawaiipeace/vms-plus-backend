@@ -311,7 +311,7 @@ type VmsMasCarpoolVehicleDetail struct {
 	RefVehicleStatusCode             string    `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
 	RefVehicleStatusName             string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
 	Age                              string    `json:"age"`
-	Seat                             int       `gorm:"column:Seat" json:"seat"`
+	Seat                             int       `gorm:"column:seat" json:"seat"`
 	VehicleColor                     string    `gorm:"column:vehicle_color" json:"vehicle_color"`
 	VehicleGear                      string    `gorm:"column:vehicle_gear" json:"vehicle_gear"`
 	RefFuelTypeID                    int       `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
