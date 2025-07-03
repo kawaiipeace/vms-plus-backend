@@ -19,7 +19,7 @@ type VmsMasVehicleList struct {
 	VehicleColor                     string `gorm:"column:vehicle_color" json:"vehicle_color"`
 	VehicleMileage                   int    `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
 	LastMonthMileage                 int    `gorm:"column:last_month_mileage" json:"last_month_mileage"`
-	Seat                             int    `gorm:"column:Seat" json:"seat"`
+	Seat                             int    `gorm:"column:seat" json:"seat"`
 	IsAdminChooseDriver              bool   `json:"is_admin_choose_driver"`
 	CarpoolName                      string `gorm:"column:carpool_name" json:"-"`
 	FleetCardNo                      string `gorm:"column:fleet_card_no" json:"fleet_card_no"`
@@ -48,7 +48,7 @@ type VmsMasVehicleCarpoolList struct {
 	VehicleMileage                   string    `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
 	Age                              string    `gorm:"column:age" json:"age"`
 	RefVehicleStatusName             string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
-	Seat                             int       `gorm:"column:Seat" json:"seat"`
+	Seat                             int       `gorm:"column:seat" json:"seat"`
 	VehicleRegistrationDate          time.Time `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"`
 	IsAdminChooseDriver              bool      `json:"is_admin_choose_driver"`
 }
@@ -127,7 +127,7 @@ type VmsMasVehicle struct {
 	RefVehicleSubtypeCode            int                     `gorm:"column:ref_vehicle_subtype_code" json:"ref_vehicle_subtype_code"`
 	VehicleUserEmpID                 string                  `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
 	RefFuelTypeID                    int                     `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
-	Seat                             int                     `gorm:"column:Seat" json:"seat"`
+	Seat                             int                     `gorm:"column:seat" json:"seat"`
 	RefFuelType                      VmsRefFuelType          `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"ref_fuel_type"`
 	VehicleRegistrationDate          time.Time               `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"`
 	Age                              int                     `json:"age"`
