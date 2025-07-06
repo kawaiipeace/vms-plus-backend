@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -29,10 +30,28 @@ func (h *DriverManagementHandler) SetQueryRole(user *models.AuthenUserEmp, query
 }
 
 func (h *DriverManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
+	if slices.Contains(user.Roles, "admin-super") {
 		return query
 	}
-	return query
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-approval") {
+		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
+	}
+	return nil
+}
+
+func (h *DriverManagementHandler) CheckRoleDriverOwner(user *models.AuthenUserEmp, masDriverUID string) bool {
+	query := config.DB.Table("vms_mas_driver_department").Where("mas_driver_uid = ?", masDriverUID)
+	query = h.SetQueryRoleDept(user, query)
+
+	//if exist return true
+	var driverOwnerDeptSAP string
+	if err := query.First(&driverOwnerDeptSAP).Error; err != nil {
+		return false
+	}
+	return true
 }
 
 // SearchDrivers godoc
@@ -62,7 +81,8 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	var drivers []models.VmsMasDriverList
-	query := h.SetQueryRole(user, config.DB).
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query).
 		Model(&models.VmsMasDriverList{}).
 		Select("vms_mas_driver.*, (select max(driver_license_end_date) from vms_mas_driver_license where vms_mas_driver.mas_driver_uid = vms_mas_driver_license.mas_driver_uid and vms_mas_driver_license.is_deleted = '0') as driver_license_end_date").
 		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
@@ -280,6 +300,7 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	masDriverUID := c.Param("mas_driver_uid")
 	var driver models.VmsMasDriverResponse
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
@@ -321,6 +342,7 @@ func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 		return
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -400,6 +422,7 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 	request.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -450,6 +473,7 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -536,6 +560,7 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -618,6 +643,7 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -676,6 +702,7 @@ func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 		return
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -721,6 +748,7 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -766,6 +794,7 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 		return
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -831,6 +860,7 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -875,7 +905,9 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 	name := strings.ToUpper(c.Query("name"))
 	var drivers []models.VmsMasDriver
-	query := h.SetQueryRole(funcs.GetAuthenUser(c, h.Role), config.DB)
+	user := funcs.GetAuthenUser(c, h.Role)
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Model(&models.VmsMasDriver{})
 	query = query.Where("is_deleted = ? AND is_replacement = ?", "0", "1")
 	// Apply search filter
@@ -937,8 +969,9 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 	var drivers []models.DriverTimeLine
 	lastMonthDate := time.Date(startDate.Year(), startDate.Month()-1, 1, 0, 0, 0, 0, startDate.Location())
 
-	query := h.SetQueryRole(user, config.DB).
-		Table("public.vms_mas_driver AS d").
+	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
+	query = query.Table("public.vms_mas_driver AS d").
 		Select("d.*, w_thismth.job_count job_count_this_month, w_thismth.total_days total_day_this_month, w_lastmth.job_count job_count_last_month, w_lastmth.total_days total_day_last_month").
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = d.driver_id AND w_thismth.is_deleted = ?", startDate.Year(), startDate.Month(), "0").
 		Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_lastmth ON w_lastmth.workload_year = ? AND w_lastmth.workload_month = ? AND w_lastmth.driver_emp_id = d.driver_id AND w_lastmth.is_deleted = ?", lastMonthDate.Year(), lastMonthDate.Month(), "0").
@@ -1224,6 +1257,7 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 	var driverWorkReports []models.DriverWorkReport
 
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_driver AS d").
 		Select(`d.mas_driver_uid, d.driver_name, d.driver_nickname, d.driver_id, 
 				d.driver_dept_sap_short_work, d.driver_dept_sap_full_work, 

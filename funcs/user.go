@@ -244,6 +244,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		CheckAdminApprovalRole(&empUser)
 		CheckFinalApprovalRole(&empUser)
 		//empUser.Roles = append(empUser.Roles, "license-approval")
+		//empUser.Roles = []string{"admin-region"}
 		if empUser.LevelCode == "M5" {
 			empUser.IsLevelM5 = "1"
 		} else {

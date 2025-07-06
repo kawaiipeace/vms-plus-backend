@@ -258,7 +258,7 @@ func main() {
 	router.PUT("/api/vehicle-inspection-admin/update-inspect-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateInspectVehicleImages)
 
 	//VehicleManagementHandler
-	vehicleManagementHandler := handlers.VehicleManagementHandler{Role: "admin-super,admin-region,admin-dept"}
+	vehicleManagementHandler := handlers.VehicleManagementHandler{Role: "admin-super,admin-region,admin-approval"}
 	router.GET("/api/vehicle-management/search", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.SearchVehicles)
 	router.PUT("/api/vehicle-management/update-vehicle-is-active", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.UpdateVehicleIsActive)
 	router.GET("/api/vehicle-management/timeline", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.GetVehicleTimeLine)
@@ -266,7 +266,7 @@ func main() {
 	router.POST("/api/vehicle-management/report-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.ReportAddFuel)
 
 	//DriverManagementHandler
-	driverManagementHandler := handlers.DriverManagementHandler{Role: "admin-super,admin-region,admin-dept"}
+	driverManagementHandler := handlers.DriverManagementHandler{Role: "admin-super,admin-region,admin-approval"}
 	router.GET("/api/driver-management/search", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.SearchDrivers)
 	router.POST("/api/driver-management/create-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.CreateDriver)
 	router.GET("/api/driver-management/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriver)
