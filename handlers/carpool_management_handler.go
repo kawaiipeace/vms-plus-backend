@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -31,10 +32,16 @@ func (h *CarpoolManagementHandler) SetQueryRole(user *models.AuthenUserEmp, quer
 }
 
 func (h *CarpoolManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
+	if slices.Contains(user.Roles, "admin-super") {
 		return query
 	}
-	return query
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("cp.carpool_main_business_area = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-approval") {
+		return query.Where("exists (select 1 from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and public.fn_get_bureau_dept_sap(cad.dept_sap) = ?)", user.BureauDeptSap)
+	}
+	return nil
 }
 
 func GetCarpoolTypeName(carpoolType string) string {
@@ -72,6 +79,7 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 	}
 	var carpools []models.VmsMasCarpoolList
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Model(&models.VmsMasCarpoolList{})
 	query = query.Table("vms_mas_carpool cp").Select(`cp.*,
 		(select count(*) from vms_mas_carpool_driver cpd where is_deleted='0' and cpd.mas_carpool_uid=cp.mas_carpool_uid) number_of_drivers,
@@ -356,7 +364,7 @@ func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 	}
 	var lists []models.VmsMasDepartment
 
-	query := h.SetQueryRoleDept(user, config.DB)
+	query := h.SetQueryRole(user, config.DB)
 	if carpoolType == "02" {
 		query = query.Where("resource_code = '031'")
 	} else if carpoolType == "03" {
@@ -601,6 +609,8 @@ func (h *CarpoolManagementHandler) GetCarpool(c *gin.Context) {
 	masCarpoolUID := c.Param("mas_carpool_uid")
 	var carpool models.VmsMasCarpoolResponse
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
+	query = query.Table("vms_mas_carpool cp")
 	if err := query.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").
 		Preload("CarpoolChooseDriver").
 		Preload("CarpoolChooseCar").
@@ -650,6 +660,8 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 
 	var existingCarpool models.VmsMasCarpoolUpdate
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
+	query = query.Table("vms_mas_carpool cp")
 	if err := query.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -706,6 +718,8 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 		return
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ? AND carpool_name = ?", request.MasCarpoolUID, "0", request.CarpoolName).First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -786,6 +800,8 @@ func (h *CarpoolManagementHandler) SetActiveCarpool(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolRequest
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -844,6 +860,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolAdmin(c *gin.Context) {
 	offset := (page - 1) * limit
 	var carpool models.VmsMasCarpoolList
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
+	query = query.Table("vms_mas_carpool cp")
 	if err := query.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -942,6 +960,8 @@ func (h *CarpoolManagementHandler) GetCarpoolAdmin(c *gin.Context) {
 	}
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", admin.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1004,6 +1024,8 @@ func (h *CarpoolManagementHandler) CreateCarpoolAdmin(c *gin.Context) {
 	for i := range requests {
 		var existingCarpool models.VmsMasCarpoolRequest
 		queryRole := h.SetQueryRole(user, config.DB)
+		queryRole = h.SetQueryRoleDept(user, queryRole)
+		queryRole = queryRole.Table("vms_mas_carpool cp")
 		if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", requests[i].MasCarpoolUID, "0").First(&existingCarpool).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 			return
@@ -1074,6 +1096,8 @@ func (h *CarpoolManagementHandler) UpdateCarpoolAdmin(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1175,6 +1199,8 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", adminCarpool.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1321,6 +1347,8 @@ func (h *CarpoolManagementHandler) SearchCarpoolApprover(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", masCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1423,6 +1451,8 @@ func (h *CarpoolManagementHandler) GetCarpoolApprover(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", approver.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1524,6 +1554,8 @@ func (h *CarpoolManagementHandler) UpdateCarpoolApprover(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1581,6 +1613,8 @@ func (h *CarpoolManagementHandler) UpdateCarpoolMainApprover(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", existingApprover.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -1630,6 +1664,8 @@ func (h *CarpoolManagementHandler) DeleteCarpoolApprover(c *gin.Context) {
 
 	var carpool models.VmsMasCarpoolList
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = h.SetQueryRoleDept(user, queryRole)
+	queryRole = queryRole.Table("vms_mas_carpool cp")
 	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", approver.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
