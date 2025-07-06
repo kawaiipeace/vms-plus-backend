@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -22,17 +23,20 @@ type VehicleManagementHandler struct {
 }
 
 func (h *VehicleManagementHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
-		return query
-	}
 	return query
 }
 
 func (h *VehicleManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
-	if user.EmpID == "" {
+	if slices.Contains(user.Roles, "admin-super") {
 		return query
 	}
-	return query
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-approval") {
+		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
+	}
+	return nil
 }
 
 // SearchVehicles godoc
@@ -66,6 +70,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleManagementList
 
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
@@ -192,7 +197,9 @@ func (h *VehicleManagementHandler) UpdateVehicleIsActive(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	if err := query.First(&vehicle, "mas_vehicle_uid = ? and is_deleted = ?", request.MasVehicleUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -261,6 +268,7 @@ func (h *VehicleManagementHandler) GetVehicleTimeLine(c *gin.Context) {
 
 	var vehicles []models.VehicleTimeLine
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
@@ -431,6 +439,7 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 	var tripReports []models.VehicleReportTripDetail
 
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
@@ -573,6 +582,7 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	}
 	var fuelReports []models.VehicleReportAddFuel
 	query := h.SetQueryRole(user, config.DB)
+	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
