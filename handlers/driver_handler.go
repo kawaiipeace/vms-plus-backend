@@ -124,6 +124,7 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 // @Param name query string false "Driver name to search"
 // @Param work_type query string false "work type to search (0: ไป-กลับ,1: ค้างคืน)" default(0)
 // @Param mas_carpool_uid query string false "MasCarpoolUID (mas_carpool_uid)"
+// @Param mas_vehicle_uid query string false "MasVehicleUID (mas_vehicle_uid)"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of records per page (default: 10)"
 // @Router /api/driver/search-booking [get]
@@ -182,9 +183,19 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	query = query.Where("vms_mas_driver.is_deleted = ? AND vms_mas_driver.is_replacement = ?", "0", "0")
 	query = query.Where("vms_mas_driver.mas_driver_uid IN (?)", masDriverUIDs)
 
+	if masVehicleUID := c.Query("mas_vehicle_uid"); masVehicleUID != "" {
+		var masCarpoolUID string
+		if err := config.DB.Table("vms_v_info_vehicle_all_active").Where("mas_vehicle_uid = ?", masVehicleUID).Pluck("mas_carpool_uid", &masCarpoolUID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "MasCarpoolUID not found", "message": messages.ErrNotfound.Error()})
+			return
+		}
+		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
+	}
+
 	if masCarpoolUID := c.Query("mas_carpool_uid"); masCarpoolUID != "" {
 		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
 	}
+
 	// Apply search filter
 	if name != "" {
 		searchTerm := "%" + name + "%"

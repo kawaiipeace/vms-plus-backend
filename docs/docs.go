@@ -4582,6 +4582,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "MasVehicleUID (mas_vehicle_uid)",
+                        "name": "mas_vehicle_uid",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number (default: 1)",
                         "name": "page",
