@@ -74,7 +74,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	query = query.Table("public.vms_mas_vehicle AS v").
 		Select(`
 		v.mas_vehicle_uid, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full, v.vehicle_brand_name, v.vehicle_model_name, v.ref_vehicle_type_code,
-		"CarTypeDetail" AS ref_vehicle_type_name, md.dept_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
+		"CarTypeDetail" AS ref_vehicle_type_name, md.dept_long_short AS vehicle_owner_dept_short, d.fleet_card_no, v.is_tax_credit, d.vehicle_mileage,
 		v.vehicle_registration_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, v.is_active, mc.carpool_name vehicle_carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").

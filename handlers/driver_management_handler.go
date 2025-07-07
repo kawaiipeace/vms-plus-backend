@@ -226,13 +226,13 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverID = fmt.Sprintf("D%s%06d", BCode, GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
 	fmt.Println("driver.DriverID", driver.DriverID)
 	var departmentHire struct {
-		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
 		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
 		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Select("dept_short, dept_full").
+		Select("dept_long_short, dept_full").
 		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
@@ -406,13 +406,13 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 	}
 
 	var departmentHire struct {
-		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
 		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
 		Where("dept_sap = ?", request.DriverDeptSapHire).
-		Select("dept_short, dept_full").
+		Select("dept_long_short, dept_full").
 		Find(&departmentHire).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
@@ -420,13 +420,13 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 	request.DriverDeptSapShortNameHire = departmentHire.DeptShort
 
 	var departmentWork struct {
-		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
+		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
 		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
 	}
 
 	if err := config.DB.Model(&models.VmsMasDepartment{}).
 		Where("dept_sap = ?", request.DriverDeptSapWork).
-		Select("dept_short, dept_full").
+		Select("dept_long_short, dept_full").
 		Find(&departmentWork).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
