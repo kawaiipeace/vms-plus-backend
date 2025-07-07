@@ -57,6 +57,7 @@ func CheckDriverIsActive(masDriverUID string) {
 
 	if driver.ApprovedJobDriverEndDate.Before(time.Now()) {
 		isActive = "0"
+		refDriverStatusCode = 5
 	}
 
 	if driver.DriverLicense.DriverLicenseEndDate.Before(time.Now()) {
