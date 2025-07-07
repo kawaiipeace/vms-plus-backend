@@ -89,11 +89,11 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 		admin_position admin_position,
 	    fn_get_long_short_dept_name_by_dept_sap(admin_dept_sap) admin_dept_sap_short,
 		case carpool_type when '01' then 'สำนักงานใหญ่'
-			when '02' then (select dept_short from vms_mas_department md where md.dept_sap=cp.carpool_dept_sap)
+			when '02' then (select dept_long_short from vms_mas_department md where md.dept_sap=cp.carpool_dept_sap)
 			when '03' then 
 				case when (select count(*) from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0') > 1 
 					then cast((select count(*) from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0') as text)||' หน่วยงาน'
-					else (select md.dept_short from vms_mas_department md,vms_mas_carpool_authorized_dept cad where md.dept_sap=cad.dept_sap and cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0')
+					else (select md.dept_long_short from vms_mas_department md,vms_mas_carpool_authorized_dept cad where md.dept_sap=cad.dept_sap and cad.mas_carpool_uid=cp.mas_carpool_uid and cad.is_deleted='0')
 				end
 		end as carpool_authorized_depts
 
@@ -374,7 +374,7 @@ func (h *CarpoolManagementHandler) GetMasDepartment(c *gin.Context) {
 	search := c.Query("search")
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1").Limit(100)
 	if search != "" {
-		query = query.Where("dept_sap ILIKE ? OR dept_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("dept_sap ILIKE ? OR dept_long_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
 	query = query.Order("dept_change_code")
@@ -950,7 +950,7 @@ func (h *CarpoolManagementHandler) GetCarpoolAdmin(c *gin.Context) {
 	var admin models.VmsMasCarpoolAdminList
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("vms_mas_carpool_admin cpa").
-		Select("cpa.*, dept.dept_short admin_dept_sap_short").
+		Select("cpa.*, dept.dept_long_short admin_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.admin_dept_sap").
 		Where("cpa.mas_carpool_admin_uid = ? AND cpa.is_deleted = ?", masCarpoolAdminUID, "0")
 
@@ -1440,7 +1440,7 @@ func (h *CarpoolManagementHandler) GetCarpoolApprover(c *gin.Context) {
 
 	var approver models.VmsMasCarpoolApproverList
 	query := config.DB.Table("vms_mas_carpool_approver cpa").
-		Select("cpa.*, dept.dept_short approver_dept_sap_short").
+		Select("cpa.*, dept.dept_long_short approver_dept_sap_short").
 		Joins("LEFT JOIN vms_mas_department dept ON dept.dept_sap = cpa.approver_dept_sap").
 		Where("cpa.mas_carpool_approver_uid = ? AND cpa.is_deleted = ?", masCarpoolApproverUID, "0")
 
