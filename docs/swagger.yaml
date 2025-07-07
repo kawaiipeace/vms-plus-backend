@@ -4483,6 +4483,10 @@ paths:
         in: query
         name: mas_carpool_uid
         type: string
+      - description: MasVehicleUID (mas_vehicle_uid)
+        in: query
+        name: mas_vehicle_uid
+        type: string
       - description: 'Page number (default: 1)'
         in: query
         name: page

@@ -105,6 +105,7 @@ func InitConfig() {
 		PEANotificationToken:    os.Getenv("PEA_NOTIFICATION_TOKEN"),
 	}
 	fmt.Printf("load AppConfig: %s %d\n", AppConfig.AppName, AppConfig.Port)
+
 }
 func getEnvAsInt(key string, defaultValue int) int {
 	valueStr := os.Getenv(key)
