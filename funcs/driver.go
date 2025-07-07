@@ -29,11 +29,12 @@ func CheckDriverIsActive(masDriverUID string) {
 		isActive = "0"
 	}
 
-	if driver.ApprovedJobDriverStartDate.Before(time.Now()) {
+	//check now is between approved_job_driver_start_date and approved_job_driver_end_date
+	if driver.ApprovedJobDriverStartDate.After(time.Now()) {
 		isActive = "0"
 	}
 
-	if driver.ApprovedJobDriverEndDate.After(time.Now()) {
+	if driver.ApprovedJobDriverEndDate.Before(time.Now()) {
 		isActive = "0"
 	}
 
