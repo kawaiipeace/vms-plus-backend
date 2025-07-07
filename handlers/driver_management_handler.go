@@ -54,6 +54,16 @@ func (h *DriverManagementHandler) CheckRoleDriverOwner(user *models.AuthenUserEm
 	return true
 }
 
+// @Summary Check if the job driver is active
+// @Description Check if the job driver is active
+// @Tags Drivers-management
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param mas_driver_uid path string true "MasDriverUID (mas_driver_uid)"
+// @Router /api/driver-management/job-driver-check-active/{mas_driver_uid} [get]
+
 // SearchDrivers godoc
 // @Summary Get drivers by name with pagination
 // @Description Get a list of drivers filtered by name with pagination
@@ -211,9 +221,10 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverLicense.IsDeleted = "0"
 	driver.DriverLicense.IsActive = "1"
 
-	BCode := user.BusinessArea[0:1]
-	driver.DriverID = fmt.Sprintf("DB%06d", GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
-
+	BusinessArea := funcs.GetBusinessAreaCodeFromDeptSap(driver.DriverDeptSapHire)
+	BCode := BusinessArea[0:1]
+	driver.DriverID = fmt.Sprintf("D%s%06d", BCode, GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
+	fmt.Println("driver.DriverID", driver.DriverID)
 	var departmentHire struct {
 		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
 		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
@@ -274,10 +285,13 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		return
 	}
 
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
+
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver created successfully",
 		"data":           driver,
 		"mas_driver_uid": driver.MasDriverUID,
+		"driver_id":      driver.DriverID,
 	})
 }
 
@@ -354,7 +368,7 @@ func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -440,6 +454,7 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		return
 
 	}
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
@@ -519,6 +534,7 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 		}
 	*/
 
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result).
 		Order("updated_at desc").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err), "message": messages.ErrInternalServer.Error()})
@@ -661,7 +677,7 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})
 		return
 	}
-
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result, "trn_driver_leave_uid = ?", request.TrnDriverLeaveUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -714,7 +730,7 @@ func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -755,6 +771,7 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 	}
 
 	if err := config.DB.Model(&driver).UpdateColumns(map[string]interface{}{
+		"is_active":  "0",
 		"is_deleted": "1",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
@@ -821,6 +838,7 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 			return
 		}
 	}
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
@@ -882,6 +900,7 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 			return
 		}
 	}
+	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	if err := config.DB.First(&result, "mas_driver_uid = ?", request.MasDriverUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return

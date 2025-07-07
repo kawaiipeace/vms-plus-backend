@@ -33,6 +33,7 @@ type VmsTrnRequestVehicleInUseList struct {
 
 	ParkingPlace      string `gorm:"column:parking_place" json:"parking_place"`
 	NextStartDatetime string `gorm:"-" json:"next_start_datetime"`
+	WorkDescription   string `gorm:"column:work_description" json:"work_description"`
 }
 
 // VmsTrnRequestVehicleInUseResponse

@@ -24,6 +24,7 @@ type VmsTrnRequestAdminList struct {
 	DriverCarpoolName        string    `gorm:"column:driver_carpool_name" json:"-"`
 	RefCarpoolChooseCarID    int       `gorm:"column:ref_carpool_choose_car_id" json:"-"`
 	RefCarpoolChooseDriverID int       `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
+	WorkDescription          string    `gorm:"column:work_description" json:"work_description"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -54,6 +55,7 @@ type VmsTrnRequestList struct {
 	CanceledRequestDatetime          time.Time `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string    `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	WorkDescription                  string    `gorm:"column:work_description" json:"work_description"`
 }
 
 func (VmsTrnRequestList) TableName() string {
