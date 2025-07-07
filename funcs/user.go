@@ -88,7 +88,9 @@ func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
 	}
 	//check if vms_trn_request has confirmed_request_emp_id
 	var adminApproval models.VmsMasCarpoolAdmin
-	err := config.DB.Where("admin_emp_no = ?", user.EmpID).First(&adminApproval).Error
+	err := config.DB.Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
+		First(&adminApproval).Error
 	if err == nil {
 		user.Roles = append(user.Roles, "admin-approval")
 		return
@@ -101,7 +103,9 @@ func CheckFinalApprovalRole(user *models.AuthenUserEmp) {
 	}
 	//check if vms_trn_request has confirmed_request_emp_id
 	var finalApproval models.VmsMasCarpoolApprover
-	err := config.DB.Where("approver_emp_no = ?", user.EmpID).First(&finalApproval).Error
+	err := config.DB.Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
+		First(&finalApproval).Error
 	if err == nil {
 		user.Roles = append(user.Roles, "final-approval")
 		return
@@ -419,4 +423,15 @@ func GetUserManager(DeptSAP string) []models.VmsMasManager {
 		fmt.Println(err)
 	}
 	return response.Data.Data.DataDetail
+}
+
+func GetBusinessAreaCodeFromDeptSap(deptSAP string) string {
+	//call db public.fn_get_business_area_code_from_dept_sap
+	var businessArea string
+	err := config.DB.Table("vms_mas_department").Where("dept_sap = ?", deptSAP).
+		Select("business_area").First(&businessArea).Error
+	if err != nil {
+		return "Z000"
+	}
+	return businessArea
 }

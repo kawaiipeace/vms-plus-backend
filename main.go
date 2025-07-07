@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 	"vms_plus_be/config"
@@ -34,6 +35,7 @@ func main() {
 	config.InitConfig()
 	config.InitDB()
 	handlers.InitMinIO(config.AppConfig.MinIoEndPoint, config.AppConfig.MinIoAccessKey, config.AppConfig.MinIoSecretKey, true)
+	funcs.InitCronJob()
 
 	router := gin.Default()
 	router.SetTrustedProxies([]string{"192.168.1.1", "192.168.1.2"})
@@ -411,6 +413,11 @@ func main() {
 	router.POST("/api/upload", funcs.ApiKeyMiddleware(), uploadHandler.UploadFile)
 	router.GET("/api/upload/files/:bucket", uploadHandler.ListFiles)
 	router.GET("/api/files/:bucket/:file", uploadHandler.GetFile)
+	//Job
+	router.GET("/api/job/driver-check-active", func(c *gin.Context) {
+		funcs.JobDriversCheckActive()
+		c.JSON(http.StatusOK, gin.H{"message": "Job drivers checked successfully"})
+	})
 
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
