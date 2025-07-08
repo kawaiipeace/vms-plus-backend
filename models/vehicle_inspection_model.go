@@ -6,14 +6,14 @@ import (
 
 // VmsTrnReturnedVehicle
 type VmsTrnReturnedVehicleNoImage struct {
-	TrnRequestUID           string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	ReturnedVehicleDatetime time.Time `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
-	MileEnd                 int       `gorm:"column:mile_end" json:"mile_end" example:"12000"`
-	FuelEnd                 int       `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
-	ReceivedVehicleRemark   string    `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
-	ReturnedVehicleRemark   string    `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
-	UpdatedAt               time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy               string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID           string       `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	ReturnedVehicleDatetime TimeWithZone `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	MileEnd                 int          `gorm:"column:mile_end" json:"mile_end" example:"12000"`
+	FuelEnd                 int          `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
+	ReceivedVehicleRemark   string       `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
+	ReturnedVehicleRemark   string       `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
+	UpdatedAt               time.Time    `gorm:"column:updated_at" json:"-"`
+	UpdatedBy               string       `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnReturnedVehicleNoImage) TableName() string {
@@ -47,16 +47,16 @@ func (VmsTrnSatisfactionSurveyAnswersResponse) TableName() string {
 
 // VmsTrnRequestAccepted
 type VmsTrnRequestAccepted struct {
-	TrnRequestUID              string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	InspectVehicleDatetime     time.Time `gorm:"column:inspected_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
-	InspectVehicleEmpID        string    `gorm:"column:inspected_vehicle_emp_id" json:"-"`
-	InspectVehicleEmpName      string    `gorm:"column:inspected_vehicle_emp_name" json:"-"`
-	InspectVehicleDeptSAP      string    `gorm:"column:inspected_vehicle_dept_sap" json:"-"`
-	InspectVehicleDeptSAPShort string    `gorm:"column:inspected_vehicle_dept_name_short" json:"-"`
-	InspectVehicleDeptSAPFull  string    `gorm:"column:inspected_vehicle_dept_name_full" json:"-"`
-	RefRequestStatusCode       string    `gorm:"column:ref_request_status_code" json:"-"`
-	UpdatedAt                  time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy                  string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID              string       `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	InspectVehicleDatetime     TimeWithZone `gorm:"column:inspected_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	InspectVehicleEmpID        string       `gorm:"column:inspected_vehicle_emp_id" json:"-"`
+	InspectVehicleEmpName      string       `gorm:"column:inspected_vehicle_emp_name" json:"-"`
+	InspectVehicleDeptSAP      string       `gorm:"column:inspected_vehicle_dept_sap" json:"-"`
+	InspectVehicleDeptSAPShort string       `gorm:"column:inspected_vehicle_dept_name_short" json:"-"`
+	InspectVehicleDeptSAPFull  string       `gorm:"column:inspected_vehicle_dept_name_full" json:"-"`
+	RefRequestStatusCode       string       `gorm:"column:ref_request_status_code" json:"-"`
+	UpdatedAt                  time.Time    `gorm:"column:updated_at" json:"-"`
+	UpdatedBy                  string       `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnRequestAccepted) TableName() string {

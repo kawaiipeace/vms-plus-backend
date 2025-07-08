@@ -183,7 +183,7 @@ type VmsMasCarpoolAdminCreate struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
@@ -206,7 +206,7 @@ type VmsMasCarpoolAdmin struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
@@ -250,7 +250,7 @@ type VmsMasCarpoolApproverCreate struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
@@ -295,30 +295,30 @@ func (VmsMasCarpoolVehicleList) TableName() string {
 
 // VmsMasCarpoolVehicleDetail
 type VmsMasCarpoolVehicleDetail struct {
-	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid;primary" json:"mas_vehicle_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
-	IsActive                         string    `gorm:"column:is_active" json:"is_active"`
-	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
-	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
-	VehicleBrandName                 string    `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
-	VehicleModelName                 string    `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	RefVehicleTypeCode               string    `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
-	RefVehicleTypeName               string    `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
-	VehicleOwnerDeptSAP              string    `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
-	FleetCardNo                      string    `gorm:"column:fleet_card_no" json:"fleet_card_no"`
-	IsTaxCredit                      bool      `gorm:"column:is_tax_credit" json:"is_tax_credit"`
-	VehicleMileage                   float64   `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	VehicleRegistrationDate          time.Time `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"` // Changed to time.Time
-	RefVehicleStatusCode             string    `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
-	RefVehicleStatusName             string    `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
-	Age                              string    `json:"age"`
-	Seat                             int       `gorm:"column:seat" json:"seat"`
-	VehicleColor                     string    `gorm:"column:vehicle_color" json:"vehicle_color"`
-	VehicleGear                      string    `gorm:"column:vehicle_gear" json:"vehicle_gear"`
-	RefFuelTypeID                    int       `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
-	FuelTypeName                     string    `gorm:"column:fuel_type_name" json:"fuel_type_name"`
-	VehiclePeaID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
-	ParkingPlace                     string    `gorm:"column:parking_place" json:"parking_place"`
-	VehicleImgs                      []string  `gorm:"-" json:"vehicle_imgs"`
+	MasVehicleUID                    string       `gorm:"column:mas_vehicle_uid;primary" json:"mas_vehicle_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
+	IsActive                         string       `gorm:"column:is_active" json:"is_active"`
+	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleBrandName                 string       `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string       `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
+	RefVehicleTypeCode               string       `gorm:"column:ref_vehicle_type_code" json:"ref_vehicle_type_code"`
+	RefVehicleTypeName               string       `gorm:"column:ref_vehicle_type_name" json:"ref_vehicle_type_name"`
+	VehicleOwnerDeptSAP              string       `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
+	FleetCardNo                      string       `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+	IsTaxCredit                      bool         `gorm:"column:is_tax_credit" json:"is_tax_credit"`
+	VehicleMileage                   float64      `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	VehicleRegistrationDate          TimeWithZone `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"` // Changed to time.Time
+	RefVehicleStatusCode             string       `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
+	RefVehicleStatusName             string       `gorm:"column:ref_vehicle_status_name" json:"ref_vehicle_status_name"`
+	Age                              string       `json:"age"`
+	Seat                             int          `gorm:"column:seat" json:"seat"`
+	VehicleColor                     string       `gorm:"column:vehicle_color" json:"vehicle_color"`
+	VehicleGear                      string       `gorm:"column:vehicle_gear" json:"vehicle_gear"`
+	RefFuelTypeID                    int          `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	FuelTypeName                     string       `gorm:"column:fuel_type_name" json:"fuel_type_name"`
+	VehiclePeaID                     string       `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	ParkingPlace                     string       `gorm:"column:parking_place" json:"parking_place"`
+	VehicleImgs                      []string     `gorm:"-" json:"vehicle_imgs"`
 }
 
 // VmsMasCarpoolVehicleCreate
@@ -329,13 +329,13 @@ type VmsMasCarpoolVehicleCreate struct {
 	IsActive             string    `gorm:"column:is_active" json:"-"`
 	IsDeleted            string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt            time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	UpdatedAt            time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
 	CreatedBy            string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 
-	StartDate               time.Time `gorm:"column:start_date" json:"-"`
-	EndDate                 time.Time `gorm:"column:end_date" json:"-"`
-	MasVehicleDepartmentUID string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
+	StartDate               TimeWithZone `gorm:"column:start_date" json:"-"`
+	EndDate                 TimeWithZone `gorm:"column:end_date" json:"-"`
+	MasVehicleDepartmentUID string       `gorm:"column:mas_vehicle_department_uid" json:"-"`
 }
 
 func (VmsMasCarpoolVehicleCreate) TableName() string {
@@ -354,9 +354,9 @@ type VmsMasCarpoolVehicle struct {
 	CreatedBy            string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 
-	StartDate               time.Time `gorm:"column:start_date" json:"-"`
-	EndDate                 time.Time `gorm:"column:end_date" json:"-"`
-	MasVehicleDepartmentUID string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
+	StartDate               TimeWithZone `gorm:"column:start_date" json:"-"`
+	EndDate                 TimeWithZone `gorm:"column:end_date" json:"-"`
+	MasVehicleDepartmentUID string       `gorm:"column:mas_vehicle_department_uid" json:"-"`
 }
 
 func (VmsMasCarpoolVehicle) TableName() string {
@@ -367,7 +367,7 @@ func (VmsMasCarpoolVehicle) TableName() string {
 type VmsMasCarpoolVehicleActive struct {
 	MasCarpoolVehicleUID string    `gorm:"column:mas_carpool_vehicle_uid;primaryKey" json:"mas_carpool_vehicle_uid" example:"164632c9-1d33-477e-b335-97a4e79a5845"`
 	IsActive             string    `gorm:"column:is_active" json:"is_active" example:"1"`
-	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	UpdatedAt            time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 }
 
@@ -388,27 +388,27 @@ func (VmsMasCarpoolDriverList) TableName() string {
 
 // VmsMasCarpoolDriverDetail
 type VmsMasCarpoolDriverDetail struct {
-	MasDriverUID                   string    `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
-	DriverImage                    string    `gorm:"column:driver_image" json:"driver_image"`
-	DriverName                     string    `gorm:"column:driver_name" json:"driver_name"`
-	DriverNickname                 string    `gorm:"column:driver_nickname" json:"driver_nickname"`
-	DriverBirthdate                time.Time `gorm:"column:driver_birthdate" json:"driver_birthdate"`
-	Age                            string    `gorm:"-" json:"age"`
-	DriverDeptSapHire              string    `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire"`
-	DriverDeptSapShortNameHire     string    `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire"`
-	DriverDeptSapWork              string    `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
-	DriverDeptSapShortNameWork     string    `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_work"`
-	DriverContactNumber            string    `gorm:"column:driver_contact_number" json:"driver_contact_number"`
-	ApprovedJobDriverEndDate       time.Time `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date"`
-	DriverAverageSatisfactionScore float64   `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
-	DriverTotalSatisfactionReview  int       `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
-	RefDriverStatusName            string    `gorm:"column:driver_status_name" json:"driver_status_name"`
-	ContractNo                     string    `gorm:"column:contract_no" json:"contract_no"`
-	EndDate                        time.Time `gorm:"column:end_date" json:"end_date"`
-	DriverLicenseNo                string    `gorm:"column:driver_license_no" json:"driver_license_no"`
-	DriverLicenseEndDate           time.Time `gorm:"column:driver_license_end_date" json:"driver_license_end_date"`
-	IsActive                       string    `gorm:"column:is_active" json:"is_active"`
-	VendorName                     string    `gorm:"column:vendor_name" json:"vendor_name"`
+	MasDriverUID                   string       `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"334632c9-1d33-477e-b335-97a4e79a5845"`
+	DriverImage                    string       `gorm:"column:driver_image" json:"driver_image"`
+	DriverName                     string       `gorm:"column:driver_name" json:"driver_name"`
+	DriverNickname                 string       `gorm:"column:driver_nickname" json:"driver_nickname"`
+	DriverBirthdate                TimeWithZone `gorm:"column:driver_birthdate" json:"driver_birthdate"`
+	Age                            string       `gorm:"-" json:"age"`
+	DriverDeptSapHire              string       `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire"`
+	DriverDeptSapShortNameHire     string       `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire"`
+	DriverDeptSapWork              string       `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
+	DriverDeptSapShortNameWork     string       `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_work"`
+	DriverContactNumber            string       `gorm:"column:driver_contact_number" json:"driver_contact_number"`
+	ApprovedJobDriverEndDate       TimeWithZone `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date"`
+	DriverAverageSatisfactionScore float64      `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverTotalSatisfactionReview  int          `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
+	RefDriverStatusName            string       `gorm:"column:driver_status_name" json:"driver_status_name"`
+	ContractNo                     string       `gorm:"column:contract_no" json:"contract_no"`
+	EndDate                        TimeWithZone `gorm:"column:end_date" json:"end_date"`
+	DriverLicenseNo                string       `gorm:"column:driver_license_no" json:"driver_license_no"`
+	DriverLicenseEndDate           TimeWithZone `gorm:"column:driver_license_end_date" json:"driver_license_end_date"`
+	IsActive                       string       `gorm:"column:is_active" json:"is_active"`
+	VendorName                     string       `gorm:"column:vendor_name" json:"vendor_name"`
 }
 
 func (d *VmsMasCarpoolDriverDetail) CalculateAgeInYearsMonths() string {
@@ -435,17 +435,17 @@ func (d *VmsMasCarpoolDriverDetail) CalculateAgeInYearsMonths() string {
 
 // VmsMasCarpoolDriverCreate
 type VmsMasCarpoolDriverCreate struct {
-	MasCarpoolDriverUID string    `gorm:"column:mas_carpool_driver_uid;primaryKey" json:"-"`
-	MasCarpoolUID       string    `gorm:"column:mas_carpool_uid" json:"-"`
-	MasDriverUID        string    `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"9c63bdfa-1a80-4238-8a3a-cbc1891161a2"`
-	StartDate           time.Time `gorm:"column:start_date" json:"-"`
-	EndDate             time.Time `gorm:"column:end_date" json:"-"`
-	IsActive            string    `gorm:"column:is_active" json:"-"`
-	IsDeleted           string    `gorm:"column:is_deleted" json:"-"`
-	CreatedAt           time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt           time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
-	CreatedBy           string    `gorm:"column:created_by" json:"-"`
-	UpdatedBy           string    `gorm:"column:updated_by" json:"-"`
+	MasCarpoolDriverUID string       `gorm:"column:mas_carpool_driver_uid;primaryKey" json:"-"`
+	MasCarpoolUID       string       `gorm:"column:mas_carpool_uid" json:"-"`
+	MasDriverUID        string       `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"9c63bdfa-1a80-4238-8a3a-cbc1891161a2"`
+	StartDate           TimeWithZone `gorm:"column:start_date" json:"-"`
+	EndDate             TimeWithZone `gorm:"column:end_date" json:"-"`
+	IsActive            string       `gorm:"column:is_active" json:"-"`
+	IsDeleted           string       `gorm:"column:is_deleted" json:"-"`
+	CreatedAt           time.Time    `gorm:"column:created_at;autoCreateTime" json:"-"`
+	UpdatedAt           time.Time    `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	CreatedBy           string       `gorm:"column:created_by" json:"-"`
+	UpdatedBy           string       `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsMasCarpoolDriverCreate) TableName() string {
@@ -454,17 +454,17 @@ func (VmsMasCarpoolDriverCreate) TableName() string {
 
 // VmsMasCarpoolDriver
 type VmsMasCarpoolDriver struct {
-	MasCarpoolDriverUID string    `gorm:"column:mas_carpool_driver_uid;primaryKey" json:"-"`
-	MasCarpoolUID       string    `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"164632c9-1d33-477e-b335-97a4e79a5845"`
-	MasDriverUID        string    `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"9c63bdfa-1a80-4238-8a3a-cbc1891161a2"`
-	StartDate           time.Time `gorm:"column:start_date" json:"-"`
-	EndDate             time.Time `gorm:"column:end_date" json:"-"`
-	IsActive            string    `gorm:"column:is_active" json:"-"`
-	IsDeleted           string    `gorm:"column:is_deleted" json:"-"`
-	CreatedAt           time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt           time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
-	CreatedBy           string    `gorm:"column:created_by" json:"-"`
-	UpdatedBy           string    `gorm:"column:updated_by" json:"-"`
+	MasCarpoolDriverUID string       `gorm:"column:mas_carpool_driver_uid;primaryKey" json:"-"`
+	MasCarpoolUID       string       `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid" example:"164632c9-1d33-477e-b335-97a4e79a5845"`
+	MasDriverUID        string       `gorm:"column:mas_driver_uid" json:"mas_driver_uid" example:"9c63bdfa-1a80-4238-8a3a-cbc1891161a2"`
+	StartDate           TimeWithZone `gorm:"column:start_date" json:"-"`
+	EndDate             TimeWithZone `gorm:"column:end_date" json:"-"`
+	IsActive            string       `gorm:"column:is_active" json:"-"`
+	IsDeleted           string       `gorm:"column:is_deleted" json:"-"`
+	CreatedAt           time.Time    `gorm:"column:created_at;autoCreateTime" json:"-"`
+	UpdatedAt           time.Time    `gorm:"column:updated_at;autoUpdateTime" json:"-"`
+	CreatedBy           string       `gorm:"column:created_by" json:"-"`
+	UpdatedBy           string       `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsMasCarpoolDriver) TableName() string {

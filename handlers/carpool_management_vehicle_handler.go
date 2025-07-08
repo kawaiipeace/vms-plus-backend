@@ -117,7 +117,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 		return
 	}
 	for i := range vehicles {
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate.Time)
 		funcs.TrimStringFields(&vehicles[i])
 		var vehicleImgs []models.VmsMasVehicleImg
 		if err := config.DB.Where("mas_vehicle_uid = ?", vehicles[i].MasVehicleUID).Find(&vehicleImgs).Error; err == nil {
@@ -213,8 +213,8 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		requests[i].UpdatedBy = user.EmpID
 		requests[i].IsDeleted = "0"
 		requests[i].IsActive = existingCarpool.IsActive
-		requests[i].StartDate = time.Now()
-		requests[i].EndDate = time.Now().AddDate(10, 0, 0)
+		requests[i].StartDate = models.TimeWithZone{Time: time.Now()}
+		requests[i].EndDate = models.TimeWithZone{Time: time.Now().AddDate(10, 0, 0)}
 		var masVehicleDepartmentUID string
 		if err := config.DB.Table("vms_mas_vehicle_department").Where("mas_vehicle_uid = ?", requests[i].MasVehicleUID).Pluck("mas_vehicle_department_uid", &masVehicleDepartmentUID).Error; err == nil {
 			requests[i].MasVehicleDepartmentUID = masVehicleDepartmentUID
@@ -330,7 +330,7 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate.Time)
 	}
 	// Respond with JSON
 	if len(vehicles) == 0 {
@@ -416,7 +416,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	}
 
 	for i := range vehicles {
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate.Time)
 		funcs.TrimStringFields(&vehicles[i])
 	}
 

@@ -4,11 +4,11 @@ import "time"
 
 //VmsTrnReceivedVehicle
 type VmsTrnReceivedVehicle struct {
-	TrnRequestUID         string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	PickupDatetime        time.Time `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00Z"`
-	MileStart             int       `gorm:"column:mile_start" json:"mile_start" example:"10000"`
-	FuelStart             int       `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
-	ReceivedVehicleRemark string    `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
+	TrnRequestUID         string       `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	PickupDatetime        TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00+07:00"`
+	MileStart             int          `gorm:"column:mile_start" json:"mile_start" example:"10000"`
+	FuelStart             int          `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
+	ReceivedVehicleRemark string       `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
 
 	VehicleImages               []VehicleImageReceived `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
 	ReceivedVehicleEmpID        string                 `gorm:"column:received_vehicle_emp_id" json:"-"`
@@ -44,9 +44,9 @@ func (VehicleImageReceived) TableName() string {
 
 //VmsTrnTravelCard
 type VmsTrnTravelCard struct {
-	TrnRequestUID string    `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid" example:"a7de5318-1e05-4511-abe7-8c1c6374ab29"`
-	StartDateTime time.Time `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00Z"`
-	EndDateTime   time.Time `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00Z"`
+	TrnRequestUID string       `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid" example:"a7de5318-1e05-4511-abe7-8c1c6374ab29"`
+	StartDateTime TimeWithZone `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00+07:00"`
+	EndDateTime   TimeWithZone `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00+07:00"`
 
 	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`

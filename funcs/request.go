@@ -470,8 +470,8 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			CreatedAt:                time.Now(),
 			UpdatedBy:                "system",
 			UpdatedAt:                time.Now(),
-			ReceivedKeyStartDatetime: time.Now(),
-			ReceivedKeyEndDatetime:   time.Now(),
+			ReceivedKeyStartDatetime: models.TimeWithZone{Time: time.Now()},
+			ReceivedKeyEndDatetime:   models.TimeWithZone{Time: time.Now()},
 			ReceivedKeyPlace:         "-",
 		}
 

@@ -1082,8 +1082,8 @@ func (h *DriverManagementHandler) GetDriverTimeLine(c *gin.Context) {
 					TrnTripDetailUID: uuid.New().String(),
 					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
 						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
-						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
-						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
+						TripStartDatetime:    models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveStartDatetime},
+						TripEndDatetime:      models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveEndDatetime},
 						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripStartMiles:       0,
@@ -1196,14 +1196,14 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 				MasDriverUID:             masDriverUID,
 				DriverLicenseNo:          record["driver_license_no"],
 				RefDriverLicenseTypeCode: record["ref_driver_license_type_code"],
-				DriverLicenseStartDate: func() time.Time {
+				DriverLicenseStartDate: models.TimeWithZone{Time: func() time.Time {
 					startDate, _ := time.Parse("2006-01-02", record["driver_license_start_date"])
 					return startDate
-				}(),
-				DriverLicenseEndDate: func() time.Time {
+				}()},
+				DriverLicenseEndDate: models.TimeWithZone{Time: func() time.Time {
 					endDate, _ := time.Parse("2006-01-02", record["driver_license_end_date"])
 					return endDate
-				}(),
+				}()},
 				CreatedBy: user.EmpID,
 				UpdatedBy: user.EmpID,
 				CreatedAt: time.Now(),
