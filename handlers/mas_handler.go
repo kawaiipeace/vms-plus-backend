@@ -231,7 +231,7 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 				IsEmployee:   true,
 			})
 		}
-		if manager.Type == "L" && manager.LevelCode >= "M3" {
+		if manager.Type == "L" && manager.LevelCode >= "M3" && manager.LevelCode < "M5" {
 			listA = append(listA, models.MasUserEmp{
 				EmpID:        strconv.Itoa(manager.EmpIDLeader),
 				FullName:     manager.EmpName,
