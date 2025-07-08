@@ -18,7 +18,7 @@ type VmsMasVehicleManagementList struct {
 	FleetCardNo                      string              `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 	IsTaxCredit                      bool                `gorm:"column:is_tax_credit" json:"is_tax_credit"`
 	VehicleMileage                   float64             `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	VehicleGetDate                   time.Time           `gorm:"column:vehicle_get_date" json:"vehicle_get_date"` // Changed to time.Time
+	VehicleRegistrationDate          time.Time           `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"` // Changed to time.Time
 	RefVehicleStatusCode             int                 `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
 	RefVehicleStatus                 VmsRefVehicleStatus `gorm:"foreignKey:RefVehicleStatusCode;references:RefVehicleStatusCode" json:"vms_ref_vehicle_status"`
 	RefVehicleStatusShortName        string              `gorm:"column:ref_vehicle_status_short_name" json:"-"`

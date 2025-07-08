@@ -143,7 +143,7 @@ type VmsMasVehicleDepartment struct {
 	MasVehicleUID                    string    `gorm:"column:mas_vehicle_uid;primaryKey" json:"-"`
 	MasVehicleDepartmentUID          string    `gorm:"column:mas_vehicle_department_uid" json:"-"`
 	County                           string    `gorm:"column:county" json:"county"`
-	VehicleGetDate                   time.Time `gorm:"column:vehicle_get_date" json:"vehicle_get_date"`
+	VehicleRegistrationDate          time.Time `gorm:"column:vehicle_registration_date" json:"vehicle_registration_date"`
 	VehiclePeaID                     string    `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleLicensePlate              string    `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string    `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`

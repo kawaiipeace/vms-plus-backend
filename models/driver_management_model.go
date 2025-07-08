@@ -164,7 +164,7 @@ type VmsMasDriverResponse struct {
 	UpdatedAt                      time.Time                   `gorm:"column:updated_at" json:"-"`
 	UpdatedBy                      string                      `gorm:"column:updated_by" json:"-"`
 	IsDeleted                      string                      `gorm:"column:is_deleted" json:"-"`
-	IsActive                       string                      `gorm:"column:is_active" json:"-"`
+	IsActive                       string                      `gorm:"column:is_active" json:"is_active"`
 
 	IsReplacement         string             `gorm:"column:is_replacement" json:"is_replacement"`
 	ReplacementDriverUID  string             `gorm:"column:replaced_mas_driver_uid" json:"replacement_driver_uid"`

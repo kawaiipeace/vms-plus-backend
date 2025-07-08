@@ -65,7 +65,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			d.fleet_card_no,
 			v.is_tax_credit,
 			d.vehicle_mileage,
-			d.vehicle_get_date,
+			d.vehicle_registration_date,
 			v.seat,
 			v.vehicle_color,
 			v.vehicle_gear,
@@ -117,7 +117,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 		return
 	}
 	for i := range vehicles {
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
 		funcs.TrimStringFields(&vehicles[i])
 		var vehicleImgs []models.VmsMasVehicleImg
 		if err := config.DB.Where("mas_vehicle_uid = ?", vehicles[i].MasVehicleUID).Find(&vehicleImgs).Error; err == nil {
@@ -395,7 +395,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.fleet_card_no,
 			v.is_tax_credit,
 			d.vehicle_mileage,
-			d.vehicle_get_date,
+			d.vehicle_registration_date,
 			d.ref_vehicle_status_code,
 			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name,
 			d.is_active,
@@ -416,7 +416,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 	}
 
 	for i := range vehicles {
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
 		funcs.TrimStringFields(&vehicles[i])
 	}
 
