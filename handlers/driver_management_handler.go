@@ -1172,24 +1172,24 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 			}(),
 
 			DriverIdentificationNo: record["driver_identification_no"],
-			DriverBirthdate: func() time.Time {
+			DriverBirthdate: models.TimeWithZone{Time: func() time.Time {
 				birthdate, _ := time.Parse("2006-01-02 15:04:05", record["driver_birthdate"])
 				return birthdate
-			}(),
+			}()},
 			ContractNo:                 record["contract_no"],
 			VendorName:                 record["vendor_name"],
 			DriverDeptSapHire:          record["driver_dept_sap_hire"],
 			DriverDeptSapShortNameHire: record["driver_dept_sap_short_name_hire"],
 			DriverDeptSapWork:          record["driver_dept_sap_work"],
 			DriverDeptSapShortNameWork: record["driver_dept_sap_short_work"],
-			ApprovedJobDriverStartDate: func() time.Time {
+			ApprovedJobDriverStartDate: models.TimeWithZone{Time: func() time.Time {
 				startDate, _ := time.Parse("2006-01-02", record["approved_job_driver_start_date"])
 				return startDate
-			}(),
-			ApprovedJobDriverEndDate: func() time.Time {
+			}()},
+			ApprovedJobDriverEndDate: models.TimeWithZone{Time: func() time.Time {
 				endDate, _ := time.Parse("2006-01-02", record["approved_job_driver_end_date"])
 				return endDate
-			}(),
+			}()},
 			RefOtherUseCode: "0",
 			DriverLicense: models.VmsMasDriverLicenseRequest{
 				MasDriverLicenseUID:      uuid.New().String(),

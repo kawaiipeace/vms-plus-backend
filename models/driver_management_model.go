@@ -70,7 +70,7 @@ type VmsMasDriverImport struct {
 	DriverNickname             string                     `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
 	DriverContactNumber        string                     `gorm:"column:driver_contact_number" json:"driver_contact_number" example:"+1234567890"`
 	DriverIdentificationNo     string                     `gorm:"column:driver_identification_no" json:"driver_identification_no" example:"ID123456789"`
-	DriverBirthdate            time.Time                  `gorm:"column:driver_birthdate" json:"driver_birthdate" example:"1990-01-01T00:00:00+07:00"`
+	DriverBirthdate            TimeWithZone               `gorm:"column:driver_birthdate" json:"driver_birthdate" example:"1990-01-01T00:00:00+07:00"`
 	WorkType                   int                        `gorm:"column:work_type" json:"work_type" example:"1"`
 	IsReplacement              string                     `gorm:"column:is_replacement" json:"is_replacement" example:"1"`
 	ContractNo                 string                     `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
@@ -79,8 +79,8 @@ type VmsMasDriverImport struct {
 	VendorName                 string                     `gorm:"column:vendor_name" json:"vendor_name"`
 	DriverDeptSapWork          string                     `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work" example:"กยจ."`
 	DriverDeptSapShortNameWork string                     `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	ApprovedJobDriverStartDate time.Time                  `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00+07:00"`
-	ApprovedJobDriverEndDate   time.Time                  `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
+	ApprovedJobDriverStartDate TimeWithZone               `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00+07:00"`
+	ApprovedJobDriverEndDate   TimeWithZone               `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
 	RefOtherUseCode            string                     `gorm:"column:ref_other_use_code" json:"ref_other_use_code" example:"1"`
 	DriverLicense              VmsMasDriverLicenseRequest `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	CreatedAt                  time.Time                  `gorm:"column:created_at" json:"-"`
