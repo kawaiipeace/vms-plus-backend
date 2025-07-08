@@ -231,7 +231,19 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 				IsEmployee:   true,
 			})
 		}
-		if manager.Type == "A" && manager.LevelCode >= "M5" {
+		if manager.Type == "L" && manager.LevelCode >= "M3" {
+			listA = append(listA, models.MasUserEmp{
+				EmpID:        strconv.Itoa(manager.EmpIDLeader),
+				FullName:     manager.EmpName,
+				Position:     manager.PlansTextShort,
+				DeptSAP:      strconv.Itoa(manager.DeptSAP),
+				DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+				DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+				ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+				IsEmployee:   true,
+			})
+		}
+		if manager.Type == "A" && manager.LevelCode >= "M3" {
 			listA = append(listA, models.MasUserEmp{
 				EmpID:        strconv.Itoa(manager.EmpIDLeader),
 				FullName:     manager.EmpName,
