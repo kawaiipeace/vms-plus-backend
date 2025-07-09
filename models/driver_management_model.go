@@ -390,8 +390,8 @@ type DriverTrnRequest struct {
 	RequestNo                        string             `gorm:"column:request_no" json:"request_no"`
 	VehicleLicensePlate              string             `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string             `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
-	ReserveStartDatetime             time.Time          `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime               time.Time          `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	ReserveStartDatetime             TimeWithZone       `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime               TimeWithZone       `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode             string             `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName             string             `json:"ref_request_status_name"`
 	WorkPlace                        string             `gorm:"column:work_place" json:"work_place"`

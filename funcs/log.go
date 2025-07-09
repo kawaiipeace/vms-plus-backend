@@ -20,7 +20,7 @@ func CreateTrnRequestActionLog(trnRequestUID, refStatusCode, actionDetail, actio
 		LogRequestActionUID:      uuid.New().String(),
 		TrnRequestUID:            trnRequestUID,
 		RefRequestStatusCode:     refStatusCode,
-		LogRequestActionDatetime: time.Now(),
+		LogRequestActionDatetime: models.TimeWithZone{Time: time.Now()},
 		ActionByPersonalID:       actionByPersonalID,
 		ActionByRole:             actionByRole,
 		ActionByFullname:         user.FullName,
