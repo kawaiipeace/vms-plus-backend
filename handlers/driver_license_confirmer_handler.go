@@ -223,9 +223,9 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "10" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime.Time},
+			{ProgressIcon: "1", ProgressName: "รอต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime.Time},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้ขออนุมัติ",
@@ -241,9 +241,9 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "11" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด", ProgressDatetime: request.ConfirmedRequestDatetime},
-			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime.Time},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากต้นสังกัด", ProgressDatetime: request.ConfirmedRequestDatetime.Time},
+			{ProgressIcon: "0", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติต้นสังกัด",
@@ -259,9 +259,9 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "20" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
-			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime.Time},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime.Time},
+			{ProgressIcon: "1", ProgressName: "รออนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติต้นสังกัด",
@@ -277,9 +277,9 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "21" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
-			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ", ProgressDatetime: request.RejectedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime.Time},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime.Time},
+			{ProgressIcon: "2", ProgressName: "ตีกลับจากผู้อนุมัติ", ProgressDatetime: request.RejectedRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติต้นสังกัด",
@@ -295,9 +295,9 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "30" {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime},
-			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime},
-			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "ขออนุมัติ", ProgressDatetime: request.CreatedRequestDatetime.Time},
+			{ProgressIcon: "3", ProgressName: "ต้นสังกัดตรวจสอบ", ProgressDatetime: request.ConfirmedRequestDatetime.Time},
+			{ProgressIcon: "3", ProgressName: "อนุมัติให้ทำหน้าที่ขับรถประจำปี", ProgressDatetime: request.ApprovedRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติให้ทำหน้าที่ขับรถประจำปี",
@@ -313,7 +313,7 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	}
 	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.CreatedRequestEmpID {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิก", ProgressDatetime: request.CanceledRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ยกเลิก", ProgressDatetime: request.CanceledRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้ขออนุมัติ",
@@ -330,7 +330,7 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 	if request.RefRequestAnnualDriverStatusCode == "90" && request.CanceledRequestEmpID == request.ConfirmedRequestEmpID {
 
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด", ProgressDatetime: request.CanceledRequestDatetime},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด", ProgressDatetime: request.CanceledRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติต้นสังกัด",
@@ -347,8 +347,8 @@ func (h *DriverLicenseConfirmerHandler) GetDriverLicenseAnnual(c *gin.Context) {
 
 	if request.RefRequestAnnualDriverStatusCode == "93" && request.CanceledRequestEmpID == request.ApprovedRequestEmpID {
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
-			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด", ProgressDatetime: request.ApprovedRequestDatetime},
-			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ", ProgressDatetime: request.CanceledRequestDatetime},
+			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด", ProgressDatetime: request.ApprovedRequestDatetime.Time},
+			{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้อนุมัติ", ProgressDatetime: request.CanceledRequestDatetime.Time},
 		}
 		request.ProgressRequestStatusEmp = models.ProgressRequestStatusEmp{
 			ActionRole:   "ผู้อนุมัติให้ทำหน้าที่ขับรถประจำปี",
@@ -410,7 +410,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualCanceled(c *gin
 	request.CanceledRequestDeptSAP = empUser.DeptSAP
 	request.CanceledRequestDeptSAPShort = empUser.DeptSAPShort
 	request.CanceledRequestDeptSAPFull = empUser.DeptSAPFull
-	request.CanceledRequestDatetime = time.Now()
+	request.CanceledRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
@@ -465,7 +465,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualRejected(c *gin
 	request.RejectedRequestDeptSAP = empUser.DeptSAP
 	request.RejectedRequestDeptSAPShort = empUser.DeptSAPShort
 	request.RejectedRequestDeptSAPFull = empUser.DeptSAPFull
-	request.RejectedRequestDatetime = time.Now()
+	request.RejectedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
@@ -521,7 +521,7 @@ func (h *DriverLicenseConfirmerHandler) UpdateDriverLicenseAnnualConfirmed(c *gi
 	request.ConfirmedRequestDeptSAP = empUser.DeptSAP
 	request.ConfirmedRequestDeptSAPShort = empUser.DeptSAPShort
 	request.ConfirmedRequestDeptSAPFull = empUser.DeptSAPFull
-	request.ConfirmedRequestDatetime = time.Now()
+	request.ConfirmedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})

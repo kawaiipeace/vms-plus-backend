@@ -540,8 +540,8 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		carpool.CarPoolVehicles[i].UpdatedBy = user.EmpID
 		carpool.CarPoolVehicles[i].IsDeleted = "0"
 		carpool.CarPoolVehicles[i].IsActive = "1"
-		carpool.CarPoolVehicles[i].StartDate = time.Now()
-		carpool.CarPoolVehicles[i].EndDate = time.Now().AddDate(10, 0, 0)
+		carpool.CarPoolVehicles[i].StartDate = models.TimeWithZone{Time: time.Now()}
+		carpool.CarPoolVehicles[i].EndDate = models.TimeWithZone{Time: time.Now().AddDate(10, 0, 0)}
 		var masVehicleDepartmentUID string
 		if err := config.DB.Table("vms_mas_vehicle_department").Where("mas_vehicle_uid = ?", carpool.CarPoolVehicles[i].MasVehicleUID).Pluck("mas_vehicle_department_uid", &masVehicleDepartmentUID).Error; err == nil {
 			carpool.CarPoolVehicles[i].MasVehicleDepartmentUID = masVehicleDepartmentUID
@@ -565,8 +565,8 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 		carpool.CarPoolDrivers[i].UpdatedBy = user.EmpID
 		carpool.CarPoolDrivers[i].IsDeleted = "0"
 		carpool.CarPoolDrivers[i].IsActive = "1"
-		carpool.CarPoolDrivers[i].StartDate = time.Now()
-		carpool.CarPoolDrivers[i].EndDate = time.Now().AddDate(1, 0, 0)
+		carpool.CarPoolDrivers[i].StartDate = models.TimeWithZone{Time: time.Now()}
+		carpool.CarPoolDrivers[i].EndDate = models.TimeWithZone{Time: time.Now().AddDate(1, 0, 0)}
 	}
 
 	if len(carpool.CarPoolDrivers) > 0 {
@@ -1265,8 +1265,7 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 			filteredLists = append(filteredLists, user)
 		}
 	}
-	lists = filteredLists
-	c.JSON(http.StatusOK, lists)
+	c.JSON(http.StatusOK, filteredLists)
 }
 
 // SearchMasApprovalUser godoc
@@ -1317,9 +1316,8 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 			filteredLists = append(filteredLists, user)
 		}
 	}
-	lists = filteredLists
 
-	c.JSON(http.StatusOK, lists)
+	c.JSON(http.StatusOK, filteredLists)
 }
 
 // SearchCarpoolApprover godoc

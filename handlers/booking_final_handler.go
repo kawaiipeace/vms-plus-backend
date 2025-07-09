@@ -370,7 +370,7 @@ func (h *BookingFinalHandler) UpdateRejected(c *gin.Context) {
 	request.RejectedRequestDeskPhone = rejectUser.TelInternal
 	request.RejectedRequestMobilePhone = rejectUser.TelMobile
 	request.RejectedRequestPosition = rejectUser.Position
-	request.RejectedRequestDatetime = time.Now()
+	request.RejectedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -435,7 +435,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	request.ApprovedRequestDeskPhone = empUser.TelInternal
 	request.ApprovedRequestMobilePhone = empUser.TelMobile
 	request.ApprovedRequestPosition = empUser.Position
-	request.ApprovedRequestDatetime = time.Now()
+	request.ApprovedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -560,7 +560,7 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeskPhone = cancelUser.TelInternal
 	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
-	request.CanceledRequestDatetime = time.Now()
+	request.CanceledRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err)})

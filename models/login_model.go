@@ -61,13 +61,13 @@ type RefreshToken_Request struct {
 }
 
 type OTP_Request_Create struct {
-	ReqID      uint      `gorm:"primaryKey;column:req_id"`
-	PhoneNo    string    `gorm:"column:phone_no;size:10;not null"`
-	OTPID      string    `gorm:"column:otp_id;size:36;not null"`
-	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
-	ExpiresAt  time.Time `gorm:"column:expires_at;not null"`
-	Status     string    `gorm:"column:status;size:20;default:pending"`
-	IsEmployee bool      `gorm:"column:is_employee"`
+	ReqID      uint         `gorm:"primaryKey;column:req_id"`
+	PhoneNo    string       `gorm:"column:phone_no;size:10;not null"`
+	OTPID      string       `gorm:"column:otp_id;size:36;not null"`
+	CreatedAt  time.Time    `gorm:"column:created_at;autoCreateTime"`
+	ExpiresAt  TimeWithZone `gorm:"column:expires_at;not null"`
+	Status     string       `gorm:"column:status;size:20;default:pending"`
+	IsEmployee bool         `gorm:"column:is_employee"`
 }
 
 func (OTP_Request_Create) TableName() string {

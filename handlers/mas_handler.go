@@ -30,7 +30,6 @@ type MasHandler struct {
 // @Router /api/mas/user-vehicle-users [get]
 func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 	funcs.GetAuthenUser(c, "*")
-	var lists []models.MasUserEmp
 	search := c.Query("search")
 
 	request := userhub.ServiceListUserRequest{
@@ -724,7 +723,7 @@ func (h *MasHandler) ListHoliday(c *gin.Context) {
 				for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
 					if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
 						holidays = append(holidays, models.VmsMasHolidays{
-							HolidaysDate: d,
+							HolidaysDate: models.TimeWithZone{Time: d},
 							HolidaysDetail: map[time.Weekday]string{
 								time.Saturday: "วันเสาร์",
 								time.Sunday:   "วันอาทิตย์",
@@ -737,7 +736,7 @@ func (h *MasHandler) ListHoliday(c *gin.Context) {
 	}
 	// Sort holidays by date
 	sort.Slice(holidays, func(i, j int) bool {
-		return holidays[i].HolidaysDate.Before(holidays[j].HolidaysDate)
+		return holidays[i].HolidaysDate.Before(holidays[j].HolidaysDate.Time)
 	})
 	c.JSON(http.StatusOK, holidays)
 }
