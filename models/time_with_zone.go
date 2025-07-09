@@ -77,8 +77,26 @@ func (t TimeWithZone) MarshalJSON() ([]byte, error) {
 		return []byte("null"), nil
 	}
 
+	// Force the time to be in +07:00 timezone for JSON output
+	// Create location for +07:00 timezone
+	loc := time.FixedZone("Asia/Bangkok", 7*60*60)
+
+	// Convert the time to +07:00 timezone
+	// If the time is already in +07:00, this will keep it the same
+	// If the time is in UTC or other timezone, this will convert it to +07:00
+	convertedTime := time.Date(
+		t.Time.Year(),
+		t.Time.Month(),
+		t.Time.Day(),
+		t.Time.Hour(),
+		t.Time.Minute(),
+		t.Time.Second(),
+		t.Time.Nanosecond(),
+		loc,
+	)
+
 	// Format as RFC3339 with +07:00 timezone
-	formatted := t.Time.Format("2006-01-02T15:04:05-07:00")
+	formatted := convertedTime.Format("2006-01-02T15:04:05-07:00")
 	return json.Marshal(formatted)
 }
 
