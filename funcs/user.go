@@ -82,10 +82,10 @@ func CheckApproverRole(user *models.AuthenUserEmp) {
 }
 
 func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "admin-approval") {
+	/*if Contains(user.Roles, "admin-approval") {
 		//remove admin-approval
 		user.Roles = RemoveFromSlice(user.Roles, "admin-approval")
-	}
+	}*/
 	//check if vms_trn_request has confirmed_request_emp_id
 	var adminApproval models.VmsMasCarpoolAdmin
 	err := config.DB.Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
@@ -97,10 +97,10 @@ func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
 	}
 }
 func CheckFinalApprovalRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "final-approval") {
+	/*if Contains(user.Roles, "final-approval") {
 		//remove final-approval
 		user.Roles = RemoveFromSlice(user.Roles, "final-approval")
-	}
+	}*/
 	//check if vms_trn_request has confirmed_request_emp_id
 	var finalApproval models.VmsMasCarpoolApprover
 	err := config.DB.Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).

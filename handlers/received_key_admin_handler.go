@@ -583,7 +583,7 @@ func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeskPhone = cancelUser.TelInternal
 	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
-	request.CanceledRequestDatetime = time.Now()
+	request.CanceledRequestDatetime = models.TimeWithZone{Time: time.Now()}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 

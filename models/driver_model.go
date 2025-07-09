@@ -97,14 +97,14 @@ func (d *VmsMasDriver) CalculateAgeInYearsMonths() string {
 
 // VmsTrnAnnualDriver
 type VmsTrnAnnualDriver struct {
-	TrnRequestAnnualDriverUid string    `gorm:"column:trn_request_annual_driver_uid" json:"-"`
-	CreatedRequestEmpId       string    `gorm:"column:created_request_emp_id" json:"-"`
-	RequestAnnualDriverNo     string    `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
-	RequestIssueDate          time.Time `gorm:"column:request_issue_date" json:"request_issue_date"`
-	RequestExpireDate         time.Time `gorm:"column:request_expire_date" json:"request_expire_date"`
-	AnnualYYYY                int       `gorm:"column:annual_yyyy" json:"annual_yyyy"`
-	DriverLicenseNo           string    `gorm:"column:driver_license_no" json:"driver_license_no"`
-	DriverLicenseExpireDate   time.Time `gorm:"column:driver_license_expire_date" json:"driver_license_expire_date"`
+	TrnRequestAnnualDriverUid string       `gorm:"column:trn_request_annual_driver_uid" json:"-"`
+	CreatedRequestEmpId       string       `gorm:"column:created_request_emp_id" json:"-"`
+	RequestAnnualDriverNo     string       `gorm:"column:request_annual_driver_no" json:"request_annual_driver_no"`
+	RequestIssueDate          TimeWithZone `gorm:"column:request_issue_date" json:"request_issue_date"`
+	RequestExpireDate         TimeWithZone `gorm:"column:request_expire_date" json:"request_expire_date"`
+	AnnualYYYY                int          `gorm:"column:annual_yyyy" json:"annual_yyyy"`
+	DriverLicenseNo           string       `gorm:"column:driver_license_no" json:"driver_license_no"`
+	DriverLicenseExpireDate   TimeWithZone `gorm:"column:driver_license_expire_date" json:"driver_license_expire_date"`
 }
 
 func (VmsTrnAnnualDriver) TableName() string {

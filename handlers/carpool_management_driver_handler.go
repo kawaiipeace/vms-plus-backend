@@ -204,8 +204,8 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		requests[i].IsDeleted = "0"
 		requests[i].IsActive = existingCarpool.IsActive
 
-		requests[i].StartDate = time.Now()
-		requests[i].EndDate = time.Now().AddDate(1, 0, 0)
+		requests[i].StartDate = models.TimeWithZone{Time: time.Now()}
+		requests[i].EndDate = models.TimeWithZone{Time: time.Now().AddDate(1, 0, 0)}
 	}
 
 	if err := config.DB.Create(&requests).Error; err != nil {
@@ -606,8 +606,8 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 					TrnTripDetailUID: uuid.New().String(),
 					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
 						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
-						TripStartDatetime:    drivers[i].DriverTrnRequests[j].ReserveStartDatetime,
-						TripEndDatetime:      drivers[i].DriverTrnRequests[j].ReserveEndDatetime,
+						TripStartDatetime:    models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveStartDatetime},
+						TripEndDatetime:      models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveEndDatetime},
 						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripStartMiles:       0,

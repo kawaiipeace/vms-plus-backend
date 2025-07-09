@@ -835,7 +835,7 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 				// Handle record not found logic (create new record)
 				req.TrnSatisfactionSurveyAnswersUID = uuid.NewString()
 				req.TrnRequestUID = trnRequestUID.String()
-				req.SurveyAnswerDate = time.Now()
+				req.SurveyAnswerDate = models.TimeWithZone{Time: time.Now()}
 				req.SurveyAnswerEmpID = user.EmpID
 				req.DriverID = driver.DriverID
 				if err := config.DB.Create(&req).Error; err != nil {
@@ -851,7 +851,7 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 			// Handle record exists (update logic)
 			existing.TrnRequestUID = trnRequestUID.String()
 			existing.SurveyAnswerScore = req.SurveyAnswerScore
-			existing.SurveyAnswerDate = time.Now()
+			existing.SurveyAnswerDate = models.TimeWithZone{Time: time.Now()}
 			existing.SurveyAnswerEmpID = user.EmpID
 
 			if err := config.DB.Save(&existing).Error; err != nil {
