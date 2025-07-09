@@ -395,7 +395,7 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	otpRequest := models.OTP_Request_Create{
 		PhoneNo:    req.Phone,
 		OTPID:      otpID,
-		ExpiresAt:  expiresAt,
+		ExpiresAt:  models.TimeWithZone{Time: expiresAt},
 		IsEmployee: is_employee,
 	}
 

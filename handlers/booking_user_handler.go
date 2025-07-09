@@ -92,7 +92,7 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	request.CreatedRequestDeskPhone = createUser.TelInternal
 	request.CreatedRequestMobilePhone = createUser.TelMobile
 	request.CreatedRequestPosition = createUser.Position
-	request.CreatedRequestDatetime = time.Now()
+	request.CreatedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	vehicleUser := funcs.GetUserEmpInfo(request.VehicleUserEmpID)
 	request.VehicleUserEmpID = vehicleUser.EmpID
@@ -1068,7 +1068,7 @@ func (h *BookingUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeskPhone = cancelUser.TelInternal
 	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
-	request.CanceledRequestDatetime = time.Now()
+	request.CanceledRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})

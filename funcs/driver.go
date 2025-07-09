@@ -29,18 +29,6 @@ func CheckDriverIsActive(masDriverUID string) {
 		isActive = "0"
 	}
 
-	if driver.ApprovedJobDriverStartDate.Before(time.Now()) {
-		isActive = "0"
-	}
-
-	if driver.ApprovedJobDriverEndDate.After(time.Now()) {
-		isActive = "0"
-	}
-
-	if driver.DriverLicense.DriverLicenseEndDate.Before(time.Now()) {
-		isActive = "0"
-	}
-
 	//vms_trn_driver_leave
 	query := config.DB.Table("vms_trn_driver_leave").Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0")
 	query = query.Where("leave_start_date <= ?", time.Now())
@@ -60,6 +48,20 @@ func CheckDriverIsActive(masDriverUID string) {
 				}
 			}
 		}
+	}
+
+	//check now is between approved_job_driver_start_date and approved_job_driver_end_date
+	if driver.ApprovedJobDriverStartDate.After(time.Now()) {
+		isActive = "0"
+	}
+
+	if driver.ApprovedJobDriverEndDate.Before(time.Now()) {
+		isActive = "0"
+		refDriverStatusCode = 5
+	}
+
+	if driver.DriverLicense.DriverLicenseEndDate.Before(time.Now()) {
+		isActive = "0"
 	}
 
 	//update is_active

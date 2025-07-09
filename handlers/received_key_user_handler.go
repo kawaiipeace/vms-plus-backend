@@ -430,7 +430,7 @@ func (h *ReceivedKeyUserHandler) UpdateCanceled(c *gin.Context) {
 	request.CanceledRequestDeskPhone = cancelUser.TelInternal
 	request.CanceledRequestMobilePhone = cancelUser.TelMobile
 	request.CanceledRequestPosition = cancelUser.Position
-	request.CanceledRequestDatetime = time.Now()
+	request.CanceledRequestDatetime = models.TimeWithZone{Time: time.Now()}
 
 	if err := config.DB.Save(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})

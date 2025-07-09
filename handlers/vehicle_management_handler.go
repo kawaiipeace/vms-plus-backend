@@ -147,7 +147,7 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	for i := range vehicles {
-		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleGetDate)
+		vehicles[i].Age = funcs.CalculateAge(vehicles[i].VehicleRegistrationDate)
 		vehicles[i].RefVehicleStatus.RefVehicleStatusName = vehicles[i].RefVehicleStatusShortName
 		funcs.TrimStringFields(&vehicles[i])
 	}
