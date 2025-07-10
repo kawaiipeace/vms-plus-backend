@@ -46,8 +46,8 @@ type VmsTrnRequestList struct {
 	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 	VehicleDepartmentDeptSapShort    string       `gorm:"column:vehicle_department_dept_sap_short" json:"vehicle_department_dept_sap_short"`
 	WorkPlace                        string       `gorm:"column:work_place" json:"work_place"`
-	ReserveStartDatetime             string       `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime               string       `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName             string       `json:"ref_request_status_name"`
 	IsHaveSubRequest                 string       `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
@@ -252,7 +252,7 @@ type VmsTrnRequestResponse struct {
 
 	CanCancelRequest         bool                    `gorm:"-" json:"can_cancel_request"`
 	CancelReqeustEmpID       string                  `gorm:"column:cancel_reqeust_emp_id" json:"cancel_reqeust_emp_id"`
-	CanceledRequestDatetime  time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
+	CanceledRequestDatetime  TimeWithZone            `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
 	CanceledRequestRole      string                  `gorm:"-" json:"canceled_request_role"`
 	RefRequestStatusCode     string                  `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatus         VmsRefRequestStatus     `gorm:"foreignKey:RefRequestStatusCode;references:RefRequestStatusCode" json:"ref_request_status"`
@@ -276,15 +276,15 @@ type VmsTrnRequestRequestNo struct {
 }
 
 type ProgressRequestStatus struct {
-	ProgressIcon     string    `gorm:"column:progress_icon" json:"progress_icon"`
-	ProgressName     string    `gorm:"column:progress_name" json:"progress_name"`
-	ProgressDatetime time.Time `gorm:"column:progress_datetime" json:"progress_datetime"`
+	ProgressIcon     string       `gorm:"column:progress_icon" json:"progress_icon"`
+	ProgressName     string       `gorm:"column:progress_name" json:"progress_name"`
+	ProgressDatetime TimeWithZone `gorm:"column:progress_datetime" json:"progress_datetime"`
 }
 
 type ProgressRequestHistory struct {
-	ProgressIcon     string    `gorm:"column:progress_icon" json:"progress_icon"`
-	ProgressName     string    `gorm:"column:progress_name" json:"progress_name"`
-	ProgressDatetime time.Time `gorm:"column:progress_datetime" json:"progress_datetime"`
+	ProgressIcon     string       `gorm:"column:progress_icon" json:"progress_icon"`
+	ProgressName     string       `gorm:"column:progress_name" json:"progress_name"`
+	ProgressDatetime TimeWithZone `gorm:"column:progress_datetime" json:"progress_datetime"`
 }
 
 // VmsTrnRequestVehicleUser

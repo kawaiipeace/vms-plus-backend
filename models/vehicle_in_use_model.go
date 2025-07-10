@@ -28,7 +28,7 @@ type VmsTrnRequestVehicleInUseList struct {
 
 	RefVehicleKeyTypeCode   int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	RefVehicleKeyType       VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"ref_vehicle_key_type"`
-	ReturnedVehicleDatetime time.Time            `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime"`
+	ReturnedVehicleDatetime TimeWithZone         `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime"`
 	ReturnedVehicleRemark   string               `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 
 	ParkingPlace      string `gorm:"column:parking_place" json:"parking_place"`
@@ -55,8 +55,8 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 
-	ReserveStartDatetime time.Time      `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
-	ReserveEndDatetime   time.Time      `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
+	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
+	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
 	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
@@ -104,7 +104,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00+07:00"`
 
 	RefVehicleKeyTypeCode int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
-	ReceivedKeyDatetime   time.Time            `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00+07:00"`
+	ReceivedKeyDatetime   TimeWithZone         `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00+07:00"`
 	ReceiverKeyType       int                  `gorm:"column:receiver_key_type" json:"receiver_key_type" example:"3"`
 	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
@@ -130,7 +130,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	FuelStart                   int                    `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
 	ReceivedVehicleRemark       string                 `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
 
-	ReturnedVehicleDatetime     time.Time              `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	ReturnedVehicleDatetime     TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
 	ReturnedParkingPlace        string                 `gorm:"column:returned_parking_place" json:"returned_parking_place" example:"Parking Lot 1"`
 	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
@@ -147,7 +147,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"returned_vehicle_dept_sap_full"`
 	VehicleImageInspect         []VehicleImageInspect  `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_image_inspect"`
 
-	AcceptedVehicleDatetime     time.Time               `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	AcceptedVehicleDatetime     TimeWithZone            `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
 	AcceptedVehicleEmpID        string                  `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
 	AcceptedVehicleEmpName      string                  `gorm:"column:accepted_vehicle_emp_name" json:"accepted_vehicle_emp_name"`
 	AcceptedVehicleDeptSAP      string                  `gorm:"column:accepted_vehicle_dept_sap" json:"accepted_vehicle_dept_sap"`
@@ -161,7 +161,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	SendedBackRequestReason     string                  `gorm:"column:sended_back_request_reason;" json:"sended_back_request_reason" example:"Test Send Back"`
 	RejectedRequestReason       string                  `gorm:"column:rejected_request_reason;" json:"rejected_request_reason" example:"Test Send Back"`
 	CanceledRequestReason       string                  `gorm:"column:canceled_request_reason;" json:"canceled_request_reason" example:"Test Cancel"`
-	CanceledRequestDatetime     time.Time               `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
+	CanceledRequestDatetime     TimeWithZone            `gorm:"canceled_request_datetime" json:"canceled_request_datetime"`
 	ProgressRequestStatus       []ProgressRequestStatus `gorm:"-" json:"progress_request_status"`
 	ParkingPlace                string                  `gorm:"column:parking_place" json:"parking_place"`
 	IsReturnOverDue             bool                    `gorm:"-" json:"is_return_overdue"`
@@ -372,8 +372,8 @@ type VmsTrnNextRequest struct {
 	VehicleUserDeptNameShort string         `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
 	VehicleUserDeptNameFull  string         `gorm:"column:vehicle_user_dept_name_full" json:"vehicle_user_dept_name_full"`
 	WorkPlace                string         `gorm:"column:work_place" json:"work_place"`
-	ReserveStartDatetime     string         `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime       string         `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	ReserveStartDatetime     TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime       TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime"`
 	RefRequestStatusCode     string         `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName     string         `json:"ref_request_status_name"`
 	RefTripTypeCode          int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`

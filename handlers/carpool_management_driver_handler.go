@@ -606,8 +606,8 @@ func (h *CarpoolManagementHandler) GetCarpoolDriverTimeLine(c *gin.Context) {
 					TrnTripDetailUID: uuid.New().String(),
 					VmsTrnTripDetailRequest: models.VmsTrnTripDetailRequest{
 						TrnRequestUID:        drivers[i].DriverTrnRequests[j].TrnRequestUID,
-						TripStartDatetime:    models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveStartDatetime},
-						TripEndDatetime:      models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveEndDatetime},
+						TripStartDatetime:    models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveStartDatetime.Time},
+						TripEndDatetime:      models.TimeWithZone{Time: drivers[i].DriverTrnRequests[j].ReserveEndDatetime.Time},
 						TripDeparturePlace:   drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripDestinationPlace: drivers[i].DriverTrnRequests[j].WorkPlace,
 						TripStartMiles:       0,
