@@ -40,18 +40,18 @@ func (RequestStatus) TableName() string {
 }
 
 type VmsLogRequest struct {
-	LogRequestActionUID      string    `gorm:"primaryKey;column:log_request_action_uid" json:"log_request_action_uid"`
-	TrnRequestUID            string    `gorm:"column:trn_request_uid;not null" json:"trn_request_uid"`
-	RefRequestStatusCode     string    `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	LogRequestActionDatetime time.Time `gorm:"column:log_request_action_datetime;default:CURRENT_TIMESTAMP" json:"log_request_action_datetime"`
-	ActionByPersonalID       string    `gorm:"column:action_by_personal_id" json:"action_by_personal_id"`
-	ActionByFullname         string    `gorm:"column:action_by_fullname" json:"action_by_fullname"`
-	ActionByRole             string    `gorm:"column:action_by_role" json:"action_by_role"`
-	ActionByPosition         string    `gorm:"column:action_by_position" json:"action_by_position"`
-	ActionByDepartment       string    `gorm:"column:action_by_department" json:"action_by_department"`
-	ActionDetail             string    `gorm:"column:action_detail" json:"action_detail"`
-	Remark                   string    `gorm:"column:remark" json:"remark"`
-	IsDeleted                string    `gorm:"column:is_deleted" json:"is_deleted"`
+	LogRequestActionUID      string       `gorm:"primaryKey;column:log_request_action_uid" json:"log_request_action_uid"`
+	TrnRequestUID            string       `gorm:"column:trn_request_uid;not null" json:"trn_request_uid"`
+	RefRequestStatusCode     string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	LogRequestActionDatetime TimeWithZone `gorm:"column:log_request_action_datetime;default:CURRENT_TIMESTAMP" json:"log_request_action_datetime"`
+	ActionByPersonalID       string       `gorm:"column:action_by_personal_id" json:"action_by_personal_id"`
+	ActionByFullname         string       `gorm:"column:action_by_fullname" json:"action_by_fullname"`
+	ActionByRole             string       `gorm:"column:action_by_role" json:"action_by_role"`
+	ActionByPosition         string       `gorm:"column:action_by_position" json:"action_by_position"`
+	ActionByDepartment       string       `gorm:"column:action_by_department" json:"action_by_department"`
+	ActionDetail             string       `gorm:"column:action_detail" json:"action_detail"`
+	Remark                   string       `gorm:"column:remark" json:"remark"`
+	IsDeleted                string       `gorm:"column:is_deleted" json:"is_deleted"`
 }
 
 // TableName overrides the default table name
