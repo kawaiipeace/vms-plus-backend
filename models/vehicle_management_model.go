@@ -107,8 +107,8 @@ type VehicleReportTripDetail struct {
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	VehicleCarTypeDetail             string       `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	VehicleMileage                   string       `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	TripStartDatetime                TimeWithZone `gorm:"column:trip_start_datetime;type:timestamp with time zone" json:"trip_start_datetime" example:"2025-03-26T08:00:00+07:00"`
-	TripEndDatetime                  TimeWithZone `gorm:"column:trip_end_datetime;type:timestamp" json:"trip_end_datetime" example:"2025-03-26T10:00:00+07:00"`
+	TripStartDatetime                TimeWithZone `gorm:"column:trip_start_datetime;type:timestamp with time zone" json:"trip_start_datetime" example:"2025-03-26T08:00:00Z"`
+	TripEndDatetime                  TimeWithZone `gorm:"column:trip_end_datetime;type:timestamp" json:"trip_end_datetime" example:"2025-03-26T10:00:00Z"`
 	TripDeparturePlace               string       `gorm:"column:trip_departure_place" json:"trip_departure_place" example:"Changi Airport"`
 	TripDestinationPlace             string       `gorm:"column:trip_destination_place" json:"trip_destination_place" example:"Marina Bay Sands"`
 	TripStartMiles                   int          `gorm:"column:trip_start_miles" json:"trip_start_miles" example:"5000"`
@@ -126,13 +126,13 @@ type VehicleReportAddFuel struct {
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	VehicleCarTypeDetail             string       `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
 	Mile                             int          `gorm:"column:mile" json:"mile" example:"12000"`
-	TaxInvoiceDate                   TimeWithZone `gorm:"column:tax_invoice_date;type:timestamp" json:"tax_invoice_date" example:"2025-03-26T08:00:00+07:00"`
+	TaxInvoiceDate                   TimeWithZone `gorm:"column:tax_invoice_date;type:timestamp" json:"tax_invoice_date" example:"2025-03-26T08:00:00Z"`
 	TaxInvoiceNo                     string       `gorm:"column:tax_invoice_no;type:varchar(20)" json:"tax_invoice_no" example:"INV1234567890"`
 	PricePerLiter                    float64      `gorm:"column:price_per_liter;type:numeric(10,2)" json:"price_per_liter" example:"35.50"`
 	SumLiter                         float64      `gorm:"column:sum_liter;type:numeric(10,2)" json:"sum_liter" example:"50.00"`
 	SumPrice                         float64      `gorm:"column:sum_price;type:numeric(10,2)" json:"sum_price" example:"1872.50"`
 	ReceiptImg                       string       `gorm:"column:receipt_img;type:varchar(100)" json:"receipt_img" example:"http://vms.pea.co.th/receipt.jpg"`
-	AddFuelDateTime                  TimeWithZone `gorm:"column:add_fuel_date_time" json:"add_fuel_date_time" example:"2025-03-26T08:00:00+07:00"`
+	AddFuelDateTime                  TimeWithZone `gorm:"column:add_fuel_date_time" json:"add_fuel_date_time" example:"2025-03-26T08:00:00Z"`
 	RefCostTypeCode                  int          `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
 	RefCostType                      string       `gorm:"column:ref_cost_type" json:"ref_cost_type" example:"Fuel"`
 	RefOilStationBrand               string       `gorm:"column:ref_oil_station_brand" json:"ref_oil_station_brand" example:"PTT"`
