@@ -81,7 +81,7 @@ func CheckCarpoolAdminRole(user *models.AuthenUserEmp) {
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
 		Count(&count)
 	if count > 0 {
-		user.Roles = append(user.Roles, "carpool-admin")
+		user.Roles = append(user.Roles, "admin-carpool")
 	}
 }
 func CheckCarpoolApprovalRole(user *models.AuthenUserEmp) {
@@ -91,7 +91,7 @@ func CheckCarpoolApprovalRole(user *models.AuthenUserEmp) {
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
 		Count(&count)
 	if count > 0 {
-		user.Roles = append(user.Roles, "carpool-approval")
+		user.Roles = append(user.Roles, "approval-carpool")
 	}
 }
 
@@ -210,7 +210,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("700001")
+		user, err := userhub.GetUserInfo("460137")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
@@ -277,10 +277,13 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		if role == "license-approval" {
 			CheckApproverRole(&empUser)
 		}
-		if role == "carpool-admin" {
+		if role == "admin-department" {
 			CheckCarpoolAdminRole(&empUser)
 		}
-		if role == "carpool-approval" {
+		if role == "admin-carpool" {
+			CheckCarpoolAdminRole(&empUser)
+		}
+		if role == "approval-carpool" {
 			CheckCarpoolApprovalRole(&empUser)
 		}
 	}
