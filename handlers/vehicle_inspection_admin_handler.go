@@ -989,7 +989,7 @@ func (h *VehicleInspectionAdminHandler) UpdateRejected(c *gin.Context) {
 			request.RefRequestStatusCode,
 			"ตีกลับยานพาหนะ",
 			user.EmpID,
-			"admin-approval",
+			"admin-department",
 			result.RejectedRequestReason,
 		)
 	}
@@ -1055,7 +1055,7 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 			request.RefRequestStatusCode,
 			"รับกุญแจและยานพาหนะคืนแล้ว จบคำขอ",
 			user.EmpID,
-			"admin-approval",
+			"admin-department",
 			"",
 		)
 	}

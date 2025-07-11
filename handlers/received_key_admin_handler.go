@@ -397,7 +397,7 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		requestStatus.RefRequestStatusCode,
 		"รับกุญแจยานพาหนะแล้ว",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		"",
 	)
 	result.RequestNo = trnRequest.RequestNo
@@ -467,7 +467,7 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		requestStatus.RefRequestStatusCode,
 		"รับกุญแจยานพาหนะแล้ว",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		"",
 	)
 	result.RequestNo = trnRequest.RequestNo
@@ -533,7 +533,7 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		requestStatus.RefRequestStatusCode,
 		"รับกุญแจยานพาหนะแล้ว",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		"",
 	)
 	result.RequestNo = trnRequest.RequestNo
@@ -600,7 +600,7 @@ func (h *ReceivedKeyAdminHandler) UpdateCanceled(c *gin.Context) {
 		request.RefRequestStatusCode,
 		"ยกเลิกคำขอ",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		request.CanceledRequestReason,
 	)
 

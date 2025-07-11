@@ -439,7 +439,7 @@ func (h *BookingAdminHandler) UpdateRejected(c *gin.Context) {
 		request.RefRequestStatusCode,
 		"ผู้ดูแลยานพาหนะตีกลับคำขอ",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		request.RejectedRequestReason,
 	)
 
@@ -515,7 +515,7 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		requestStatus.RefRequestStatusCode,
 		"ผู้ดูแลยานพาหนะ ตรวจสอบผ่านแล้ว",
 		user.EmpID,
-		"admin-approval",
+		"admin-department",
 		"",
 	)
 	funcs.CheckMustPassStatus(request.TrnRequestUID)
@@ -581,7 +581,7 @@ func (h *BookingAdminHandler) UpdateCanceled(c *gin.Context) {
 			request.RefRequestStatusCode,
 			"ยกเลิกคำขอ",
 			user.EmpID,
-			"admin-approval",
+			"admin-department",
 			request.CanceledRequestReason,
 		)
 	}
