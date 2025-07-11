@@ -284,7 +284,7 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
 
 	// Return success response
@@ -454,6 +454,7 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		return
 
 	}
+	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
