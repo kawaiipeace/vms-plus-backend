@@ -362,7 +362,7 @@ func main() {
 	router.GET("/api/mas/user-vehicle-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleUser)
 	router.GET("/api/mas/user-driver-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverUser)
 	router.GET("/api/mas/user-confirmer-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListConfirmerUser)
-	router.GET("/api/mas/user-admin-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListAdminApprovalUser)
+	router.GET("/api/mas/user-admin-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListAdminDepartmentOrCarpoolUser)
 	router.GET("/api/mas/user-final-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListFinalApprovalUser)
 	router.GET("/api/mas/user-received-key-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListReceivedKeyUser)
 	router.GET("/api/mas/user/:emp_id", funcs.ApiKeyAuthenMiddleware(), masHandler.GetUserEmp)
