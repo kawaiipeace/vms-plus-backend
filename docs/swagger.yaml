@@ -66,11 +66,6 @@ definitions:
     required:
     - redirect_uri
     type: object
-  models.TimeWithZone:
-    properties:
-      time.Time:
-        type: string
-    type: object
   models.VehicleImageInspect:
     properties:
       ref_vehicle_img_side_code:
@@ -100,11 +95,12 @@ definitions:
     type: object
   models.VmsDriverLicenseAnnualApproved:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       annual_yyyy:
         example: 2568
         type: integer
+      driver_license_expire_date:
+        example: "2025-12-31T00:00:00Z"
+        type: string
       trn_request_annual_driver_uid:
         example: 095fbfbf-378e-4507-b15f-e53ac60370e7
         type: string
@@ -144,8 +140,6 @@ definitions:
     type: object
   models.VmsDriverLicenseAnnualRequest:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       annual_yyyy:
         example: 2568
         type: integer
@@ -155,8 +149,14 @@ definitions:
       confirmed_request_emp_id:
         example: "990002"
         type: string
+      driver_certificate_expire_date:
+        example: "2024-12-31T00:00:00Z"
+        type: string
       driver_certificate_img:
         example: http://vms-plus.pea.co.th/images/cert.png
+        type: string
+      driver_certificate_issue_date:
+        example: "2023-01-01T00:00:00Z"
         type: string
       driver_certificate_name:
         example: Safety Certificate
@@ -167,6 +167,9 @@ definitions:
       driver_certificate_type_code:
         example: 1
         type: integer
+      driver_license_expire_date:
+        example: "2025-12-31T00:00:00Z"
+        type: string
       driver_license_img:
         example: http://vms-plus.pea.co.th/images/license.png
         type: string
@@ -415,8 +418,12 @@ definitions:
     type: object
   models.VmsMasDriverContractUpdate:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      approved_job_driver_end_date:
+        example: "2023-12-31T23:59:59Z"
+        type: string
+      approved_job_driver_start_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
       contract_no:
         example: CON123456
         type: string
@@ -452,8 +459,9 @@ definitions:
     type: object
   models.VmsMasDriverDetailUpdate:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      driver_birthdate:
+        example: "1990-01-01T00:00:00Z"
+        type: string
       driver_contact_number:
         example: "+1234567890"
         type: string
@@ -520,10 +528,14 @@ definitions:
     type: object
   models.VmsMasDriverLeaveStatusUpdate:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      leave_end_date:
+        example: "2025-01-30T23:59:59Z"
+        type: string
       leave_reason:
         example: Sick leave
+        type: string
+      leave_start_date:
+        example: "2025-01-25T00:00:00Z"
         type: string
       leave_time_type_code:
         example: 1
@@ -537,13 +549,17 @@ definitions:
     type: object
   models.VmsMasDriverLicenseRequest:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      driver_license_end_date:
+        example: "2025-12-31T23:59:59Z"
+        type: string
       driver_license_image:
         example: https://example.com/license_image.jpg
         type: string
       driver_license_no:
         example: D123456789
+        type: string
+      driver_license_start_date:
+        example: "2020-01-01T00:00:00Z"
         type: string
       ref_driver_license_type_code:
         example: "1"
@@ -551,10 +567,14 @@ definitions:
     type: object
   models.VmsMasDriverLicenseUpdate:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      driver_license_end_date:
+        example: "2025-12-31T23:59:59Z"
+        type: string
       driver_license_no:
         example: D123456789
+        type: string
+      driver_license_start_date:
+        example: "2020-01-01T00:00:00Z"
         type: string
       mas_driver_uid:
         example: 3e89ebe5-d597-4ee2-b0a1-c3a5628cf131
@@ -566,16 +586,16 @@ definitions:
   models.VmsMasDriverRequest:
     properties:
       approved_job_driver_end_date:
-        example: 2023-12-31T23:59:59T
+        example: "2023-12-31T23:59:59Z"
         type: string
       approved_job_driver_start_date:
-        example: 2023-01-01T00:00:00T
+        example: "2023-01-01T00:00:00Z"
         type: string
       contract_no:
         example: CON123456
         type: string
       driver_birthdate:
-        example: 1990-01-01T00:00:00T
+        example: "1990-01-01T00:00:00Z"
         type: string
       driver_contact_number:
         example: "+1234567890"
@@ -685,8 +705,6 @@ definitions:
     type: object
   models.VmsTrnAddFuel:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       add_fuel_date_time:
         example: "2025-03-26T08:00:00Z"
         type: string
@@ -732,6 +750,9 @@ definitions:
       sum_price:
         example: 1872.5
         type: number
+      tax_invoice_date:
+        example: "2025-03-26T08:00:00Z"
+        type: string
       tax_invoice_no:
         example: INV1234567890
         type: string
@@ -753,8 +774,6 @@ definitions:
     type: object
   models.VmsTrnAddFuelRequest:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       before_vat_price:
         example: 46.5
         type: number
@@ -782,6 +801,9 @@ definitions:
       sum_price:
         example: 1872.5
         type: number
+      tax_invoice_date:
+        example: "2025-03-26T08:00:00Z"
+        type: string
       tax_invoice_no:
         example: INV1234567890
         type: string
@@ -846,14 +868,15 @@ definitions:
     type: object
   models.VmsTrnReceivedVehicle:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       fuel_start:
         example: 50
         type: integer
       mile_start:
         example: 10000
         type: integer
+      pickup_datetime:
+        example: "2025-03-26T14:30:00Z"
+        type: string
       received_vehicle_remark:
         example: Minor scratch on bumper
         type: string
@@ -876,11 +899,34 @@ definitions:
         type: array
     type: object
   models.VmsTrnReceivedVehicleNoImgage:
+    properties:
+      fuel_start:
+        example: 50
+        type: integer
+      mile_start:
+        example: 10000
+        type: integer
+      pickup_datetime:
+        example: "2025-03-26T14:30:00Z"
+        type: string
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
+      returned_cleanliness_level:
+        example: 1
+        type: integer
+      returned_vehicle_remark:
+        example: OK
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestAccepted:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      accepted_vehicle_datetime:
+        example: 2025-04-16T14:30:00
+        type: string
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
         type: string
@@ -893,10 +939,14 @@ definitions:
     type: object
   models.VmsTrnRequestApprovedWithRecieiveKey:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      received_key_end_datetime:
+        example: "2025-02-16T09:30:00Z"
+        type: string
       received_key_place:
         example: Main Office
+        type: string
+      received_key_start_datetime:
+        example: "2025-02-16T08:00:00Z"
         type: string
       receiver_type:
         example: 0
@@ -991,8 +1041,9 @@ definitions:
     type: object
   models.VmsTrnRequestPickup:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      pickup_datetime:
+        example: "2025-02-16T08:30:00Z"
+        type: string
       pickup_place:
         example: Main Office
         type: string
@@ -1011,8 +1062,6 @@ definitions:
     type: object
   models.VmsTrnRequestRequest:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       activity_no:
         example: A12345
         type: string
@@ -1044,6 +1093,9 @@ definitions:
       driver_mobile_contact_number:
         example: "0987654321"
         type: string
+      end_datetime:
+        example: "2025-01-01T10:00:00Z"
+        type: string
       is_admin_choose_driver:
         example: "0"
         type: string
@@ -1073,6 +1125,9 @@ definitions:
       number_of_passengers:
         example: 3
         type: integer
+      pickup_datetime:
+        example: "2025-02-16T08:30:00Z"
+        type: string
       pickup_place:
         example: Main Office
         type: string
@@ -1089,6 +1144,9 @@ definitions:
         type: string
       requested_vehicle_type:
         example: Sedan
+        type: string
+      start_datetime:
+        example: "2025-01-01T08:00:00Z"
         type: string
       trip_type:
         example: 1
@@ -1115,13 +1173,17 @@ definitions:
     type: object
   models.VmsTrnRequestTrip:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      end_datetime:
+        example: "2025-01-01T10:00:00Z"
+        type: string
       number_of_passengers:
         example: 3
         type: integer
       remark:
         example: Urgent request
+        type: string
+      start_datetime:
+        example: "2025-01-01T08:00:00Z"
         type: string
       trip_type:
         example: 1
@@ -1138,10 +1200,14 @@ definitions:
     type: object
   models.VmsTrnRequestUpdateRecieivedKey:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      received_key_end_datetime:
+        example: "2025-02-16T17:00:00Z"
+        type: string
       received_key_place:
         example: Main Office
+        type: string
+      received_key_start_datetime:
+        example: "2025-02-16T08:00:00Z"
         type: string
       trn_request_uid:
         example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
@@ -1149,8 +1215,9 @@ definitions:
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyConfirmed:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      received_key_datetime:
+        example: "2025-02-16T08:00:00Z"
+        type: string
       ref_vehicle_key_type_code:
         example: 1
         type: integer
@@ -1160,8 +1227,9 @@ definitions:
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyDetail:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
+      received_key_datetime:
+        example: "2025-02-16T08:00:00Z"
+        type: string
       ref_vehicle_key_type_code:
         example: 1
         type: integer
@@ -1217,7 +1285,7 @@ definitions:
         example: Parking Lot 1
         type: string
       returned_vehicle_datetime:
-        example: "2025-04-16T14:30:00Z"
+        example: 2025-04-16T14:30:00
         type: string
       returned_vehicle_emp_id:
         type: string
@@ -1244,8 +1312,6 @@ definitions:
     type: object
   models.VmsTrnReturnedVehicleNoImage:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       fuel_end:
         example: 70
         type: integer
@@ -1254,6 +1320,9 @@ definitions:
         type: integer
       received_vehicle_remark:
         example: Minor scratch on bumper
+        type: string
+      returned_vehicle_datetime:
+        example: "2025-04-16T14:30:00Z"
         type: string
       returned_vehicle_remark:
         example: OK
@@ -1273,8 +1342,6 @@ definitions:
     type: object
   models.VmsTrnTripDetailRequest:
     properties:
-      $2:
-        $ref: '#/definitions/models.TimeWithZone'
       trip_departure_place:
         example: Changi Airport
         type: string
@@ -1284,9 +1351,15 @@ definitions:
       trip_detail:
         example: Routine transport between airport and hotel.
         type: string
+      trip_end_datetime:
+        example: "2025-03-26T10:00:00Z"
+        type: string
       trip_end_miles:
         example: 5050
         type: integer
+      trip_start_datetime:
+        example: "2025-03-26T08:00:00Z"
+        type: string
       trip_start_miles:
         example: 5000
         type: integer

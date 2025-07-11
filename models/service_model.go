@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type VmsTrnRequesService struct {
 	TrnRequestUID            string `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
@@ -18,8 +20,8 @@ type VmsTrnRequesService struct {
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 
-	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
-	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
+	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
 	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
@@ -59,11 +61,11 @@ type VmsTrnRequesService struct {
 	MasVehicle                    VmsMasVehicle `gorm:"foreignKey:MasVehicleUID;references:MasVehicleUID" json:"vehicle"`
 
 	ReceivedKeyPlace         string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00+07:00"`
-	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00+07:00"`
+	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
 
 	RefVehicleKeyTypeCode int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
-	ReceivedKeyDatetime   time.Time            `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00+07:00"`
+	ReceivedKeyDatetime   TimeWithZone         `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceiverKeyType       int                  `gorm:"column:receiver_key_type" json:"receiver_key_type" example:"3"`
 	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:ReceiverKeyType;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
@@ -89,7 +91,7 @@ type VmsTrnRequesService struct {
 	FuelStart                   int                    `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
 	ReceivedVehicleRemark       string                 `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
 
-	ReturnedVehicleDatetime     time.Time              `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	ReturnedVehicleDatetime     TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
 	MileEnd                     int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                     int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	MileUsed                    int                    `gorm:"-" json:"mile_used" example:"200"`
@@ -105,7 +107,7 @@ type VmsTrnRequesService struct {
 	ReturnedVehicleDeptSAPFull  string                 `gorm:"column:returned_vehicle_dept_sap_full" json:"returned_vehicle_dept_sap_full"`
 	VehicleImageInspect         []VehicleImageInspect  `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_image_inspect"`
 
-	AcceptedVehicleDatetime     time.Time               `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00+07:00"`
+	AcceptedVehicleDatetime     TimeWithZone            `gorm:"column:accepted_vehicle_datetime" json:"accepted_vehicle_datetime" example:"2025-04-16T14:30:00Z"`
 	AcceptedVehicleEmpID        string                  `gorm:"column:accepted_vehicle_emp_id" json:"accepted_vehicle_emp_id"`
 	AcceptedVehicleEmpName      string                  `gorm:"column:accepted_vehicle_emp_name" json:"accepted_vehicle_emp_name"`
 	AcceptedVehicleDeptSAP      string                  `gorm:"column:accepted_vehicle_dept_sap" json:"accepted_vehicle_dept_sap"`
@@ -139,8 +141,8 @@ type VmsToEEMS struct {
 	TrnRequestUID        string       `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
 	RequestNo            string       `gorm:"column:request_no" json:"request_no"`
 	VehicleLicensePlate  string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
-	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
-	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
+	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00"`
+	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00"`
 	WorkPlace            string       `gorm:"column:work_place" json:"work_place" example:"Head Office"`
 	WorkDescription      string       `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
 	DocNo                string       `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
