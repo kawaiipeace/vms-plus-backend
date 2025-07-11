@@ -52,8 +52,8 @@ type VmsTrnRequestList struct {
 	RefRequestStatusName             string       `json:"ref_request_status_name"`
 	IsHaveSubRequest                 string       `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
 	ReceivedKeyPlace                 string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime         TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00+07:00"`
-	ReceivedKeyEndDatetime           TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00+07:00"`
+	ReceivedKeyStartDatetime         TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime           TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
@@ -100,8 +100,8 @@ type VmsTrnRequestRequest struct {
 	VehicleUserDeptNameShort string `gorm:"column:vehicle_user_dept_name_short" json:"-"`
 	VehicleUserDeptNameFull  string `gorm:"column:vehicle_user_dept_name_full" json:"-"`
 
-	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
-	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
+	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" swaggertype:"string" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" swaggertype:"string" example:"2025-01-01T10:00:00Z"`
 	RefTripTypeCode      int          `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`
@@ -146,7 +146,7 @@ type VmsTrnRequestRequest struct {
 	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"-"`
 
 	PickupPlace    *string      `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
-	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00+07:00"`
+	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" swaggertype:"string" example:"2025-02-16T08:30:00Z"`
 
 	//Step 4
 	ConfirmedRequestEmpID         string `gorm:"column:confirmed_request_emp_id" json:"confirmed_request_emp_id" example:"501621"`
@@ -186,8 +186,8 @@ type VmsTrnRequestResponse struct {
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 
-	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
-	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
+	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" swaggertype:"string" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" swaggertype:"string" example:"2025-01-01T10:00:00Z"`
 	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
@@ -235,11 +235,11 @@ type VmsTrnRequestResponse struct {
 	DriverMobileContact    string       `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverImageURL         string       `gorm:"-" json:"driver_image_url"`
 	PickupPlace            string       `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
-	PickupDateTime         TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00+07:00"`
+	PickupDateTime         TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" swaggertype:"string" example:"2025-02-16T08:30:00Z"`
 
 	ReceivedKeyPlace         string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00+07:00"`
-	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00+07:00"`
+	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 
 	ConfirmedRequestEmpID         string `gorm:"column:confirmed_request_emp_id" json:"confirmed_request_emp_id" example:"501621"`
 	ConfirmedRequestEmpName       string `gorm:"column:confirmed_request_emp_name" json:"confirmed_request_emp_name"`
@@ -313,8 +313,8 @@ func (VmsTrnRequestVehicleUser) TableName() string {
 type VmsTrnRequestTrip struct {
 	TrnRequestUID string `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 
-	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00+07:00"`
-	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00+07:00"`
+	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" swaggertype:"string" example:"2025-01-01T08:00:00Z"`
+	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" swaggertype:"string" example:"2025-01-01T10:00:00Z"`
 	RefTripTypeCode      int          `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	WorkPlace            string       `gorm:"column:work_place" json:"work_place" example:"Head Office"`
 	WorkDescription      string       `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
@@ -332,7 +332,7 @@ func (VmsTrnRequestTrip) TableName() string {
 type VmsTrnRequestPickup struct {
 	TrnRequestUID  string       `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	PickupPlace    string       `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
-	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00+07:00"`
+	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" swaggertype:"string" example:"2025-02-16T08:30:00Z"`
 	UpdatedAt      time.Time    `gorm:"column:updated_at" json:"-"`
 	UpdatedBy      string       `gorm:"column:updated_by" json:"-"`
 }
@@ -513,8 +513,8 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 	HandoverUID              string       `gorm:"column:handover_uid;primaryKey" json:"-"`
 	TrnRequestUID            string       `gorm:"column:trn_request_uid" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	ReceivedKeyPlace         string       `gorm:"column:appointment_location" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_start" json:"received_key_start_datetime" example:"2025-02-16T08:00:00+07:00"`
-	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_end" json:"received_key_end_datetime" example:"2025-02-16T09:30:00+07:00"`
+	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_start" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_end" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 	ReceiverType             int          `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
 	CreatedBy                string       `gorm:"column:created_by" json:"-"`
 	CreatedAt                time.Time    `gorm:"column:created_at" json:"-"`
