@@ -334,27 +334,24 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	case 2:
 		//select leave_start_date,leave_end_date from vms_trn_driver_leave where  leave_end_date<now()
 		var leave []struct {
-			LeaveStart  string `gorm:"column:leave_start_date" json:"leave_start_date"`
-			LeaveEnd    string `gorm:"column:leave_end_date" json:"leave_end_date"`
-			LeaveReason string `gorm:"column:leave_reason" json:"leave_reason"`
+			LeaveStart  models.TimeWithZone `gorm:"column:leave_start_date" json:"leave_start_date"`
+			LeaveEnd    models.TimeWithZone `gorm:"column:leave_end_date" json:"leave_end_date"`
+			LeaveReason string              `gorm:"column:leave_reason" json:"leave_reason"`
 		}
-		if err := config.DB.Raw("SELECT leave_start_date,leave_end_date,leave_reason FROM vms_trn_driver_leave WHERE leave_end_date <= ?", time.Now()).Scan(&leave).Error; err == nil && len(leave) > 0 {
+		if err := config.DB.Raw("SELECT leave_start_date,leave_end_date,leave_reason FROM vms_trn_driver_leave WHERE mas_driver_uid = ? AND leave_end_date >= ?", driver.MasDriverUID, time.Now()).Scan(&leave).Error; err == nil && len(leave) > 0 {
 			var alertDriverStatus []string
 			var alertDriverStatusDesc []string
 			driver.AlertDriverStatus = "ลา "
 			for _, l := range leave {
-				startDate, _ := time.Parse("2006-01-02 15:04:05", l.LeaveStart)
-				endDate, _ := time.Parse("2006-01-02 15:04:05", l.LeaveEnd)
-				// Convert to พ.ศ.
-				startYear := startDate.Year() + 543
-				endYear := endDate.Year() + 543
-				thaiStart := startDate.Format("02/01/") + fmt.Sprintf("%d", startYear)
-				thaiEnd := endDate.Format("02/01/") + fmt.Sprintf("%d", endYear)
+				startYear := l.LeaveStart.Year() + 543
+				endYear := l.LeaveEnd.Year() + 543
+				thaiStart := l.LeaveStart.Format("02/01/") + fmt.Sprintf("%d", startYear) + " " + l.LeaveStart.Format("15.04")
+				thaiEnd := l.LeaveEnd.Format("02/01/") + fmt.Sprintf("%d", endYear) + " " + l.LeaveEnd.Format("15.04")
 				alertDriverStatus = append(alertDriverStatus, thaiStart+" - "+thaiEnd)
 				alertDriverStatusDesc = append(alertDriverStatusDesc, l.LeaveReason)
 			}
-			driver.AlertDriverStatus = strings.Join(alertDriverStatus, ",")
-			driver.AlertDriverStatusDesc = strings.Join(alertDriverStatusDesc, ",")
+			driver.AlertDriverStatus += strings.Join(alertDriverStatus, ", ")
+			driver.AlertDriverStatusDesc = strings.Join(alertDriverStatusDesc, ", ")
 		}
 	}
 	//driver.DriverTotalSatisfactionReview = 200
