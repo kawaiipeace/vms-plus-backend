@@ -95,17 +95,23 @@ func UpdateBusinessArea(masDriverUID string) {
 		return
 	}
 
-	var bureauDeptSap string
-	var businessArea string
+	var result struct {
+		DeptSap      string `gorm:"column:dept_sap"`
+		BusinessArea string `gorm:"column:business_area"`
+	}
 
-	err = config.DB.Raw("SELECT dept_sap, business_area FROM vms_mas_department d WHERE d.dept_code = fn_get_bureau_dept_sap(?)", driver.DriverDeptSapWork).
-		First(&bureauDeptSap, &businessArea).Error
+	err = config.DB.Raw("SELECT dept_sap, business_area FROM vms_mas_department d WHERE d.dept_sap = fn_get_bureau_dept_sap(?)", driver.DriverDeptSapWork).
+		Scan(&result).Error
 	if err != nil {
 		return
 	}
+
+	bureauDeptSap := result.DeptSap
+	businessArea := result.BusinessArea
+
 	//update business_area
 	if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid = ?", masDriverUID).
-		Update("business_area", businessArea).
+		Update("bureau_ba", businessArea).
 		Update("bureau_dept_sap", bureauDeptSap).
 		Error; err != nil {
 		return
