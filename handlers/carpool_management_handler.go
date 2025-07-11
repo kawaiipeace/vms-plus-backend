@@ -38,7 +38,7 @@ func (h *CarpoolManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 	if slices.Contains(user.Roles, "admin-region") {
 		return query.Where("cp.carpool_main_business_area = ?", user.BusinessArea)
 	}
-	if slices.Contains(user.Roles, "admin-approval") {
+	if slices.Contains(user.Roles, "admin-department") {
 		return query.Where("exists (select 1 from vms_mas_carpool_authorized_dept cad where cad.mas_carpool_uid=cp.mas_carpool_uid and public.fn_get_bureau_dept_sap(cad.dept_sap) = ?)", user.BureauDeptSap)
 	}
 	return nil

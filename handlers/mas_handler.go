@@ -36,7 +36,6 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		ServiceCode: "vms",
 		Search:      search,
 		//BureauDeptSap: user.BureauDeptSap,
-		Role:  "vehicle-user",
 		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
@@ -142,7 +141,6 @@ func (h *MasHandler) ListDriverUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		Role:          "vehicle-user",
 		Limit:         100,
 	}
 	users, err := userhub.GetUserList(request)
@@ -316,7 +314,7 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-// ListAdminApprovalUser godoc
+// ListAdminDepartmentOrCarpoolUser godoc
 // @Summary Retrieve the Admin Approval Users
 // @Description This endpoint allows a user to retrieve Admin Approval Users.
 // @Tags MAS
@@ -327,7 +325,7 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 // @Param trn_request_uid query string true "TrnReuestUID"
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/mas/user-admin-approval-users [get]
-func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
+func (h *MasHandler) ListAdminDepartmentOrCarpoolUser(c *gin.Context) {
 	trnRequestUID := c.Query("trn_request_uid")
 	if trnRequestUID == "" {
 		h.ListConfirmerLicenseUser(c)
@@ -372,7 +370,7 @@ func (h *MasHandler) ListAdminApprovalUser(c *gin.Context) {
 		request := userhub.ServiceListUserRequest{
 			ServiceCode:   "vms",
 			Search:        search,
-			Role:          "admin_approval",
+			Role:          "admin-department",
 			BureauDeptSap: bureauDeptSap,
 			Limit:         100,
 		}
@@ -406,11 +404,12 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 	}
 	search := c.Query("search")
 	var result struct {
-		MasCarpoolUID string
-		MasVehicleUID string
+		MasCarpoolUID    string
+		MasVehicleUID    string
+		VehicleUserEmpID string
 	}
 	if err := config.DB.Table("vms_trn_request").
-		Select("mas_carpool_uid, mas_vehicle_uid").
+		Select("mas_carpool_uid, mas_vehicle_uid,vehicle_user_emp_id").
 		Where("trn_request_uid = ?", trnRequestUID).
 		Scan(&result).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})
@@ -441,20 +440,45 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		c.JSON(http.StatusOK, lists)
 		return
 	} else {
-		var bureauDeptSap string
-		request := userhub.ServiceListUserRequest{
-			ServiceCode:   "vms",
-			Search:        search,
-			Role:          "final_approval",
-			BureauDeptSap: bureauDeptSap,
-			Limit:         100,
-		}
-		lists, err := userhub.GetUserList(request)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+		userInfo := funcs.GetUserEmpInfo(result.VehicleUserEmpID)
+		managers := funcs.GetUserManager(userInfo.DeptSAP)
+		lists := []models.MasUserEmp{}
+		for _, manager := range managers {
+			if manager.LevelCode == "S1" {
+				lists = append(lists, models.MasUserEmp{
+					EmpID:        strconv.Itoa(manager.EmpIDLeader),
+					FullName:     manager.EmpName,
+					Position:     manager.PlansTextShort,
+					DeptSAP:      strconv.Itoa(manager.DeptSAP),
+					DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+					DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+					ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+					IsEmployee:   true,
+				})
+			}
 		}
 
+		if len(lists) == 0 {
+			for _, manager := range managers {
+				if manager.LevelCode == "M6" {
+					lists = append(lists, models.MasUserEmp{
+						EmpID:        strconv.Itoa(manager.EmpIDLeader),
+						FullName:     manager.EmpName,
+						Position:     manager.PlansTextShort,
+						DeptSAP:      strconv.Itoa(manager.DeptSAP),
+						DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+						DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+						ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+						IsEmployee:   true,
+					})
+				}
+			}
+		}
+		for i := range lists {
+			empInfo := funcs.GetUserEmpInfo(lists[i].EmpID)
+			lists[i].TelMobile = empInfo.TelMobile
+			lists[i].TelInternal = empInfo.TelInternal
+		}
 		c.JSON(http.StatusOK, lists)
 		return
 	}

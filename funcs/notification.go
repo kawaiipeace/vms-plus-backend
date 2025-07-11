@@ -42,7 +42,9 @@ func CreateRequestBookingNotification(trnRequestUID string) {
 			notifyEmpID = request.DriverEmpID
 		case "level1-approval":
 			notifyEmpID = request.ConfirmedRequestEmpID
-		case "final-approval":
+		case "approval-department":
+			notifyEmpID = request.ApprovedRequestEmpID
+		case "approval-carpool":
 			notifyEmpID = request.ApprovedRequestEmpID
 		}
 		if notifyEmpID != "" {
@@ -94,7 +96,7 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 			notifyEmpID = request.CreatedRequestEmpID
 		case "level1-approval":
 			notifyEmpID = request.ConfirmedRequestEmpID
-		case "final-approval":
+		case "license-approval":
 			notifyEmpID = request.ApprovedRequestEmpID
 		}
 		if notifyEmpID != "" {

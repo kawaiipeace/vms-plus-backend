@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"vms_plus_be/config"
@@ -150,11 +151,13 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	empID := c.Query("emp_id")
 	bureauDeptSap := user.BureauDeptSap
 	businessArea := user.BusinessArea
+	deptSAP := user.DeptSAP
 
 	if empID != "" {
 		empUser := funcs.GetUserEmpInfo(empID)
 		bureauDeptSap = empUser.BureauDeptSap
 		businessArea = empUser.BusinessArea
+		deptSAP = empUser.DeptSAP
 	}
 
 	startDate := c.Query("start_date")
@@ -163,6 +166,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Start Date and End Date are required", "message": messages.ErrInvalidRequest.Error()})
 		return
 	}
+	fmt.Println("startDate", startDate)
+	fmt.Println("endDate", endDate)
+	fmt.Println("DeptSAP", deptSAP)
+	fmt.Println("bureauDeptSap", bureauDeptSap)
+	fmt.Println("businessArea", businessArea)
 	var vehicleCanBookings []models.VmsMasVehicleCanBooking
 
 	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?)`,

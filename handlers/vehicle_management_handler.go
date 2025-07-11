@@ -33,7 +33,7 @@ func (h *VehicleManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 	if slices.Contains(user.Roles, "admin-region") {
 		return query.Where("d.bureau_ba = ?", user.BusinessArea)
 	}
-	if slices.Contains(user.Roles, "admin-approval") {
+	if slices.Contains(user.Roles, "admin-department") {
 		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
 	}
 	return nil

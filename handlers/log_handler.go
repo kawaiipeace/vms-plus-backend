@@ -18,10 +18,13 @@ func GetRoleOfCreater(role string) string {
 		return "ผู้ใช้ยานพาหนะ"
 	case "level1-approval":
 		return "ผู้อนุมัติต้นสังกัด"
-	case "admin-approval":
-	case "admin-dept-approval":
+	case "admin-department":
 		return "ผู้ดูแลยานพาหนะ"
-	case "final-approval":
+	case "admin-carpool":
+		return "ผู้ดูแลยานพาหนะ"
+	case "approval-carpool":
+		return "ผู้อนุมัติขั้นสุดท้าย"
+	case "approval-department":
 		return "ผู้อนุมัติขั้นสุดท้าย"
 	case "driver":
 		return "คนขับรถ"
