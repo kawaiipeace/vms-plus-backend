@@ -36,7 +36,6 @@ func (h *MasHandler) ListVehicleUser(c *gin.Context) {
 		ServiceCode: "vms",
 		Search:      search,
 		//BureauDeptSap: user.BureauDeptSap,
-		Role:  "vehicle-user",
 		Limit: 100,
 	}
 	lists, err := userhub.GetUserList(request)
