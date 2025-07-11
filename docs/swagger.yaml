@@ -99,6 +99,15 @@ definitions:
         type: string
     type: object
   models.VmsDriverLicenseAnnualApproved:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      annual_yyyy:
+        example: 2568
+        type: integer
+      trn_request_annual_driver_uid:
+        example: 095fbfbf-378e-4507-b15f-e53ac60370e7
+        type: string
     type: object
   models.VmsDriverLicenseAnnualApprover:
     properties:
@@ -134,6 +143,39 @@ definitions:
         type: string
     type: object
   models.VmsDriverLicenseAnnualRequest:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      annual_yyyy:
+        example: 2568
+        type: integer
+      approved_request_emp_id:
+        example: "990001"
+        type: string
+      confirmed_request_emp_id:
+        example: "990002"
+        type: string
+      driver_certificate_img:
+        example: http://vms-plus.pea.co.th/images/cert.png
+        type: string
+      driver_certificate_name:
+        example: Safety Certificate
+        type: string
+      driver_certificate_no:
+        example: CERT12345
+        type: string
+      driver_certificate_type_code:
+        example: 1
+        type: integer
+      driver_license_img:
+        example: http://vms-plus.pea.co.th/images/license.png
+        type: string
+      driver_license_no:
+        example: DL12345678
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
     type: object
   models.VmsMasCarpoolActive:
     properties:
@@ -372,6 +414,32 @@ definitions:
         type: string
     type: object
   models.VmsMasDriverContractUpdate:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      contract_no:
+        example: CON123456
+        type: string
+      driver_dept_sap_hire:
+        example: "1000"
+        type: string
+      driver_dept_sap_work:
+        example: "10001"
+        type: string
+      is_replacement:
+        example: "1"
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      ref_other_use_code:
+        example: 1
+        type: integer
+      replacement_driver_uid:
+        example: 0a33f4df-5da8-4831-b3e4-27b5c6134c7c
+        type: string
+      vendor_name:
+        type: string
     type: object
   models.VmsMasDriverDelete:
     properties:
@@ -383,6 +451,30 @@ definitions:
         type: string
     type: object
   models.VmsMasDriverDetailUpdate:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      driver_contact_number:
+        example: "+1234567890"
+        type: string
+      driver_identification_no:
+        example: ID123456789
+        type: string
+      driver_image:
+        example: https://example.com/driver_image.jpg
+        type: string
+      driver_name:
+        example: John Doe
+        type: string
+      driver_nickname:
+        example: Johnny
+        type: string
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      work_type:
+        example: 1
+        type: integer
     type: object
   models.VmsMasDriverDocument:
     properties:
@@ -427,10 +519,103 @@ definitions:
         type: string
     type: object
   models.VmsMasDriverLeaveStatusUpdate:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      leave_reason:
+        example: Sick leave
+        type: string
+      leave_time_type_code:
+        example: 1
+        type: integer
+      mas_driver_uid:
+        example: 8d14e6df-5d65-486e-b079-393d9c817a09
+        type: string
+      replacement_driver_uid:
+        example: 0a33f4df-5da8-4831-b3e4-27b5c6134c7c
+        type: string
+    type: object
+  models.VmsMasDriverLicenseRequest:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      driver_license_image:
+        example: https://example.com/license_image.jpg
+        type: string
+      driver_license_no:
+        example: D123456789
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
     type: object
   models.VmsMasDriverLicenseUpdate:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      driver_license_no:
+        example: D123456789
+        type: string
+      mas_driver_uid:
+        example: 3e89ebe5-d597-4ee2-b0a1-c3a5628cf131
+        type: string
+      ref_driver_license_type_code:
+        example: "1"
+        type: string
     type: object
   models.VmsMasDriverRequest:
+    properties:
+      approved_job_driver_end_date:
+        example: 2023-12-31T23:59:59T
+        type: string
+      approved_job_driver_start_date:
+        example: 2023-01-01T00:00:00T
+        type: string
+      contract_no:
+        example: CON123456
+        type: string
+      driver_birthdate:
+        example: 1990-01-01T00:00:00T
+        type: string
+      driver_contact_number:
+        example: "+1234567890"
+        type: string
+      driver_dept_sap_hire:
+        example: "1000"
+        type: string
+      driver_dept_sap_work:
+        example: "10001"
+        type: string
+      driver_documents:
+        items:
+          $ref: '#/definitions/models.VmsMasDriverDocument'
+        type: array
+      driver_identification_no:
+        example: ID123456789
+        type: string
+      driver_image:
+        example: https://example.com/driver_image.jpg
+        type: string
+      driver_license:
+        $ref: '#/definitions/models.VmsMasDriverLicenseRequest'
+      driver_name:
+        example: John Doe
+        type: string
+      driver_nickname:
+        example: Johnny
+        type: string
+      is_replacement:
+        example: "1"
+        type: string
+      ref_other_use_code:
+        example: "1"
+        type: string
+      vendor_name:
+        example: VENDOR123
+        type: string
+      work_type:
+        example: 1
+        type: integer
     type: object
   models.VmsMasDriverResignStatusUpdate:
     properties:
@@ -456,9 +641,156 @@ definitions:
         example: f3b29096-140e-49dc-97ee-17fa9352aff6
         type: string
     type: object
+  models.VmsRefCostType:
+    properties:
+      cost_center:
+        type: string
+      cost_center_code:
+        type: string
+      cost_center_name:
+        type: string
+      ref_cost_type_code:
+        type: string
+      ref_cost_type_name:
+        type: string
+    type: object
+  models.VmsRefFuelType:
+    properties:
+      ref_fuel_type_id:
+        type: integer
+      ref_fuel_type_name_en:
+        type: string
+      ref_fuel_type_name_th:
+        type: string
+    type: object
+  models.VmsRefOilStationBrand:
+    properties:
+      ref_oil_station_brand_id:
+        type: integer
+      ref_oil_station_brand_img:
+        type: string
+      ref_oil_station_brand_name_en:
+        type: string
+      ref_oil_station_brand_name_full:
+        type: string
+      ref_oil_station_brand_name_th:
+        type: string
+    type: object
+  models.VmsRefPaymentType:
+    properties:
+      ref_payment_type_code:
+        type: integer
+      ref_payment_type_name:
+        type: string
+    type: object
   models.VmsTrnAddFuel:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      add_fuel_date_time:
+        example: "2025-03-26T08:00:00Z"
+        type: string
+      before_vat_price:
+        example: 46.5
+        type: number
+      mas_vehicle_department_uid:
+        type: string
+      mas_vehicle_uid:
+        type: string
+      mile:
+        example: 12000
+        type: integer
+      price_per_liter:
+        example: 35.5
+        type: number
+      receipt_img:
+        example: http://vms.pea.co.th/receipt.jpg
+        type: string
+      ref_cost_type:
+        $ref: '#/definitions/models.VmsRefCostType'
+      ref_cost_type_code:
+        example: 1
+        type: integer
+      ref_fuel_type:
+        $ref: '#/definitions/models.VmsRefFuelType'
+      ref_fuel_type_id:
+        example: 1
+        type: integer
+      ref_oil_station_brand:
+        $ref: '#/definitions/models.VmsRefOilStationBrand'
+      ref_oil_station_brand_id:
+        example: 1
+        type: integer
+      ref_payment_type:
+        $ref: '#/definitions/models.VmsRefPaymentType'
+      ref_payment_type_code:
+        example: 1
+        type: integer
+      sum_liter:
+        example: 50
+        type: number
+      sum_price:
+        example: 1872.5
+        type: number
+      tax_invoice_no:
+        example: INV1234567890
+        type: string
+      trn_add_fuel_uid:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      vat:
+        example: 3.5
+        type: number
+      vehicle_license_plate:
+        type: string
+      vehicle_license_plate_province_full:
+        type: string
+      vehicle_license_plate_province_short:
+        type: string
     type: object
   models.VmsTrnAddFuelRequest:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      before_vat_price:
+        example: 46.5
+        type: number
+      mile:
+        example: 12000
+        type: integer
+      price_per_liter:
+        example: 35.5
+        type: number
+      receipt_img:
+        example: http://vms.pea.co.th/receipt.jpg
+        type: string
+      ref_fuel_type_id:
+        example: 1
+        type: integer
+      ref_oil_station_brand_id:
+        example: 1
+        type: integer
+      ref_payment_type_code:
+        example: 1
+        type: integer
+      sum_liter:
+        example: 50
+        type: number
+      sum_price:
+        example: 1872.5
+        type: number
+      tax_invoice_no:
+        example: INV1234567890
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      vat:
+        example: 3.5
+        type: number
     type: object
   models.VmsTrnInspectVehicleImages:
     properties:
@@ -513,6 +845,25 @@ definitions:
         type: string
     type: object
   models.VmsTrnReceivedVehicle:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      fuel_start:
+        example: 50
+        type: integer
+      mile_start:
+        example: 10000
+        type: integer
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      vehicle_images:
+        items:
+          $ref: '#/definitions/models.VehicleImageReceived'
+        type: array
     type: object
   models.VmsTrnReceivedVehicleImages:
     properties:
@@ -527,6 +878,12 @@ definitions:
   models.VmsTrnReceivedVehicleNoImgage:
     type: object
   models.VmsTrnRequestAccepted:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestApproved:
     properties:
@@ -535,6 +892,18 @@ definitions:
         type: string
     type: object
   models.VmsTrnRequestApprovedWithRecieiveKey:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      received_key_place:
+        example: Main Office
+        type: string
+      receiver_type:
+        example: 0
+        type: integer
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestCanceled:
     properties:
@@ -621,6 +990,15 @@ definitions:
         type: string
     type: object
   models.VmsTrnRequestPickup:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      pickup_place:
+        example: Main Office
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestRejected:
     properties:
@@ -632,6 +1010,102 @@ definitions:
         type: string
     type: object
   models.VmsTrnRequestRequest:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      activity_no:
+        example: A12345
+        type: string
+      car_user_internal_contact_number:
+        example: "1122"
+        type: string
+      car_user_mobile_contact_number:
+        example: "0987654321"
+        type: string
+      confirmed_request_emp_id:
+        description: Step 4
+        example: "501621"
+        type: string
+      cost_center:
+        example: B0002211
+        type: string
+      doc_file:
+        example: document.pdf
+        type: string
+      doc_no:
+        example: REF123456
+        type: string
+      driver_emp_id:
+        example: "700001"
+        type: string
+      driver_internal_contact_number:
+        example: "1221"
+        type: string
+      driver_mobile_contact_number:
+        example: "0987654321"
+        type: string
+      is_admin_choose_driver:
+        example: "0"
+        type: string
+      is_admin_choose_vehicle:
+        example: "0"
+        type: string
+      is_pea_employee_driver:
+        example: "1"
+        type: string
+      is_system_choose_vehicle:
+        example: "0"
+        type: string
+      mas_carpool_driver_uid:
+        description: Step 3
+        example: a6c8a34b-9245-49c8-a12b-45fae77a4e7d
+        type: string
+      mas_carpool_uid:
+        description: Step 2
+        example: 389b0f63-4195-4ece-bf35-0011c2f5f28c
+        type: string
+      mas_vehicle_uid:
+        example: 21d2ea5a-4ad6-4a95-a64d-73b72d43bd55
+        type: string
+      network_no:
+        example: NET12345
+        type: string
+      number_of_passengers:
+        example: 3
+        type: integer
+      pickup_place:
+        example: Main Office
+        type: string
+      pm_order_no:
+        example: PM123456
+        type: string
+      ref_cost_type_code:
+        example: 1
+        type: integer
+      remark:
+        example: Urgent request
+        type: string
+      request_no:
+        type: string
+      requested_vehicle_type:
+        example: Sedan
+        type: string
+      trip_type:
+        example: 1
+        type: integer
+      vehicle_user_emp_id:
+        description: Step1
+        example: "990001"
+        type: string
+      wbs_no:
+        example: WBS12345
+        type: string
+      work_description:
+        example: Business Meeting
+        type: string
+      work_place:
+        example: Head Office
+        type: string
     type: object
   models.VmsTrnRequestResend:
     properties:
@@ -640,12 +1114,60 @@ definitions:
         type: string
     type: object
   models.VmsTrnRequestTrip:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      number_of_passengers:
+        example: 3
+        type: integer
+      remark:
+        example: Urgent request
+        type: string
+      trip_type:
+        example: 1
+        type: integer
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
+      work_description:
+        example: Business Meeting
+        type: string
+      work_place:
+        example: Head Office
+        type: string
     type: object
   models.VmsTrnRequestUpdateRecieivedKey:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      received_key_place:
+        example: Main Office
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyConfirmed:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      ref_vehicle_key_type_code:
+        example: 1
+        type: integer
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestUpdateRecieivedKeyDetail:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      ref_vehicle_key_type_code:
+        example: 1
+        type: integer
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnRequestVehicle:
     properties:
@@ -695,7 +1217,7 @@ definitions:
         example: Parking Lot 1
         type: string
       returned_vehicle_datetime:
-        example: "2025-04-16T14:30:00+07:00"
+        example: "2025-04-16T14:30:00Z"
         type: string
       returned_vehicle_emp_id:
         type: string
@@ -721,6 +1243,24 @@ definitions:
         type: array
     type: object
   models.VmsTrnReturnedVehicleNoImage:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      fuel_end:
+        example: 70
+        type: integer
+      mile_end:
+        example: 12000
+        type: integer
+      received_vehicle_remark:
+        example: Minor scratch on bumper
+        type: string
+      returned_vehicle_remark:
+        example: OK
+        type: string
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
   models.VmsTrnSatisfactionSurveyAnswers:
     properties:
@@ -732,6 +1272,27 @@ definitions:
         type: integer
     type: object
   models.VmsTrnTripDetailRequest:
+    properties:
+      $2:
+        $ref: '#/definitions/models.TimeWithZone'
+      trip_departure_place:
+        example: Changi Airport
+        type: string
+      trip_destination_place:
+        example: Marina Bay Sands
+        type: string
+      trip_detail:
+        example: Routine transport between airport and hotel.
+        type: string
+      trip_end_miles:
+        example: 5050
+        type: integer
+      trip_start_miles:
+        example: 5000
+        type: integer
+      trn_request_uid:
+        example: 0b07440c-ab04-49d0-8730-d62ce0a9bab9
+        type: string
     type: object
 info:
   contact: {}

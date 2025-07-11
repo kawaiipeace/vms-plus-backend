@@ -284,7 +284,7 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
 
 	// Return success response
@@ -327,10 +327,34 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 		return
 	}
 	//
-	driver.AlertDriverStatus = "ปฏิบัติงานปกติ"
-	driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
-	driver.DriverTotalSatisfactionReview = 200
-
+	driver.AlertDriverStatus = driver.DriverStatus.RefDriverStatusDesc
+	switch driver.RefDriverStatusCode {
+	case 1:
+		driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
+	case 2:
+		//select leave_start_date,leave_end_date from vms_trn_driver_leave where  leave_end_date<now()
+		var leave []struct {
+			LeaveStart  models.TimeWithZone `gorm:"column:leave_start_date" json:"leave_start_date"`
+			LeaveEnd    models.TimeWithZone `gorm:"column:leave_end_date" json:"leave_end_date"`
+			LeaveReason string              `gorm:"column:leave_reason" json:"leave_reason"`
+		}
+		if err := config.DB.Raw("SELECT leave_start_date,leave_end_date,leave_reason FROM vms_trn_driver_leave WHERE mas_driver_uid = ? AND leave_end_date >= ?", driver.MasDriverUID, time.Now()).Scan(&leave).Error; err == nil && len(leave) > 0 {
+			var alertDriverStatus []string
+			var alertDriverStatusDesc []string
+			driver.AlertDriverStatus = "ลา "
+			for _, l := range leave {
+				startYear := l.LeaveStart.Year() + 543
+				endYear := l.LeaveEnd.Year() + 543
+				thaiStart := l.LeaveStart.Format("02/01/") + fmt.Sprintf("%d", startYear) + " " + l.LeaveStart.Format("15.04")
+				thaiEnd := l.LeaveEnd.Format("02/01/") + fmt.Sprintf("%d", endYear) + " " + l.LeaveEnd.Format("15.04")
+				alertDriverStatus = append(alertDriverStatus, thaiStart+" - "+thaiEnd)
+				alertDriverStatusDesc = append(alertDriverStatusDesc, l.LeaveReason)
+			}
+			driver.AlertDriverStatus += strings.Join(alertDriverStatus, ", ")
+			driver.AlertDriverStatusDesc = strings.Join(alertDriverStatusDesc, ", ")
+		}
+	}
+	//driver.DriverTotalSatisfactionReview = 200
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 
@@ -454,6 +478,7 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		return
 
 	}
+	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }

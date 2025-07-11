@@ -364,13 +364,13 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
 			}
 		}
-		if request.CanceledRequestRole == "admin-approval" {
+		if request.CanceledRequestRole == "admin-department" || request.CanceledRequestRole == "admin-carpool" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
 			}
 		}
-		if request.CanceledRequestRole == "final-approval" {
+		if request.CanceledRequestRole == "approval-department" || request.CanceledRequestRole == "approval-carpool" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
