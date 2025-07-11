@@ -58,6 +58,7 @@ type VmsTrnRequestList struct {
 	IsPEAEmployeeDriver              string       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	WorkDescription                  string       `gorm:"column:work_description" json:"work_description"`
+	ActionDetail                     string       `gorm:"column:action_detail" json:"action_detail"`
 }
 
 func (VmsTrnRequestList) TableName() string {
