@@ -2,10 +2,10 @@ package models
 
 import "time"
 
-//VmsTrnReceivedVehicle
+// VmsTrnReceivedVehicle
 type VmsTrnReceivedVehicle struct {
 	TrnRequestUID         string       `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	PickupDatetime        TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-03-26T14:30:00+07:00"`
+	PickupDatetime        TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" swaggertype:"string" example:"2025-03-26T14:30:00Z"`
 	MileStart             int          `gorm:"column:mile_start" json:"mile_start" example:"10000"`
 	FuelStart             int          `gorm:"column:fuel_start" json:"fuel_start" example:"50"`
 	ReceivedVehicleRemark string       `gorm:"column:received_vehicle_remark" json:"received_vehicle_remark" example:"Minor scratch on bumper"`
@@ -42,11 +42,11 @@ func (VehicleImageReceived) TableName() string {
 	return "public.vms_trn_vehicle_img_received"
 }
 
-//VmsTrnTravelCard
+// VmsTrnTravelCard
 type VmsTrnTravelCard struct {
 	TrnRequestUID string       `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid" example:"a7de5318-1e05-4511-abe7-8c1c6374ab29"`
-	StartDateTime TimeWithZone `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00+07:00"`
-	EndDateTime   TimeWithZone `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00+07:00"`
+	StartDateTime TimeWithZone `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00Z"`
+	EndDateTime   TimeWithZone `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00Z"`
 
 	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`

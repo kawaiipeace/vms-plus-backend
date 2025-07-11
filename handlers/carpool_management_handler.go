@@ -98,7 +98,12 @@ func DoSearchCarpools(c *gin.Context, h *CarpoolManagementHandler, isLimit bool)
 		end as carpool_authorized_depts
 
 	`).Where("cp.is_deleted = ?", "0").
-		Joins("LEFT JOIN vms_mas_carpool_admin cpa ON cp.mas_carpool_uid = cpa.mas_carpool_uid and cpa.is_deleted = ?", "0")
+		Joins(`LEFT JOIN LATERAL (
+			SELECT * FROM vms_mas_carpool_admin cpa
+			WHERE cpa.mas_carpool_uid = cp.mas_carpool_uid AND cpa.is_deleted = '0'
+			ORDER BY cpa.is_main_admin DESC
+			LIMIT 1
+		) cpa ON true`)
 	search := strings.ToUpper(c.Query("search"))
 	if search != "" {
 		query = query.Where("UPPER(cp.carpool_name) ILIKE ? OR EXISTS (SELECT 1 FROM vms_mas_carpool_admin cpa WHERE cpa.mas_carpool_uid = cp.mas_carpool_uid AND UPPER(cpa.admin_emp_name) ILIKE ?)", "%"+search+"%", "%"+search+"%")

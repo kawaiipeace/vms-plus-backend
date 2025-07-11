@@ -10790,14 +10790,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TimeWithZone": {
-            "type": "object",
-            "properties": {
-                "time.Time": {
-                    "type": "string"
-                }
-            }
-        },
         "models.VehicleImageInspect": {
             "type": "object",
             "properties": {
@@ -10840,12 +10832,13 @@ const docTemplate = `{
         "models.VmsDriverLicenseAnnualApproved": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "annual_yyyy": {
                     "type": "integer",
                     "example": 2568
+                },
+                "driver_license_expire_date": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
                 },
                 "trn_request_annual_driver_uid": {
                     "type": "string",
@@ -10904,9 +10897,6 @@ const docTemplate = `{
         "models.VmsDriverLicenseAnnualRequest": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "annual_yyyy": {
                     "type": "integer",
                     "example": 2568
@@ -10919,9 +10909,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "990002"
                 },
+                "driver_certificate_expire_date": {
+                    "type": "string",
+                    "example": "2024-12-31T00:00:00Z"
+                },
                 "driver_certificate_img": {
                     "type": "string",
                     "example": "http://vms-plus.pea.co.th/images/cert.png"
+                },
+                "driver_certificate_issue_date": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
                 },
                 "driver_certificate_name": {
                     "type": "string",
@@ -10934,6 +10932,10 @@ const docTemplate = `{
                 "driver_certificate_type_code": {
                     "type": "integer",
                     "example": 1
+                },
+                "driver_license_expire_date": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
                 },
                 "driver_license_img": {
                     "type": "string",
@@ -11287,8 +11289,13 @@ const docTemplate = `{
         "models.VmsMasDriverContractUpdate": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "approved_job_driver_end_date": {
+                    "type": "string",
+                    "example": "2023-12-31T23:59:59Z"
+                },
+                "approved_job_driver_start_date": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
                 },
                 "contract_no": {
                     "type": "string",
@@ -11339,8 +11346,9 @@ const docTemplate = `{
         "models.VmsMasDriverDetailUpdate": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "driver_birthdate": {
+                    "type": "string",
+                    "example": "1990-01-01T00:00:00Z"
                 },
                 "driver_contact_number": {
                     "type": "string",
@@ -11436,12 +11444,17 @@ const docTemplate = `{
         "models.VmsMasDriverLeaveStatusUpdate": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "leave_end_date": {
+                    "type": "string",
+                    "example": "2025-01-30T23:59:59Z"
                 },
                 "leave_reason": {
                     "type": "string",
                     "example": "Sick leave"
+                },
+                "leave_start_date": {
+                    "type": "string",
+                    "example": "2025-01-25T00:00:00Z"
                 },
                 "leave_time_type_code": {
                     "type": "integer",
@@ -11460,8 +11473,9 @@ const docTemplate = `{
         "models.VmsMasDriverLicenseRequest": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "driver_license_end_date": {
+                    "type": "string",
+                    "example": "2025-12-31T23:59:59Z"
                 },
                 "driver_license_image": {
                     "type": "string",
@@ -11470,6 +11484,10 @@ const docTemplate = `{
                 "driver_license_no": {
                     "type": "string",
                     "example": "D123456789"
+                },
+                "driver_license_start_date": {
+                    "type": "string",
+                    "example": "2020-01-01T00:00:00Z"
                 },
                 "ref_driver_license_type_code": {
                     "type": "string",
@@ -11480,12 +11498,17 @@ const docTemplate = `{
         "models.VmsMasDriverLicenseUpdate": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "driver_license_end_date": {
+                    "type": "string",
+                    "example": "2025-12-31T23:59:59Z"
                 },
                 "driver_license_no": {
                     "type": "string",
                     "example": "D123456789"
+                },
+                "driver_license_start_date": {
+                    "type": "string",
+                    "example": "2020-01-01T00:00:00Z"
                 },
                 "mas_driver_uid": {
                     "type": "string",
@@ -11502,11 +11525,11 @@ const docTemplate = `{
             "properties": {
                 "approved_job_driver_end_date": {
                     "type": "string",
-                    "example": "2023-12-31T23:59:59T"
+                    "example": "2023-12-31T23:59:59Z"
                 },
                 "approved_job_driver_start_date": {
                     "type": "string",
-                    "example": "2023-01-01T00:00:00T"
+                    "example": "2023-01-01T00:00:00Z"
                 },
                 "contract_no": {
                     "type": "string",
@@ -11514,7 +11537,7 @@ const docTemplate = `{
                 },
                 "driver_birthdate": {
                     "type": "string",
-                    "example": "1990-01-01T00:00:00T"
+                    "example": "1990-01-01T00:00:00Z"
                 },
                 "driver_contact_number": {
                     "type": "string",
@@ -11674,9 +11697,6 @@ const docTemplate = `{
         "models.VmsTrnAddFuel": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "add_fuel_date_time": {
                     "type": "string",
                     "example": "2025-03-26T08:00:00Z"
@@ -11739,6 +11759,10 @@ const docTemplate = `{
                     "type": "number",
                     "example": 1872.5
                 },
+                "tax_invoice_date": {
+                    "type": "string",
+                    "example": "2025-03-26T08:00:00Z"
+                },
                 "tax_invoice_no": {
                     "type": "string",
                     "example": "INV1234567890"
@@ -11769,9 +11793,6 @@ const docTemplate = `{
         "models.VmsTrnAddFuelRequest": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "before_vat_price": {
                     "type": "number",
                     "example": 46.5
@@ -11807,6 +11828,10 @@ const docTemplate = `{
                 "sum_price": {
                     "type": "number",
                     "example": 1872.5
+                },
+                "tax_invoice_date": {
+                    "type": "string",
+                    "example": "2025-03-26T08:00:00Z"
                 },
                 "tax_invoice_no": {
                     "type": "string",
@@ -11899,9 +11924,6 @@ const docTemplate = `{
         "models.VmsTrnReceivedVehicle": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "fuel_start": {
                     "type": "integer",
                     "example": 50
@@ -11909,6 +11931,10 @@ const docTemplate = `{
                 "mile_start": {
                     "type": "integer",
                     "example": 10000
+                },
+                "pickup_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T14:30:00Z"
                 },
                 "received_vehicle_remark": {
                     "type": "string",
@@ -11942,13 +11968,44 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnReceivedVehicleNoImgage": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "fuel_start": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "mile_start": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "pickup_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T14:30:00Z"
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
+                },
+                "returned_cleanliness_level": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "returned_vehicle_remark": {
+                    "type": "string",
+                    "example": "OK"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestAccepted": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "accepted_vehicle_datetime": {
+                    "type": "string",
+                    "example": "2025-04-16T14:30:00"
                 },
                 "trn_request_uid": {
                     "type": "string",
@@ -11968,12 +12025,17 @@ const docTemplate = `{
         "models.VmsTrnRequestApprovedWithRecieiveKey": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "received_key_end_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T09:30:00Z"
                 },
                 "received_key_place": {
                     "type": "string",
                     "example": "Main Office"
+                },
+                "received_key_start_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
                 },
                 "receiver_type": {
                     "type": "integer",
@@ -12106,8 +12168,9 @@ const docTemplate = `{
         "models.VmsTrnRequestPickup": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "pickup_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:30:00Z"
                 },
                 "pickup_place": {
                     "type": "string",
@@ -12135,9 +12198,6 @@ const docTemplate = `{
         "models.VmsTrnRequestRequest": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "activity_no": {
                     "type": "string",
                     "example": "A12345"
@@ -12179,6 +12239,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "0987654321"
                 },
+                "end_datetime": {
+                    "type": "string",
+                    "example": "2025-01-01T10:00:00Z"
+                },
                 "is_admin_choose_driver": {
                     "type": "string",
                     "example": "0"
@@ -12217,6 +12281,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3
                 },
+                "pickup_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:30:00Z"
+                },
                 "pickup_place": {
                     "type": "string",
                     "example": "Main Office"
@@ -12239,6 +12307,10 @@ const docTemplate = `{
                 "requested_vehicle_type": {
                     "type": "string",
                     "example": "Sedan"
+                },
+                "start_datetime": {
+                    "type": "string",
+                    "example": "2025-01-01T08:00:00Z"
                 },
                 "trip_type": {
                     "type": "integer",
@@ -12275,8 +12347,9 @@ const docTemplate = `{
         "models.VmsTrnRequestTrip": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "end_datetime": {
+                    "type": "string",
+                    "example": "2025-01-01T10:00:00Z"
                 },
                 "number_of_passengers": {
                     "type": "integer",
@@ -12285,6 +12358,10 @@ const docTemplate = `{
                 "remark": {
                     "type": "string",
                     "example": "Urgent request"
+                },
+                "start_datetime": {
+                    "type": "string",
+                    "example": "2025-01-01T08:00:00Z"
                 },
                 "trip_type": {
                     "type": "integer",
@@ -12307,12 +12384,17 @@ const docTemplate = `{
         "models.VmsTrnRequestUpdateRecieivedKey": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "received_key_end_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T17:00:00Z"
                 },
                 "received_key_place": {
                     "type": "string",
                     "example": "Main Office"
+                },
+                "received_key_start_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
                 },
                 "trn_request_uid": {
                     "type": "string",
@@ -12323,8 +12405,9 @@ const docTemplate = `{
         "models.VmsTrnRequestUpdateRecieivedKeyConfirmed": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "received_key_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
                 },
                 "ref_vehicle_key_type_code": {
                     "type": "integer",
@@ -12339,8 +12422,9 @@ const docTemplate = `{
         "models.VmsTrnRequestUpdateRecieivedKeyDetail": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
+                "received_key_datetime": {
+                    "type": "string",
+                    "example": "2025-02-16T08:00:00Z"
                 },
                 "ref_vehicle_key_type_code": {
                     "type": "integer",
@@ -12420,7 +12504,7 @@ const docTemplate = `{
                 },
                 "returned_vehicle_datetime": {
                     "type": "string",
-                    "example": "2025-04-16T14:30:00Z"
+                    "example": "2025-04-16T14:30:00"
                 },
                 "returned_vehicle_emp_id": {
                     "type": "string"
@@ -12459,9 +12543,6 @@ const docTemplate = `{
         "models.VmsTrnReturnedVehicleNoImage": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "fuel_end": {
                     "type": "integer",
                     "example": 70
@@ -12473,6 +12554,10 @@ const docTemplate = `{
                 "received_vehicle_remark": {
                     "type": "string",
                     "example": "Minor scratch on bumper"
+                },
+                "returned_vehicle_datetime": {
+                    "type": "string",
+                    "example": "2025-04-16T14:30:00Z"
                 },
                 "returned_vehicle_remark": {
                     "type": "string",
@@ -12500,9 +12585,6 @@ const docTemplate = `{
         "models.VmsTrnTripDetailRequest": {
             "type": "object",
             "properties": {
-                "$2": {
-                    "$ref": "#/definitions/models.TimeWithZone"
-                },
                 "trip_departure_place": {
                     "type": "string",
                     "example": "Changi Airport"
@@ -12515,9 +12597,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Routine transport between airport and hotel."
                 },
+                "trip_end_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T10:00:00Z"
+                },
                 "trip_end_miles": {
                     "type": "integer",
                     "example": 5050
+                },
+                "trip_start_datetime": {
+                    "type": "string",
+                    "example": "2025-03-26T08:00:00Z"
                 },
                 "trip_start_miles": {
                     "type": "integer",
