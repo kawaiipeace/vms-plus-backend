@@ -327,10 +327,37 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 		return
 	}
 	//
-	driver.AlertDriverStatus = "ปฏิบัติงานปกติ"
-	driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
-	driver.DriverTotalSatisfactionReview = 200
-
+	driver.AlertDriverStatus = driver.DriverStatus.RefDriverStatusDesc
+	switch driver.RefDriverStatusCode {
+	case 1:
+		driver.AlertDriverStatusDesc = "เข้าปฏิบัติงานตามปกติ"
+	case 2:
+		//select leave_start_date,leave_end_date from vms_trn_driver_leave where  leave_end_date<now()
+		var leave []struct {
+			LeaveStart  string `gorm:"column:leave_start_date" json:"leave_start_date"`
+			LeaveEnd    string `gorm:"column:leave_end_date" json:"leave_end_date"`
+			LeaveReason string `gorm:"column:leave_reason" json:"leave_reason"`
+		}
+		if err := config.DB.Raw("SELECT leave_start_date,leave_end_date,leave_reason FROM vms_trn_driver_leave WHERE leave_end_date <= ?", time.Now()).Scan(&leave).Error; err == nil && len(leave) > 0 {
+			var alertDriverStatus []string
+			var alertDriverStatusDesc []string
+			driver.AlertDriverStatus = "ลา "
+			for _, l := range leave {
+				startDate, _ := time.Parse("2006-01-02 15:04:05", l.LeaveStart)
+				endDate, _ := time.Parse("2006-01-02 15:04:05", l.LeaveEnd)
+				// Convert to พ.ศ.
+				startYear := startDate.Year() + 543
+				endYear := endDate.Year() + 543
+				thaiStart := startDate.Format("02/01/") + fmt.Sprintf("%d", startYear)
+				thaiEnd := endDate.Format("02/01/") + fmt.Sprintf("%d", endYear)
+				alertDriverStatus = append(alertDriverStatus, thaiStart+" - "+thaiEnd)
+				alertDriverStatusDesc = append(alertDriverStatusDesc, l.LeaveReason)
+			}
+			driver.AlertDriverStatus = strings.Join(alertDriverStatus, ",")
+			driver.AlertDriverStatusDesc = strings.Join(alertDriverStatusDesc, ",")
+		}
+	}
+	//driver.DriverTotalSatisfactionReview = 200
 	c.JSON(http.StatusOK, gin.H{"driver": driver})
 }
 
