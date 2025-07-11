@@ -45,10 +45,6 @@ var (
 )
 
 func CheckConfirmerRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "level1-approval") {
-		//remove level1-approval
-		user.Roles = RemoveFromSlice(user.Roles, "level1-approval")
-	}
 	//check if vms_trn_request has confirmed_request_emp_id
 	var trnRequestList models.VmsTrnRequestList
 	err := config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&trnRequestList).Error
@@ -66,12 +62,8 @@ func CheckConfirmerRole(user *models.AuthenUserEmp) {
 	}
 
 }
-func CheckApproverRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "license-approval") {
-		//remove license-approval
-		user.Roles = RemoveFromSlice(user.Roles, "license-approval")
-	}
 
+func CheckApproverRole(user *models.AuthenUserEmp) {
 	//check if exist vms_trn_request_annual_driver has approved_request_emp_id=user.EmpID
 	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
 	err := config.DB.Where("approved_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
@@ -79,53 +71,45 @@ func CheckApproverRole(user *models.AuthenUserEmp) {
 		user.Roles = append(user.Roles, "license-approval")
 		return
 	}
+	var trnRequestList models.VmsTrnRequestList
+	err = config.DB.Where("approved_request_emp_id = ? and carpool_uid is not null", user.EmpID).First(&trnRequestList).Error
+	if err == nil {
+		user.Roles = append(user.Roles, "final-approval")
+		return
+	}
+
 }
 
-func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
-	/*if Contains(user.Roles, "admin-approval") {
-		//remove admin-approval
-		user.Roles = RemoveFromSlice(user.Roles, "admin-approval")
-	}*/
+func CheckCarpoolAdminRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
 	var adminApproval models.VmsMasCarpoolAdmin
 	err := config.DB.Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
 		First(&adminApproval).Error
 	if err == nil {
-		user.Roles = append(user.Roles, "admin-approval")
+		user.Roles = append(user.Roles, "carpool-admin")
 		return
 	}
 }
-func CheckFinalApprovalRole(user *models.AuthenUserEmp) {
-	/*if Contains(user.Roles, "final-approval") {
-		//remove final-approval
-		user.Roles = RemoveFromSlice(user.Roles, "final-approval")
-	}*/
+func CheckCarpoolApprovalRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
 	var finalApproval models.VmsMasCarpoolApprover
 	err := config.DB.Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
 		First(&finalApproval).Error
 	if err == nil {
-		user.Roles = append(user.Roles, "final-approval")
+		user.Roles = append(user.Roles, "carpool-approval")
 		return
 	}
 }
 
-func RemoveFromSlice(slice []string, value string) []string {
-	for i, v := range slice {
-		if v == value {
-			return append(slice[:i], slice[i+1:]...)
-		}
-	}
-	return slice
-}
-
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
+	//append  role vehicle-user
+	user.Roles = append(user.Roles, "vehicle-user")
 	CheckConfirmerRole(&user)
 	CheckApproverRole(&user)
-	CheckAdminApprovalRole(&user)
-	CheckFinalApprovalRole(&user)
+	CheckCarpoolAdminRole(&user)
+	CheckCarpoolApprovalRole(&user)
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:         user.EmpID,
@@ -245,8 +229,8 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		empUser.IsEmployee = true
 		CheckConfirmerRole(&empUser)
 		CheckApproverRole(&empUser)
-		CheckAdminApprovalRole(&empUser)
-		CheckFinalApprovalRole(&empUser)
+		CheckCarpoolAdminRole(&empUser)
+		CheckCarpoolApprovalRole(&empUser)
 		//empUser.Roles = append(empUser.Roles, "license-approval")
 		//empUser.Roles = []string{"admin-region"}
 		if empUser.LevelCode == "M5" {
@@ -292,17 +276,20 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		IsEmployee:    jwt.IsEmployee,
 		LevelCode:     jwt.LevelCode,
 	}
-	if roles == "level1-approval" {
-		CheckConfirmerRole(&empUser)
-	}
-	if roles == "license-approval" {
-		CheckApproverRole(&empUser)
-	}
-	if roles == "admin-approval" {
-		CheckAdminApprovalRole(&empUser)
-	}
-	if roles == "final-approval" {
-		CheckFinalApprovalRole(&empUser)
+
+	for _, role := range strings.Split(roles, ",") {
+		if role == "level1-approval" {
+			CheckConfirmerRole(&empUser)
+		}
+		if role == "license-approval" {
+			CheckApproverRole(&empUser)
+		}
+		if role == "carpool-admin" {
+			CheckCarpoolAdminRole(&empUser)
+		}
+		if role == "carpool-approval" {
+			CheckCarpoolApprovalRole(&empUser)
+		}
 	}
 
 	if empUser.LevelCode == "M5" {
