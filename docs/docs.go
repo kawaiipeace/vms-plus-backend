@@ -10838,7 +10838,20 @@ const docTemplate = `{
             }
         },
         "models.VmsDriverLicenseAnnualApproved": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "annual_yyyy": {
+                    "type": "integer",
+                    "example": 2568
+                },
+                "trn_request_annual_driver_uid": {
+                    "type": "string",
+                    "example": "095fbfbf-378e-4507-b15f-e53ac60370e7"
+                }
+            }
         },
         "models.VmsDriverLicenseAnnualApprover": {
             "type": "object",
@@ -10916,7 +10929,52 @@ const docTemplate = `{
             }
         },
         "models.VmsDriverLicenseAnnualRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "annual_yyyy": {
+                    "type": "integer",
+                    "example": 2568
+                },
+                "approved_request_emp_id": {
+                    "type": "string",
+                    "example": "990001"
+                },
+                "confirmed_request_emp_id": {
+                    "type": "string",
+                    "example": "990002"
+                },
+                "driver_certificate_img": {
+                    "type": "string",
+                    "example": "http://vms-plus.pea.co.th/images/cert.png"
+                },
+                "driver_certificate_name": {
+                    "type": "string",
+                    "example": "Safety Certificate"
+                },
+                "driver_certificate_no": {
+                    "type": "string",
+                    "example": "CERT12345"
+                },
+                "driver_certificate_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "driver_license_img": {
+                    "type": "string",
+                    "example": "http://vms-plus.pea.co.th/images/license.png"
+                },
+                "driver_license_no": {
+                    "type": "string",
+                    "example": "DL12345678"
+                },
+                "ref_driver_license_type_code": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
         },
         "models.VmsMasCarpoolActive": {
             "type": "object",
@@ -11254,7 +11312,43 @@ const docTemplate = `{
             }
         },
         "models.VmsMasDriverContractUpdate": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "contract_no": {
+                    "type": "string",
+                    "example": "CON123456"
+                },
+                "driver_dept_sap_hire": {
+                    "type": "string",
+                    "example": "1000"
+                },
+                "driver_dept_sap_work": {
+                    "type": "string",
+                    "example": "10001"
+                },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                },
+                "ref_other_use_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
+                },
+                "vendor_name": {
+                    "type": "string"
+                }
+            }
         },
         "models.VmsMasDriverDelete": {
             "type": "object",
@@ -11270,7 +11364,40 @@ const docTemplate = `{
             }
         },
         "models.VmsMasDriverDetailUpdate": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "driver_contact_number": {
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "driver_identification_no": {
+                    "type": "string",
+                    "example": "ID123456789"
+                },
+                "driver_image": {
+                    "type": "string",
+                    "example": "https://example.com/driver_image.jpg"
+                },
+                "driver_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "driver_nickname": {
+                    "type": "string",
+                    "example": "Johnny"
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                },
+                "work_type": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
         },
         "models.VmsMasDriverDocument": {
             "type": "object",
@@ -11334,13 +11461,142 @@ const docTemplate = `{
             }
         },
         "models.VmsMasDriverLeaveStatusUpdate": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "leave_reason": {
+                    "type": "string",
+                    "example": "Sick leave"
+                },
+                "leave_time_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "8d14e6df-5d65-486e-b079-393d9c817a09"
+                },
+                "replacement_driver_uid": {
+                    "type": "string",
+                    "example": "0a33f4df-5da8-4831-b3e4-27b5c6134c7c"
+                }
+            }
+        },
+        "models.VmsMasDriverLicenseRequest": {
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "driver_license_image": {
+                    "type": "string",
+                    "example": "https://example.com/license_image.jpg"
+                },
+                "driver_license_no": {
+                    "type": "string",
+                    "example": "D123456789"
+                },
+                "ref_driver_license_type_code": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
         },
         "models.VmsMasDriverLicenseUpdate": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "driver_license_no": {
+                    "type": "string",
+                    "example": "D123456789"
+                },
+                "mas_driver_uid": {
+                    "type": "string",
+                    "example": "3e89ebe5-d597-4ee2-b0a1-c3a5628cf131"
+                },
+                "ref_driver_license_type_code": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
         },
         "models.VmsMasDriverRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "approved_job_driver_end_date": {
+                    "type": "string",
+                    "example": "2023-12-31T23:59:59T"
+                },
+                "approved_job_driver_start_date": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00T"
+                },
+                "contract_no": {
+                    "type": "string",
+                    "example": "CON123456"
+                },
+                "driver_birthdate": {
+                    "type": "string",
+                    "example": "1990-01-01T00:00:00T"
+                },
+                "driver_contact_number": {
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "driver_dept_sap_hire": {
+                    "type": "string",
+                    "example": "1000"
+                },
+                "driver_dept_sap_work": {
+                    "type": "string",
+                    "example": "10001"
+                },
+                "driver_documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VmsMasDriverDocument"
+                    }
+                },
+                "driver_identification_no": {
+                    "type": "string",
+                    "example": "ID123456789"
+                },
+                "driver_image": {
+                    "type": "string",
+                    "example": "https://example.com/driver_image.jpg"
+                },
+                "driver_license": {
+                    "$ref": "#/definitions/models.VmsMasDriverLicenseRequest"
+                },
+                "driver_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "driver_nickname": {
+                    "type": "string",
+                    "example": "Johnny"
+                },
+                "is_replacement": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "ref_other_use_code": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "vendor_name": {
+                    "type": "string",
+                    "example": "VENDOR123"
+                },
+                "work_type": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
         },
         "models.VmsMasDriverResignStatusUpdate": {
             "type": "object",
@@ -11377,11 +11633,221 @@ const docTemplate = `{
                 }
             }
         },
+        "models.VmsRefCostType": {
+            "type": "object",
+            "properties": {
+                "cost_center": {
+                    "type": "string"
+                },
+                "cost_center_code": {
+                    "type": "string"
+                },
+                "cost_center_name": {
+                    "type": "string"
+                },
+                "ref_cost_type_code": {
+                    "type": "string"
+                },
+                "ref_cost_type_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefFuelType": {
+            "type": "object",
+            "properties": {
+                "ref_fuel_type_id": {
+                    "type": "integer"
+                },
+                "ref_fuel_type_name_en": {
+                    "type": "string"
+                },
+                "ref_fuel_type_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefOilStationBrand": {
+            "type": "object",
+            "properties": {
+                "ref_oil_station_brand_id": {
+                    "type": "integer"
+                },
+                "ref_oil_station_brand_img": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_en": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_full": {
+                    "type": "string"
+                },
+                "ref_oil_station_brand_name_th": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.VmsRefPaymentType": {
+            "type": "object",
+            "properties": {
+                "ref_payment_type_code": {
+                    "type": "integer"
+                },
+                "ref_payment_type_name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.VmsTrnAddFuel": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "add_fuel_date_time": {
+                    "type": "string",
+                    "example": "2025-03-26T08:00:00Z"
+                },
+                "before_vat_price": {
+                    "type": "number",
+                    "example": 46.5
+                },
+                "mas_vehicle_department_uid": {
+                    "type": "string"
+                },
+                "mas_vehicle_uid": {
+                    "type": "string"
+                },
+                "mile": {
+                    "type": "integer",
+                    "example": 12000
+                },
+                "price_per_liter": {
+                    "type": "number",
+                    "example": 35.5
+                },
+                "receipt_img": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/receipt.jpg"
+                },
+                "ref_cost_type": {
+                    "$ref": "#/definitions/models.VmsRefCostType"
+                },
+                "ref_cost_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_fuel_type": {
+                    "$ref": "#/definitions/models.VmsRefFuelType"
+                },
+                "ref_fuel_type_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_oil_station_brand": {
+                    "$ref": "#/definitions/models.VmsRefOilStationBrand"
+                },
+                "ref_oil_station_brand_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_payment_type": {
+                    "$ref": "#/definitions/models.VmsRefPaymentType"
+                },
+                "ref_payment_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sum_liter": {
+                    "type": "number",
+                    "example": 50
+                },
+                "sum_price": {
+                    "type": "number",
+                    "example": 1872.5
+                },
+                "tax_invoice_no": {
+                    "type": "string",
+                    "example": "INV1234567890"
+                },
+                "trn_add_fuel_uid": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "vat": {
+                    "type": "number",
+                    "example": 3.5
+                },
+                "vehicle_license_plate": {
+                    "type": "string"
+                },
+                "vehicle_license_plate_province_full": {
+                    "type": "string"
+                },
+                "vehicle_license_plate_province_short": {
+                    "type": "string"
+                }
+            }
         },
         "models.VmsTrnAddFuelRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "before_vat_price": {
+                    "type": "number",
+                    "example": 46.5
+                },
+                "mile": {
+                    "type": "integer",
+                    "example": 12000
+                },
+                "price_per_liter": {
+                    "type": "number",
+                    "example": 35.5
+                },
+                "receipt_img": {
+                    "type": "string",
+                    "example": "http://vms.pea.co.th/receipt.jpg"
+                },
+                "ref_fuel_type_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_oil_station_brand_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ref_payment_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sum_liter": {
+                    "type": "number",
+                    "example": 50
+                },
+                "sum_price": {
+                    "type": "number",
+                    "example": 1872.5
+                },
+                "tax_invoice_no": {
+                    "type": "string",
+                    "example": "INV1234567890"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "vat": {
+                    "type": "number",
+                    "example": 3.5
+                }
+            }
         },
         "models.VmsTrnInspectVehicleImages": {
             "type": "object",
@@ -11458,7 +11924,34 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnReceivedVehicle": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "fuel_start": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "mile_start": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "vehicle_images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VehicleImageReceived"
+                    }
+                }
+            }
         },
         "models.VmsTrnReceivedVehicleImages": {
             "type": "object",
@@ -11479,7 +11972,16 @@ const docTemplate = `{
             "type": "object"
         },
         "models.VmsTrnRequestAccepted": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestApproved": {
             "type": "object",
@@ -11491,7 +11993,24 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnRequestApprovedWithRecieiveKey": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "received_key_place": {
+                    "type": "string",
+                    "example": "Main Office"
+                },
+                "receiver_type": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestCanceled": {
             "type": "object",
@@ -11612,7 +12131,20 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnRequestPickup": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "pickup_place": {
+                    "type": "string",
+                    "example": "Main Office"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestRejected": {
             "type": "object",
@@ -11628,7 +12160,135 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnRequestRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "activity_no": {
+                    "type": "string",
+                    "example": "A12345"
+                },
+                "car_user_internal_contact_number": {
+                    "type": "string",
+                    "example": "1122"
+                },
+                "car_user_mobile_contact_number": {
+                    "type": "string",
+                    "example": "0987654321"
+                },
+                "confirmed_request_emp_id": {
+                    "description": "Step 4",
+                    "type": "string",
+                    "example": "501621"
+                },
+                "cost_center": {
+                    "type": "string",
+                    "example": "B0002211"
+                },
+                "doc_file": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "doc_no": {
+                    "type": "string",
+                    "example": "REF123456"
+                },
+                "driver_emp_id": {
+                    "type": "string",
+                    "example": "700001"
+                },
+                "driver_internal_contact_number": {
+                    "type": "string",
+                    "example": "1221"
+                },
+                "driver_mobile_contact_number": {
+                    "type": "string",
+                    "example": "0987654321"
+                },
+                "is_admin_choose_driver": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_admin_choose_vehicle": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "is_pea_employee_driver": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "is_system_choose_vehicle": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "mas_carpool_driver_uid": {
+                    "description": "Step 3",
+                    "type": "string",
+                    "example": "a6c8a34b-9245-49c8-a12b-45fae77a4e7d"
+                },
+                "mas_carpool_uid": {
+                    "description": "Step 2",
+                    "type": "string",
+                    "example": "389b0f63-4195-4ece-bf35-0011c2f5f28c"
+                },
+                "mas_vehicle_uid": {
+                    "type": "string",
+                    "example": "21d2ea5a-4ad6-4a95-a64d-73b72d43bd55"
+                },
+                "network_no": {
+                    "type": "string",
+                    "example": "NET12345"
+                },
+                "number_of_passengers": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "pickup_place": {
+                    "type": "string",
+                    "example": "Main Office"
+                },
+                "pm_order_no": {
+                    "type": "string",
+                    "example": "PM123456"
+                },
+                "ref_cost_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "remark": {
+                    "type": "string",
+                    "example": "Urgent request"
+                },
+                "request_no": {
+                    "type": "string"
+                },
+                "requested_vehicle_type": {
+                    "type": "string",
+                    "example": "Sedan"
+                },
+                "trip_type": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "vehicle_user_emp_id": {
+                    "description": "Step1",
+                    "type": "string",
+                    "example": "990001"
+                },
+                "wbs_no": {
+                    "type": "string",
+                    "example": "WBS12345"
+                },
+                "work_description": {
+                    "type": "string",
+                    "example": "Business Meeting"
+                },
+                "work_place": {
+                    "type": "string",
+                    "example": "Head Office"
+                }
+            }
         },
         "models.VmsTrnRequestResend": {
             "type": "object",
@@ -11640,16 +12300,84 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnRequestTrip": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "number_of_passengers": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "remark": {
+                    "type": "string",
+                    "example": "Urgent request"
+                },
+                "trip_type": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                },
+                "work_description": {
+                    "type": "string",
+                    "example": "Business Meeting"
+                },
+                "work_place": {
+                    "type": "string",
+                    "example": "Head Office"
+                }
+            }
         },
         "models.VmsTrnRequestUpdateRecieivedKey": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "received_key_place": {
+                    "type": "string",
+                    "example": "Main Office"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestUpdateRecieivedKeyConfirmed": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "ref_vehicle_key_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestUpdateRecieivedKeyDetail": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "ref_vehicle_key_type_code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnRequestVehicle": {
             "type": "object",
@@ -11719,7 +12447,7 @@ const docTemplate = `{
                 },
                 "returned_vehicle_datetime": {
                     "type": "string",
-                    "example": "2025-04-16T14:30:00+07:00"
+                    "example": "2025-04-16T14:30:00Z"
                 },
                 "returned_vehicle_emp_id": {
                     "type": "string"
@@ -11756,7 +12484,32 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnReturnedVehicleNoImage": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "fuel_end": {
+                    "type": "integer",
+                    "example": 70
+                },
+                "mile_end": {
+                    "type": "integer",
+                    "example": 12000
+                },
+                "received_vehicle_remark": {
+                    "type": "string",
+                    "example": "Minor scratch on bumper"
+                },
+                "returned_vehicle_remark": {
+                    "type": "string",
+                    "example": "OK"
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         },
         "models.VmsTrnSatisfactionSurveyAnswers": {
             "type": "object",
@@ -11772,7 +12525,36 @@ const docTemplate = `{
             }
         },
         "models.VmsTrnTripDetailRequest": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "$2": {
+                    "$ref": "#/definitions/models.TimeWithZone"
+                },
+                "trip_departure_place": {
+                    "type": "string",
+                    "example": "Changi Airport"
+                },
+                "trip_destination_place": {
+                    "type": "string",
+                    "example": "Marina Bay Sands"
+                },
+                "trip_detail": {
+                    "type": "string",
+                    "example": "Routine transport between airport and hotel."
+                },
+                "trip_end_miles": {
+                    "type": "integer",
+                    "example": 5050
+                },
+                "trip_start_miles": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "trn_request_uid": {
+                    "type": "string",
+                    "example": "0b07440c-ab04-49d0-8730-d62ce0a9bab9"
+                }
+            }
         }
     },
     "securityDefinitions": {

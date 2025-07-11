@@ -891,7 +891,7 @@ func (h *VehicleInUseAdminHandler) ReturnedVehicle(c *gin.Context) {
 			request.RefRequestStatusCode,
 			"ส่งคืนกุญแจและยานพาหนะ",
 			user.EmpID,
-			"admin-approval",
+			"admin-department",
 			"",
 		)
 	}

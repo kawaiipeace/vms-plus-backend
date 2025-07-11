@@ -45,87 +45,63 @@ var (
 )
 
 func CheckConfirmerRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "level1-approval") {
-		//remove level1-approval
-		user.Roles = RemoveFromSlice(user.Roles, "level1-approval")
-	}
 	//check if vms_trn_request has confirmed_request_emp_id
-	var trnRequestList models.VmsTrnRequestList
-	err := config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&trnRequestList).Error
-	if err == nil {
+	var count int64
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("confirmed_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "level1-approval")
-		return
 	}
 
 	//check if vms_trn_request_annual_driver has confirmed_request_emp_id
-	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
-	err = config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
-	if err == nil {
+	config.DB.Model(&models.VmsDriverLicenseAnnualList{}).Where("confirmed_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "level1-approval")
-		return
 	}
 
 }
+
 func CheckApproverRole(user *models.AuthenUserEmp) {
-	if Contains(user.Roles, "license-approval") {
-		//remove license-approval
-		user.Roles = RemoveFromSlice(user.Roles, "license-approval")
-	}
-
 	//check if exist vms_trn_request_annual_driver has approved_request_emp_id=user.EmpID
-	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
-	err := config.DB.Where("approved_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
-	if err == nil {
+	var count int64
+	config.DB.Model(&models.VmsDriverLicenseAnnualList{}).Where("approved_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "license-approval")
-		return
 	}
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is not null", user.EmpID).Count(&count)
+	if count > 0 {
+		user.Roles = append(user.Roles, "approval-department")
+	}
+
 }
 
-func CheckAdminApprovalRole(user *models.AuthenUserEmp) {
-	/*if Contains(user.Roles, "admin-approval") {
-		//remove admin-approval
-		user.Roles = RemoveFromSlice(user.Roles, "admin-approval")
-	}*/
+func CheckCarpoolAdminRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
-	var adminApproval models.VmsMasCarpoolAdmin
-	err := config.DB.Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+	var count int64
+	config.DB.Model(&models.VmsMasCarpoolAdmin{}).Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
-		First(&adminApproval).Error
-	if err == nil {
-		user.Roles = append(user.Roles, "admin-approval")
-		return
+		Count(&count)
+	if count > 0 {
+		user.Roles = append(user.Roles, "admin-carpool")
 	}
 }
-func CheckFinalApprovalRole(user *models.AuthenUserEmp) {
-	/*if Contains(user.Roles, "final-approval") {
-		//remove final-approval
-		user.Roles = RemoveFromSlice(user.Roles, "final-approval")
-	}*/
+func CheckCarpoolApprovalRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
-	var finalApproval models.VmsMasCarpoolApprover
-	err := config.DB.Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+	var count int64
+	config.DB.Model(&models.VmsMasCarpoolApprover{}).Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
-		First(&finalApproval).Error
-	if err == nil {
-		user.Roles = append(user.Roles, "final-approval")
-		return
+		Count(&count)
+	if count > 0 {
+		user.Roles = append(user.Roles, "approval-carpool")
 	}
-}
-
-func RemoveFromSlice(slice []string, value string) []string {
-	for i, v := range slice {
-		if v == value {
-			return append(slice[:i], slice[i+1:]...)
-		}
-	}
-	return slice
 }
 
 func GenerateJWT(user models.AuthenUserEmp, tokenType string, expiration time.Duration) (string, error) {
+	//append  role vehicle-user
+	user.Roles = append(user.Roles, "vehicle-user")
 	CheckConfirmerRole(&user)
 	CheckApproverRole(&user)
-	CheckAdminApprovalRole(&user)
-	CheckFinalApprovalRole(&user)
+	CheckCarpoolAdminRole(&user)
+	CheckCarpoolApprovalRole(&user)
 	jwtSecret = []byte(config.AppConfig.JWTSecret)
 	claims := Claims{
 		EmpID:         user.EmpID,
@@ -234,19 +210,21 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("700001")
+		user, err := userhub.GetUserInfo("460137")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return &empUser
 		}
+		user.Roles = append(user.Roles, "vehicle-user")
+
 		empUser = user
 		empUser.LoginBy = "keycloak"
 		empUser.IsEmployee = true
 		CheckConfirmerRole(&empUser)
 		CheckApproverRole(&empUser)
-		CheckAdminApprovalRole(&empUser)
-		CheckFinalApprovalRole(&empUser)
+		CheckCarpoolAdminRole(&empUser)
+		CheckCarpoolApprovalRole(&empUser)
 		//empUser.Roles = append(empUser.Roles, "license-approval")
 		//empUser.Roles = []string{"admin-region"}
 		if empUser.LevelCode == "M5" {
@@ -263,7 +241,6 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 				return &empUser
 			}
 		}
-
 		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		c.Abort()
 		return &models.AuthenUserEmp{}
@@ -292,17 +269,23 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		IsEmployee:    jwt.IsEmployee,
 		LevelCode:     jwt.LevelCode,
 	}
-	if roles == "level1-approval" {
-		CheckConfirmerRole(&empUser)
-	}
-	if roles == "license-approval" {
-		CheckApproverRole(&empUser)
-	}
-	if roles == "admin-approval" {
-		CheckAdminApprovalRole(&empUser)
-	}
-	if roles == "final-approval" {
-		CheckFinalApprovalRole(&empUser)
+
+	for _, role := range strings.Split(roles, ",") {
+		if role == "level1-approval" {
+			CheckConfirmerRole(&empUser)
+		}
+		if role == "license-approval" {
+			CheckApproverRole(&empUser)
+		}
+		if role == "admin-department" {
+			CheckCarpoolAdminRole(&empUser)
+		}
+		if role == "admin-carpool" {
+			CheckCarpoolAdminRole(&empUser)
+		}
+		if role == "approval-carpool" {
+			CheckCarpoolApprovalRole(&empUser)
+		}
 	}
 
 	if empUser.LevelCode == "M5" {

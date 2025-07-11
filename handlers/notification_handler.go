@@ -73,11 +73,11 @@ func (h *NotificationHandler) GetNotification(c *gin.Context) {
 			funcs.Contains([]string{"20", "21", "30"}, notify.RefRequestStatusCode) {
 			notifys[i].NotifyURL = "/administrator/booking-approver/" + notify.RecordUID
 		}
-		if notify.NotifyRole == "admin-approval" && notify.NotifyType == "request-booking" &&
+		if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
 			funcs.Contains([]string{"30", "31", "40"}, notify.RefRequestStatusCode) {
 			notifys[i].NotifyURL = "/administrator/booking-approver/" + notify.RecordUID
 		}
-		if notify.NotifyRole == "admin-approval" && notify.NotifyType == "request-booking" &&
+		if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
 			funcs.Contains([]string{"50", "51", "60", "70", "80"}, notify.RefRequestStatusCode) {
 			notifys[i].NotifyURL = "/administrator/vehicle-in-use/" + notify.RecordUID
 		}

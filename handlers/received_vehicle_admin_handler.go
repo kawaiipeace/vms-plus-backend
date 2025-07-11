@@ -308,7 +308,7 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 			result.RefRequestStatusCode,
 			"นำยานพาหนะออกไปปฎิบัติงานแล้ว",
 			user.EmpID,
-			"admin-approval",
+			"admin-department",
 			"",
 		)
 	}

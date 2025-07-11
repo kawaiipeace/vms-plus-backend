@@ -311,13 +311,13 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากต้นสังกัด"},
 			}
 		}
-		if request.CanceledRequestRole == "admin-approval" {
+		if request.CanceledRequestRole == "admin-department" || request.CanceledRequestRole == "admin-carpool" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ดูแลยานพาหนะ"},
 			}
 		}
-		if request.CanceledRequestRole == "final-approval" {
+		if request.CanceledRequestRole == "approval-department" || request.CanceledRequestRole == "approval-carpool" {
 			request.ProgressRequestStatus = []models.ProgressRequestStatus{
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 				{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},
@@ -387,7 +387,7 @@ func (h *BookingFinalHandler) UpdateRejected(c *gin.Context) {
 		request.RefRequestStatusCode,
 		"ผู้อนุมัติตีกลับคำขอ",
 		user.EmpID,
-		"final-approval",
+		"approval-department",
 		request.RejectedRequestReason,
 	)
 
@@ -488,7 +488,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 		request.RefRequestStatusCode,
 		"ผู้อนุมัติ อนุมัติคำขอแล้ว",
 		user.EmpID,
-		"final-approval",
+		"approval-department",
 		"",
 	)
 
@@ -576,7 +576,7 @@ func (h *BookingFinalHandler) UpdateCanceled(c *gin.Context) {
 		request.RefRequestStatusCode,
 		"ยกเลิกคำขอ",
 		user.EmpID,
-		"final-approval",
+		"approval-department",
 		request.CanceledRequestReason,
 	)
 

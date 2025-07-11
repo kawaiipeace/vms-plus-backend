@@ -43,6 +43,7 @@ type VmsMasDriver struct {
 	DriverTripDetails              []VmsDriverTripDetail `gorm:"-" json:"trip_Details"`
 	DriverLicense                  VmsMasDriverLicense   `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	VendorName                     string                `gorm:"column:vendor_name" json:"vendor_name"`
+	//remove driver_vender
 }
 
 func (VmsMasDriver) TableName() string {
