@@ -46,60 +46,52 @@ var (
 
 func CheckConfirmerRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
-	var trnRequestList models.VmsTrnRequestList
-	err := config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&trnRequestList).Error
-	if err == nil {
+	var count int64
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("confirmed_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "level1-approval")
-		return
 	}
 
 	//check if vms_trn_request_annual_driver has confirmed_request_emp_id
-	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
-	err = config.DB.Where("confirmed_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
-	if err == nil {
+	config.DB.Model(&models.VmsDriverLicenseAnnualList{}).Where("confirmed_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "level1-approval")
-		return
 	}
 
 }
 
 func CheckApproverRole(user *models.AuthenUserEmp) {
 	//check if exist vms_trn_request_annual_driver has approved_request_emp_id=user.EmpID
-	var driverLicenseAnnualList models.VmsDriverLicenseAnnualList
-	err := config.DB.Where("approved_request_emp_id = ?", user.EmpID).First(&driverLicenseAnnualList).Error
-	if err == nil {
+	var count int64
+	config.DB.Model(&models.VmsDriverLicenseAnnualList{}).Where("approved_request_emp_id = ?", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "license-approval")
-		return
 	}
-	var trnRequestList models.VmsTrnRequestList
-	err = config.DB.Where("approved_request_emp_id = ? and carpool_uid is not null", user.EmpID).First(&trnRequestList).Error
-	if err == nil {
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is not null", user.EmpID).Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "final-approval")
-		return
 	}
 
 }
 
 func CheckCarpoolAdminRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
-	var adminApproval models.VmsMasCarpoolAdmin
-	err := config.DB.Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+	var count int64
+	config.DB.Model(&models.VmsMasCarpoolAdmin{}).Where("admin_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
-		First(&adminApproval).Error
-	if err == nil {
+		Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "carpool-admin")
-		return
 	}
 }
 func CheckCarpoolApprovalRole(user *models.AuthenUserEmp) {
 	//check if vms_trn_request has confirmed_request_emp_id
-	var finalApproval models.VmsMasCarpoolApprover
-	err := config.DB.Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
+	var count int64
+	config.DB.Model(&models.VmsMasCarpoolApprover{}).Where("approver_emp_no = ? AND is_deleted = '0' AND is_active = '1'", user.EmpID).
 		Where("mas_carpool_uid IN (SELECT mas_carpool_uid FROM vms_mas_carpool WHERE is_deleted = '0' AND is_active = '1')").
-		First(&finalApproval).Error
-	if err == nil {
+		Count(&count)
+	if count > 0 {
 		user.Roles = append(user.Roles, "carpool-approval")
-		return
 	}
 }
 
@@ -224,6 +216,8 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 			c.Abort()
 			return &empUser
 		}
+		user.Roles = append(user.Roles, "vehicle-user")
+
 		empUser = user
 		empUser.LoginBy = "keycloak"
 		empUser.IsEmployee = true
@@ -247,7 +241,6 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 				return &empUser
 			}
 		}
-
 		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 		c.Abort()
 		return &models.AuthenUserEmp{}
