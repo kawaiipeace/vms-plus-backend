@@ -120,7 +120,7 @@ type VmsMasVehicle struct {
 	VehicleLicensePlateProvinceShort string                  `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string                  `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
 	VehicleImgs                      []string                `gorm:"-" json:"vehicle_imgs"`
-	CarType                          string                  `gorm:"column:CarType" json:"CarType"`
+	CarType                          string                  `gorm:"column:CarTypeDetail" json:"CarType"`
 	VehicleOwnerDeptSap              string                  `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
 	IsHasFleetCard                   byte                    `gorm:"column:is_has_fleet_card" json:"is_has_fleet_card"`
 	VehicleGear                      string                  `gorm:"column:vehicle_gear" json:"vehicle_gear"`
