@@ -206,7 +206,7 @@ type VmsMasCarpoolAdmin struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
