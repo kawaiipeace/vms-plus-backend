@@ -65,7 +65,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolVehicle(c *gin.Context) {
 			d.fleet_card_no,
 			v.is_tax_credit,
 			d.vehicle_mileage,
-			d.vehicle_registration_date,
+			v.vehicle_registration_date,
 			v.seat,
 			v.vehicle_color,
 			v.vehicle_gear,
