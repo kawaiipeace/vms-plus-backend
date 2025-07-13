@@ -18,10 +18,11 @@ func (h *ServiceHandler) checkServiceKey(c *gin.Context, serviceCode string) {
 	serviceKey := c.GetHeader("ServiceKey")
 	isValid, err := userhub.CheckServiceKey(serviceKey, serviceCode)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized", "message": messages.ErrUnauthorized.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized" + err.Error(), "message": messages.ErrUnauthorized.Error()})
 		c.Abort()
 		return
 	}
+
 	if !isValid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized", "message": messages.ErrUnauthorized.Error()})
 		c.Abort()
@@ -39,7 +40,7 @@ func (h *ServiceHandler) checkServiceKey(c *gin.Context, serviceCode string) {
 // @Param request_no path string true "RequestNo"
 // @router /api/service/vms-to-eems/{request_no} [get]
 func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
-	h.checkServiceKey(c, "eems")
+	h.checkServiceKey(c, "vms")
 	if c.IsAborted() {
 		return
 	}
