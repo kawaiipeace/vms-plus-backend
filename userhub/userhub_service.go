@@ -31,13 +31,13 @@ func CheckServiceKey(serviceKey string, serviceCode string) (bool, error) {
 	}
 	defer resp.Body.Close()
 
-	var response map[string]bool
+	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return false, err
 	}
 
-	return response["is_valid"], nil
+	return response["is_valid"].(bool), nil
 }
 
 func CheckPhoneNumber(phoneNumber string) (bool, error) {
