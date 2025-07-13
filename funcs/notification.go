@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"time"
 	"vms_plus_be/config"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/google/uuid"
 )
@@ -117,7 +119,8 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 				fmt.Println("Error creating notification:", err)
 				return
 			}
-			SendNotificationPEA(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
+			go SendNotificationPEA(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
+			go SendNotificationSMS(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
 		}
 
 	}
@@ -174,4 +177,70 @@ func SendNotificationPEA(empID, message string) {
 
 	fmt.Printf("Response Status: %s\n", resp.Status)
 	fmt.Printf("Response Body: %s\n", responseBody)
+}
+
+func SendNotificationSMS(empID, message string) {
+
+	userInfo, err := userhub.GetUserInfo(empID)
+	if err != nil {
+		fmt.Printf("Error getting user info: %v", err)
+		return
+	}
+
+	if userInfo.MobilePhone == "" {
+		return
+	}
+
+	soapEndpoint := "https://crm.pea.co.th/Modules/SMS/WebServices/SmsGatewayService.asmx"
+	soapAction := "http://crm.pea.co.th/modules/sms/smsgatewayservice/SendSms"
+
+	soapRequest := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+               xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <SendSms xmlns="http://crm.pea.co.th/modules/sms/smsgatewayservice/">
+      <authenKey>545653AA-19E0-41BB-B89F-8485559CD0A7</authenKey>
+      <smsServiceId>ae9d5c1b-7ed8-444e-8bb0-707ab7e3e68a</smsServiceId>
+      <telephoneNumber>%s</telephoneNumber>
+      <message>%s</message>
+    </SendSms>
+  </soap:Body>
+</soap:Envelope>`, userInfo.MobilePhone, message)
+
+	req, err := http.NewRequest("POST", soapEndpoint, bytes.NewBuffer([]byte(soapRequest)))
+	if err != nil {
+		fmt.Printf("Error creating request: %v", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.Header.Set("SOAPAction", soapAction)
+
+	// Create custom HTTP client with timeout and TLS config
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending request: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %v", err)
+		return
+	}
+
+	var envelope models.Envelope
+	err = xml.Unmarshal(body, &envelope)
+	if err != nil {
+		fmt.Printf("Error parsing SOAP response: %v", err)
+		return
+	}
 }

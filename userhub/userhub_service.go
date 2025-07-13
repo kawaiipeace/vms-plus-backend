@@ -125,7 +125,6 @@ func GetUserInfo(empID string) (models.AuthenUserEmp, error) {
 		return models.AuthenUserEmp{}, err
 	}
 	defer resp.Body.Close()
-	fmt.Println(resp.Body)
 	// Parse response
 	var response models.AuthenUserEmp
 	err = json.NewDecoder(resp.Body).Decode(&response)
