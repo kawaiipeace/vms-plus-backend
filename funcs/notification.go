@@ -17,6 +17,49 @@ import (
 	"github.com/google/uuid"
 )
 
+func GetNotifyURL(notify models.Notification) string {
+	if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"20", "21", "30", "31", "40", "41", "90"}, notify.RefRequestStatusCode) {
+		return "vehicle-booking/request-list/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"50", "51", "60", "70", "80", "90"}, notify.RefRequestStatusCode) {
+		return "vehicle-in-use/user/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-annual-driver" &&
+		Contains([]string{"10", "11", "20", "21", "30", "90"}, notify.RefRequestStatusCode) {
+		return "vehicle-booking/request-list/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "driver" {
+		return "vehicle-booking/request-list/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "level1-approval" && notify.NotifyType == "request-annual-driver" &&
+		Contains([]string{"10", "11", "20"}, notify.RefRequestStatusCode) {
+		return "/administrator/driver-license-confirmer/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "level1-approval" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"20", "21", "30"}, notify.RefRequestStatusCode) {
+		return "/administrator/booking-approver/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"30", "31", "40"}, notify.RefRequestStatusCode) {
+		return "/administrator/booking-approver/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"50", "51", "60", "70", "80"}, notify.RefRequestStatusCode) {
+		return "/administrator/vehicle-in-use/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "final-approval" && notify.NotifyType == "request-booking" &&
+		Contains([]string{"40", "41", "50"}, notify.RefRequestStatusCode) {
+		return "/administrator/booking-final/" + notify.RecordUID
+	}
+	if notify.NotifyRole == "license-approver" && notify.NotifyType == "request-annual-driver" &&
+		Contains([]string{"20", "21", "30"}, notify.RefRequestStatusCode) {
+		return "/administrator/driver-license-approver/" + notify.RecordUID
+	}
+	return ""
+}
+
 func CreateRequestBookingNotification(trnRequestUID string) {
 	var request models.RequestBookingNotification
 	fmt.Println("trnRequestUID:", trnRequestUID)
@@ -67,7 +110,14 @@ func CreateRequestBookingNotification(trnRequestUID string) {
 				fmt.Println("Error creating notification:", err)
 				return
 			}
-			SendNotificationPEA(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
+			userInfo, err := userhub.GetUserInfo(notifyEmpID)
+			if err != nil {
+				fmt.Println("Error getting user info:", err)
+				return
+			}
+			go SendNotificationWorkD(notifyEmpID, notifyTemplate.NotifyTitle, notifyMessage, "", GetNotifyURL(notification), userInfo.DeptSAP, userInfo.DeptSAPShort)
+			go SendNotificationPEA(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
+			go SendNotificationSMS(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
 		}
 
 	}
@@ -119,7 +169,13 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 				fmt.Println("Error creating notification:", err)
 				return
 			}
+			userInfo, err := userhub.GetUserInfo(notifyEmpID)
+			if err != nil {
+				fmt.Println("Error getting user info:", err)
+				return
+			}
 			go SendNotificationPEA(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
+			go SendNotificationWorkD(notifyEmpID, notifyTemplate.NotifyTitle, notifyMessage, "", GetNotifyURL(notification), userInfo.DeptSAP, userInfo.DeptSAPShort)
 			go SendNotificationSMS(notifyEmpID, notifyTemplate.NotifyTitle+" "+notifyMessage)
 		}
 
@@ -128,6 +184,9 @@ func CreateRequestAnnualLicenseNotification(trnAnnualLicenseUID string) {
 
 func SendNotificationPEA(empID, message string) {
 	if config.AppConfig.PEANotificationEndPoint == "" || config.AppConfig.PEANotificationToken == "" {
+		return
+	}
+	if empID != "505291" {
 		return
 	}
 	body := models.NotificationRequestBodyPEA{
@@ -177,6 +236,62 @@ func SendNotificationPEA(empID, message string) {
 
 	fmt.Printf("Response Status: %s\n", resp.Status)
 	fmt.Printf("Response Body: %s\n", responseBody)
+}
+
+func SendNotificationWorkD(empID, headline, subHeadline, content, url, deptSap, targetName string) {
+	if config.AppConfig.PEAWorkDNotificationEndPoint == "" || config.AppConfig.PEAWorkDNotificationToken == "" {
+		return
+	}
+
+	if empID != "505291" {
+		return
+	}
+
+	payloadStr := fmt.Sprintf(`{
+		"notificationType": "MESSAGE",
+		"id": null,
+		"headline": "%s",	
+		"subHeadline": "%s",
+		"content": "%s",
+		"mobileUrlScheme": %s,
+		"desktopUrlScheme": %s,
+		"tabletUrlScheme": %s,
+		"system": "VMS Plus",
+		"notificationTargetType": "SPECIFIC",
+		"notificationSpecificGroup": [
+			{
+				"deptSap": "%s",
+				"targetName": "%s"
+			}
+		],
+		"publishedDate": "%s",
+		"expiredDate": "%s",
+		"isModal": false
+	}`, headline, subHeadline, content, url, url, url, deptSap, targetName,
+		time.Now().Format("2006-01-02 15:04:05"),
+		time.Now().Add(24*time.Hour).Format("2006-01-02 15:04:05"))
+
+	payload := []byte(payloadStr)
+
+	req, err := http.NewRequest("POST", config.AppConfig.PEAWorkDNotificationEndPoint, bytes.NewBuffer(payload))
+	if err != nil {
+		panic(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Public-Key", config.AppConfig.PEAWorkDNotificationToken)
+	req.Header.Set("username", empID)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println("Response Status:", resp.Status)
+	fmt.Println("Response Body:", string(body))
 }
 
 func SendNotificationSMS(empID, message string) {
