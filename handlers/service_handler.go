@@ -51,6 +51,9 @@ func (h *ServiceHandler) GetVMSToEEMS(c *gin.Context) {
 	}
 	var request models.VmsToEEMS
 	if err := config.DB.
+		Table("public.vms_trn_request AS req").
+		Select(`req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full`).
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Where("request_no = ?", requestNo).First(&request).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrBookingNotFound.Error()})
 		return
