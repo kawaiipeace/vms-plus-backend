@@ -44,53 +44,12 @@ func (h *NotificationHandler) GetNotification(c *gin.Context) {
 		if notify.NotifyType == "request-booking" {
 			notifys[i].NotifyURL = notify.NotifyURL + "?trn_request_uid=" + notify.RecordUID
 		}
+		notifys[i].NotifyURL = funcs.GetNotifyURL(notify)
 	}
 	if len(notifys) == 0 {
 		notifys = []models.Notification{}
 	}
 
-	for i, notify := range notifys {
-		if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"20", "21", "30", "31", "40", "41", "90"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "vehicle-booking/request-list/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"50", "51", "60", "70", "80", "90"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "vehicle-in-use/user/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-annual-driver" &&
-			funcs.Contains([]string{"10", "11", "20", "21", "30", "90"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "vehicle-booking/request-list/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "driver" {
-			notifys[i].NotifyURL = "vehicle-booking/request-list/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "level1-approval" && notify.NotifyType == "request-annual-driver" &&
-			funcs.Contains([]string{"10", "11", "20"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/driver-license-confirmer/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "level1-approval" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"20", "21", "30"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/booking-approver/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"30", "31", "40"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/booking-approver/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "admin-department" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"50", "51", "60", "70", "80"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/vehicle-in-use/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "final-approval" && notify.NotifyType == "request-booking" &&
-			funcs.Contains([]string{"40", "41", "50"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/booking-final/" + notify.RecordUID
-		}
-		if notify.NotifyRole == "license-approver" && notify.NotifyType == "request-annual-driver" &&
-			funcs.Contains([]string{"20", "21", "30"}, notify.RefRequestStatusCode) {
-			notifys[i].NotifyURL = "/administrator/driver-license-approver/" + notify.RecordUID
-		}
-
-	}
 	c.JSON(http.StatusOK, gin.H{
 		"notifications": notifys,
 		"total":         total,

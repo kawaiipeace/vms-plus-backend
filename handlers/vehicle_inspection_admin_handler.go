@@ -965,7 +965,7 @@ func (h *VehicleInspectionAdminHandler) UpdateRejected(c *gin.Context) {
 		return
 	}
 
-	request.RefRequestStatusCode = "71" //ตรวจสอบยานพาหนะไม่ผ่าน รอแก้ไขเพื่อส่งคืน
+	request.RefRequestStatusCode = "71" //ตรวจสอบการคืนยานพาหนะไม่ผ่าน รอแก้ไขเพื่อส่งคืน
 	empUser := funcs.GetUserEmpInfo(user.EmpID)
 	request.RejectedRequestEmpID = empUser.EmpID
 	request.RejectedRequestEmpName = empUser.FullName
