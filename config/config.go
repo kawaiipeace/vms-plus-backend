@@ -50,11 +50,13 @@ type Config struct {
 	DevSaveFilePath string
 	DevSaveFileUrl  string
 
-	UserHubEndPoint         string
-	UserHubServiceKey       string
-	HrPlatformEndPoint      string
-	PEANotificationEndPoint string
-	PEANotificationToken    string
+	UserHubEndPoint              string
+	UserHubServiceKey            string
+	HrPlatformEndPoint           string
+	PEANotificationEndPoint      string
+	PEANotificationToken         string
+	PEAWorkDNotificationEndPoint string
+	PEAWorkDNotificationToken    string
 }
 
 // AppConfig is a globally accessible configuration variable
@@ -96,13 +98,15 @@ func InitConfig() {
 		MinIoSecretKey: os.Getenv("MINIO_SECRET_KEY"),
 		MinIoNotUseSSL: os.Getenv("MINIO_NOT_USE_SSL") == "true",
 
-		DevSaveFilePath:         os.Getenv("DEV_SAVE_FILE_PATH"),
-		DevSaveFileUrl:          os.Getenv("DEV_SAVE_FILE_URL"),
-		UserHubEndPoint:         os.Getenv("USER_HUB_END_POINT"),
-		UserHubServiceKey:       os.Getenv("USER_HUB_SERVICE_KEY"),
-		HrPlatformEndPoint:      os.Getenv("HR_PLATFORM_END_POINT"),
-		PEANotificationEndPoint: os.Getenv("PEA_NOTIFICATION_END_POINT"),
-		PEANotificationToken:    os.Getenv("PEA_NOTIFICATION_TOKEN"),
+		DevSaveFilePath:              os.Getenv("DEV_SAVE_FILE_PATH"),
+		DevSaveFileUrl:               os.Getenv("DEV_SAVE_FILE_URL"),
+		UserHubEndPoint:              os.Getenv("USER_HUB_END_POINT"),
+		UserHubServiceKey:            os.Getenv("USER_HUB_SERVICE_KEY"),
+		HrPlatformEndPoint:           os.Getenv("HR_PLATFORM_END_POINT"),
+		PEANotificationEndPoint:      os.Getenv("PEA_NOTIFICATION_END_POINT"),
+		PEANotificationToken:         os.Getenv("PEA_NOTIFICATION_TOKEN"),
+		PEAWorkDNotificationEndPoint: os.Getenv("PEA_WORK_D_NOTIFICATION_END_POINT"),
+		PEAWorkDNotificationToken:    os.Getenv("PEA_WORK_D_NOTIFICATION_TOKEN"),
 	}
 	fmt.Printf("load AppConfig: %s %d\n", AppConfig.AppName, AppConfig.Port)
 

@@ -259,6 +259,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	query.Count(&total)
 	query = query.Model(&models.VmsMasVehicleList{})
 	// Execute query with pagination
+	query = query.Preload("RefFuelType")
 	query.Offset(offset).Limit(limit).Find(&vehicles)
 
 	for i := range vehicles {
