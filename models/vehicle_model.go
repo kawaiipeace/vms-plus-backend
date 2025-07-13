@@ -5,24 +5,26 @@ import (
 )
 
 type VmsMasVehicleList struct {
-	MasVehicleUID                    string `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
-	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
-	VehicleLicensePlateProvinceFull  string `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
-	VehicleBrandName                 string `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
-	VehicleModelName                 string `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
-	CarType                          string `gorm:"column:CarTypeDetail" json:"car_type"`
-	VehiclePeaID                     string `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
-	VehicleOwnerDeptSAP              string `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
-	VehicleOwnerDeptShort            string `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
-	VehicleImg                       string `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
-	VehicleColor                     string `gorm:"column:vehicle_color" json:"vehicle_color"`
-	VehicleMileage                   int    `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	LastMonthMileage                 int    `gorm:"column:last_month_mileage" json:"last_month_mileage"`
-	Seat                             int    `gorm:"column:seat" json:"seat"`
-	IsAdminChooseDriver              bool   `json:"is_admin_choose_driver"`
-	CarpoolName                      string `gorm:"column:carpool_name" json:"-"`
-	FleetCardNo                      string `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+	MasVehicleUID                    string         `gorm:"primaryKey;column:mas_vehicle_uid" json:"mas_vehicle_uid"`
+	VehicleLicensePlate              string         `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string         `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string         `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleBrandName                 string         `gorm:"column:vehicle_brand_name" json:"vehicle_brand_name"`
+	VehicleModelName                 string         `gorm:"column:vehicle_model_name" json:"vehicle_model_name"`
+	CarType                          string         `gorm:"column:CarTypeDetail" json:"car_type"`
+	VehiclePeaID                     string         `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	VehicleOwnerDeptSAP              string         `gorm:"column:vehicle_owner_dept_sap" json:"vehicle_owner_dept_sap"`
+	VehicleOwnerDeptShort            string         `gorm:"column:vehicle_owner_dept_short" json:"vehicle_owner_dept_short"`
+	VehicleImg                       string         `gorm:"column:vehicle_img" json:"vehicle_img"` // Store image URL or file path
+	VehicleColor                     string         `gorm:"column:vehicle_color" json:"vehicle_color"`
+	VehicleMileage                   int            `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
+	LastMonthMileage                 int            `gorm:"column:last_month_mileage" json:"last_month_mileage"`
+	Seat                             int            `gorm:"column:seat" json:"seat"`
+	IsAdminChooseDriver              bool           `json:"is_admin_choose_driver"`
+	CarpoolName                      string         `gorm:"column:carpool_name" json:"-"`
+	FleetCardNo                      string         `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+	RefFuelTypeID                    int            `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	RefFuelType                      VmsRefFuelType `gorm:"foreignKey:RefFuelTypeID;references:RefFuelTypeID" json:"ref_fuel_type"`
 }
 
 func (VmsMasVehicleList) TableName() string {

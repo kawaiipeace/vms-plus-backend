@@ -9,6 +9,37 @@ import (
 	"vms_plus_be/models"
 )
 
+func CheckServiceKey(serviceKey string, serviceCode string) (bool, error) {
+	reqBody := map[string]string{
+		"service_code": serviceCode,
+	}
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return false, err
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", config.AppConfig.UserHubEndPoint+"/service/check-service-key", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("ServiceKey", serviceKey)
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var response map[string]bool
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return false, err
+	}
+
+	return response["is_valid"], nil
+}
+
 func CheckPhoneNumber(phoneNumber string) (bool, error) {
 	client := &http.Client{}
 
