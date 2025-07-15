@@ -251,10 +251,11 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver License", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
-	if err := config.DB.Create(&driverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
-		return
+	if len(driverDocuments) > 0 {
+		if err := config.DB.Create(&driverDocuments).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
