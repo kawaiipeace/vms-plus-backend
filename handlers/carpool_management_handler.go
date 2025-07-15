@@ -44,6 +44,19 @@ func (h *CarpoolManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 	return nil
 }
 
+func (h *CarpoolManagementHandler) SetQueryRoleDeptVehicle(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if slices.Contains(user.Roles, "admin-super") {
+		return query
+	}
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-department") {
+		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
+	}
+	return nil
+}
+
 func GetCarpoolTypeName(carpoolType string) string {
 	switch carpoolType {
 	case "01":
