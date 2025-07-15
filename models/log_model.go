@@ -7,7 +7,7 @@ type LogCreate struct {
 	CreatedBy string    `gorm:"column:created_by;not null" json:"created_by" binding:"required"`
 }
 type LogUpdate struct {
-	UpdatedAt time.Time `gorm:"column:updated_a;autoCreateTime" json:"updated_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoCreateTime" json:"updated_at"`
 	UpdatedBy string    `gorm:"column:updated_by;not null" json:"updated_by" binding:"required"`
 }
 
