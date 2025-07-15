@@ -31,7 +31,6 @@ func GetRoleOfCreater(role string) string {
 	default:
 		return ""
 	}
-	return ""
 }
 
 // GetLogRequest godoc
