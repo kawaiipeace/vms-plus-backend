@@ -411,8 +411,32 @@ func UpdateVehicleParkingPlace(trnRequestUID string, parkingPlace string) error 
 
 	return nil
 }
+func CheckMustPassStatus30Department(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where(`
+			vms_trn_request.ref_request_status_code = '20' AND
+			vms_trn_request.mas_carpool_uid is null AND
+			vms_trn_request.trn_request_uid = ?`, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='30'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
+	}
+}
 
 func CheckMustPassStatus30(trnRequestUID string) {
+	CheckMustPassStatus30Department(trnRequestUID)
+
 	var exists bool
 	err := config.DB.
 		Table("vms_mas_carpool").
@@ -512,4 +536,40 @@ func CheckMustPassStatus(trnRequestUID string) {
 	CheckMustPassStatus30(trnRequestUID)
 	CheckMustPassStatus40(trnRequestUID)
 	CheckMustPassStatus50(trnRequestUID)
+}
+
+func IsAllowPickupButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code < '60'", trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
+}
+
+func IsAllowScoreButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code >= '60' AND ref_request_status_code < '70' AND date(reserve_end_datetime) >= date(?)", trnRequestUID, time.Now()).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
 }

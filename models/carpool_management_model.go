@@ -183,7 +183,7 @@ type VmsMasCarpoolAdminCreate struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
@@ -250,7 +250,7 @@ type VmsMasCarpoolApproverCreate struct {
 	IsActive              string    `gorm:"column:is_active" json:"-"`
 	IsDeleted             string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt             time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy             string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy             string    `gorm:"column:updated_by" json:"-"`
 }
@@ -329,7 +329,7 @@ type VmsMasCarpoolVehicleCreate struct {
 	IsActive             string    `gorm:"column:is_active" json:"-"`
 	IsDeleted            string    `gorm:"column:is_deleted" json:"-"`
 	CreatedAt            time.Time `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt            time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy            string    `gorm:"column:created_by" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 
@@ -367,7 +367,7 @@ func (VmsMasCarpoolVehicle) TableName() string {
 type VmsMasCarpoolVehicleActive struct {
 	MasCarpoolVehicleUID string    `gorm:"column:mas_carpool_vehicle_uid;primaryKey" json:"mas_carpool_vehicle_uid" example:"164632c9-1d33-477e-b335-97a4e79a5845"`
 	IsActive             string    `gorm:"column:is_active" json:"is_active" example:"1"`
-	UpdatedAt            time.Time `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
 }
 
@@ -443,7 +443,7 @@ type VmsMasCarpoolDriverCreate struct {
 	IsActive            string       `gorm:"column:is_active" json:"-"`
 	IsDeleted           string       `gorm:"column:is_deleted" json:"-"`
 	CreatedAt           time.Time    `gorm:"column:created_at;autoCreateTime" json:"-"`
-	UpdatedAt           time.Time    `gorm:"column:updated_a;autoUpdateTime" json:"-"`
+	UpdatedAt           time.Time    `gorm:"column:updated_at;autoUpdateTime" json:"-"`
 	CreatedBy           string       `gorm:"column:created_by" json:"-"`
 	UpdatedBy           string       `gorm:"column:updated_by" json:"-"`
 }

@@ -94,27 +94,28 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryRoleDept(user, query).
 		Model(&models.VmsMasDriverList{}).
-		Select("vms_mas_driver.*, (select max(driver_license_end_date) from vms_mas_driver_license where vms_mas_driver.mas_driver_uid = vms_mas_driver_license.mas_driver_uid and vms_mas_driver_license.is_deleted = '0') as driver_license_end_date").
-		Where("vms_mas_driver.is_deleted = ?", "0").Debug()
+		Table("vms_mas_driver d").
+		Select("d.*, (select max(driver_license_end_date) from vms_mas_driver_license where d.mas_driver_uid = vms_mas_driver_license.mas_driver_uid and vms_mas_driver_license.is_deleted = '0') as driver_license_end_date").
+		Where("d.is_deleted = ?", "0").Debug()
 
 	if search := strings.ToUpper(c.Query("search")); search != "" {
-		query = query.Where("UPPER(vms_mas_driver.driver_name) ILIKE ? OR UPPER(vms_mas_driver.driver_nickname) ILIKE ? OR UPPER(vms_mas_driver.driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		query = query.Where("UPPER(d.driver_name) ILIKE ? OR UPPER(d.driver_nickname) ILIKE ? OR UPPER(d.driver_dept_sap_short_work) ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
-		query = query.Where("vms_mas_driver.driver_dept_sap_work = ?", driverDeptSAP)
+		query = query.Where("d.driver_dept_sap_work = ?", driverDeptSAP)
 	}
 
 	if workType := c.Query("work_type"); workType != "" {
-		query = query.Where("vms_mas_driver.work_type IN (?)", strings.Split(workType, ","))
+		query = query.Where("d.work_type IN (?)", strings.Split(workType, ","))
 	}
 
 	if statusCodes := c.Query("ref_driver_status_code"); statusCodes != "" {
-		query = query.Where("vms_mas_driver.ref_driver_status_code IN (?)", strings.Split(statusCodes, ","))
+		query = query.Where("d.ref_driver_status_code IN (?)", strings.Split(statusCodes, ","))
 	}
 
 	if isActive := c.Query("is_active"); isActive != "" {
-		query = query.Where("vms_mas_driver.is_active IN (?)", strings.Split(isActive, ","))
+		query = query.Where("d.is_active IN (?)", strings.Split(isActive, ","))
 	}
 
 	if licenseEndDate := c.Query("driver_license_end_date"); licenseEndDate != "" {
@@ -122,7 +123,7 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	}
 
 	if approvedEndDate := c.Query("approved_job_driver_end_date"); approvedEndDate != "" {
-		query = query.Where("vms_mas_driver.approved_job_driver_end_date <= ?", approvedEndDate)
+		query = query.Where("d.approved_job_driver_end_date <= ?", approvedEndDate)
 	}
 
 	orderBy := c.Query("order_by")
@@ -225,35 +226,6 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	BCode := BusinessArea[0:1]
 	driver.DriverID = fmt.Sprintf("D%s%06d", BCode, GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
 	fmt.Println("driver.DriverID", driver.DriverID)
-	var departmentHire struct {
-		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
-		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
-	}
-
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapHire).
-		Select("dept_long_short, dept_full").
-		Find(&departmentHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
-	}
-	driver.DriverDeptSapShortNameHire = departmentHire.DeptShort
-
-	var departmentWork struct {
-		DeptShort string `gorm:"column:dept_short" json:"dept_short"`
-		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
-	}
-
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", driver.DriverDeptSapWork).
-		Select("dept_short, dept_full").
-		Find(&departmentWork).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
-	}
-
-	driver.DriverDeptSapShortWork = departmentWork.DeptShort
-	driver.DriverDeptSapFullWork = departmentWork.DeptFull
 
 	for i := range driver.DriverDocuments {
 		driver.DriverDocuments[i].MasDriverUID = driver.MasDriverUID
@@ -279,10 +251,11 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver License", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
-	if err := config.DB.Create(&driverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
-		return
+	if len(driverDocuments) > 0 {
+		if err := config.DB.Create(&driverDocuments).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to driver Certificate", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
@@ -315,7 +288,8 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 	var driver models.VmsMasDriverResponse
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryRoleDept(user, query)
-	if err := query.Where("mas_driver_uid = ? AND is_deleted = ?", masDriverUID, "0").
+	query = query.Table("vms_mas_driver d")
+	if err := query.Where("d.mas_driver_uid = ? AND d.is_deleted = ?", masDriverUID, "0").
 		Preload("DriverStatus").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
@@ -381,7 +355,8 @@ func (h *DriverManagementHandler) UpdateDriverDetail(c *gin.Context) {
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -429,39 +404,10 @@ func (h *DriverManagementHandler) UpdateDriverContract(c *gin.Context) {
 		return
 	}
 
-	var departmentHire struct {
-		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
-		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
-	}
-
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", request.DriverDeptSapHire).
-		Select("dept_long_short, dept_full").
-		Find(&departmentHire).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
-	}
-	request.DriverDeptSapShortNameHire = departmentHire.DeptShort
-
-	var departmentWork struct {
-		DeptShort string `gorm:"column:dept_long_short" json:"dept_short"`
-		DeptFull  string `gorm:"column:dept_full" json:"dept_full"`
-	}
-
-	if err := config.DB.Model(&models.VmsMasDepartment{}).
-		Where("dept_sap = ?", request.DriverDeptSapWork).
-		Select("dept_long_short, dept_full").
-		Find(&departmentWork).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve department details: %v", err), "message": messages.ErrInternalServer.Error()})
-		return
-	}
-
-	request.DriverDeptSapShortWork = departmentWork.DeptShort
-	request.DriverDeptSapFullWork = departmentWork.DeptFull
-
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -514,7 +460,8 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -601,8 +548,9 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = queryRole.Table("vms_mas_driver d")
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -638,10 +586,11 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 		request.DriverDocuments[i].UpdatedAt = time.Now()
 		request.DriverDocuments[i].IsDeleted = "0"
 	}
-
-	if err := config.DB.Create(&request.DriverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents", "message": messages.ErrInternalServer.Error()})
-		return
+	if len(request.DriverDocuments) > 0 {
+		if err := config.DB.Create(&request.DriverDocuments).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 
 	if err := config.DB.
@@ -685,7 +634,8 @@ func (h *DriverManagementHandler) UpdateDriverLeaveStatus(c *gin.Context) {
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -744,7 +694,8 @@ func (h *DriverManagementHandler) UpdateDriverIsActive(c *gin.Context) {
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -790,7 +741,8 @@ func (h *DriverManagementHandler) DeleteDriver(c *gin.Context) {
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -837,7 +789,8 @@ func (h *DriverManagementHandler) UpdateDriverLayoffStatus(c *gin.Context) {
 	}
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -904,7 +857,8 @@ func (h *DriverManagementHandler) UpdateDriverResignStatus(c *gin.Context) {
 
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
-	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
+	queryRole = queryRole.Table("vms_mas_driver d")
+	if err := queryRole.First(&driver, "d.mas_driver_uid = ? and d.is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
@@ -951,6 +905,7 @@ func (h *DriverManagementHandler) GetReplacementDrivers(c *gin.Context) {
 	var drivers []models.VmsMasDriver
 	user := funcs.GetAuthenUser(c, h.Role)
 	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("vms_mas_driver d")
 	query = h.SetQueryRoleDept(user, query)
 	query = query.Model(&models.VmsMasDriver{})
 	query = query.Where("is_deleted = ? AND is_replacement = ?", "0", "1")
@@ -1254,6 +1209,10 @@ func (h *DriverManagementHandler) ImportDriver(c *gin.Context) {
 		if err := config.DB.Create(&drivers).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import drivers", "message": messages.ErrInternalServer.Error()})
 			return
+		}
+		for _, driver := range drivers {
+			funcs.UpdateBusinessArea(driver.MasDriverUID)
+			funcs.CheckDriverIsActive(driver.MasDriverUID)
 		}
 	}
 

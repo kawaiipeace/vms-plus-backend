@@ -113,6 +113,9 @@ func UpdateBusinessArea(masDriverUID string) {
 	if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid = ?", masDriverUID).
 		Update("bureau_ba", businessArea).
 		Update("bureau_dept_sap", bureauDeptSap).
+		Update("driver_dept_sap_short_work", GetDeptSAPShort(driver.DriverDeptSapWork)).
+		Update("driver_dept_sap_full_work", GetDeptSAPFull(driver.DriverDeptSapWork)).
+		Update("driver_dept_sap_short_name_hire", GetDeptSAPShort(driver.DriverDeptSapHire)).
 		Error; err != nil {
 		return
 	}

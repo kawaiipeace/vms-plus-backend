@@ -442,10 +442,10 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 	} else {
 		userInfo := funcs.GetUserEmpInfo(result.VehicleUserEmpID)
 		managers := funcs.GetUserManager(userInfo.DeptSAP)
-		lists := []models.MasUserEmp{}
+		list := []models.MasUserEmp{}
 		for _, manager := range managers {
 			if manager.LevelCode == "S1" {
-				lists = append(lists, models.MasUserEmp{
+				list = append(list, models.MasUserEmp{
 					EmpID:        strconv.Itoa(manager.EmpIDLeader),
 					FullName:     manager.EmpName,
 					Position:     manager.PlansTextShort,
@@ -458,10 +458,26 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 			}
 		}
 
-		if len(lists) == 0 {
-			for _, manager := range managers {
-				if manager.LevelCode == "M6" {
-					lists = append(lists, models.MasUserEmp{
+		for _, manager := range managers {
+			if manager.LevelCode == "M6" {
+				list = append(list, models.MasUserEmp{
+					EmpID:        strconv.Itoa(manager.EmpIDLeader),
+					FullName:     manager.EmpName,
+					Position:     manager.PlansTextShort,
+					DeptSAP:      strconv.Itoa(manager.DeptSAP),
+					DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+					DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+					ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+					IsEmployee:   true,
+				})
+			}
+		}
+
+		if len(list) == 0 && len(managers) > 0 {
+			upperManagers := funcs.GetUserManager(strconv.Itoa(managers[0].DeptUpper))
+			for _, manager := range upperManagers {
+				if manager.LevelCode == "S1" || manager.LevelCode == "M6" {
+					list = append(list, models.MasUserEmp{
 						EmpID:        strconv.Itoa(manager.EmpIDLeader),
 						FullName:     manager.EmpName,
 						Position:     manager.PlansTextShort,
@@ -474,12 +490,12 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 				}
 			}
 		}
-		for i := range lists {
-			empInfo := funcs.GetUserEmpInfo(lists[i].EmpID)
-			lists[i].TelMobile = empInfo.TelMobile
-			lists[i].TelInternal = empInfo.TelInternal
+		for i := range list {
+			empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
+			list[i].TelMobile = empInfo.TelMobile
+			list[i].TelInternal = empInfo.TelInternal
 		}
-		c.JSON(http.StatusOK, lists)
+		c.JSON(http.StatusOK, list)
 		return
 	}
 }
@@ -685,9 +701,25 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 		}
 	}
 
-	if len(list) == 0 {
-		for _, manager := range managers {
-			if manager.LevelCode == "M6" {
+	for _, manager := range managers {
+		if manager.LevelCode == "M6" {
+			list = append(list, models.MasUserEmp{
+				EmpID:        strconv.Itoa(manager.EmpIDLeader),
+				FullName:     manager.EmpName,
+				Position:     manager.PlansTextShort,
+				DeptSAP:      strconv.Itoa(manager.DeptSAP),
+				DeptSAPShort: funcs.GetDeptSAPShort(strconv.Itoa(manager.DeptSAP)),
+				DeptSAPFull:  funcs.GetDeptSAPFull(strconv.Itoa(manager.DeptSAP)),
+				ImageUrl:     funcs.GetEmpImage(strconv.Itoa(manager.EmpIDLeader)),
+				IsEmployee:   true,
+			})
+		}
+	}
+
+	if len(list) == 0 && len(managers) > 0 {
+		upperManagers := funcs.GetUserManager(strconv.Itoa(managers[0].DeptUpper))
+		for _, manager := range upperManagers {
+			if manager.LevelCode == "S1" || manager.LevelCode == "M6" {
 				list = append(list, models.MasUserEmp{
 					EmpID:        strconv.Itoa(manager.EmpIDLeader),
 					FullName:     manager.EmpName,
@@ -701,6 +733,7 @@ func (h *MasHandler) ListApprovalLicenseUser(c *gin.Context) {
 			}
 		}
 	}
+
 	for i := range list {
 		empInfo := funcs.GetUserEmpInfo(list[i].EmpID)
 		list[i].TelMobile = empInfo.TelMobile

@@ -34,6 +34,8 @@ type VmsTrnRequestVehicleInUseList struct {
 	ParkingPlace      string `gorm:"column:parking_place" json:"parking_place"`
 	NextStartDatetime string `gorm:"-" json:"next_start_datetime"`
 	WorkDescription   string `gorm:"column:work_description" json:"work_description"`
+	CanPickupButton   bool   `gorm:"-" json:"can_pickup_button"`
+	CanScoreButton    bool   `gorm:"-" json:"can_score_button"`
 }
 
 // VmsTrnRequestVehicleInUseResponse
@@ -168,6 +170,8 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	NextRequest                 VmsTrnNextRequest       `gorm:"-" json:"next_request"`
 
 	SatisfactionSurveyAnswers []VmsTrnSatisfactionSurveyAnswersResponse `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"satisfaction_survey_answers"`
+	CanPickupButton           bool                                      `gorm:"-" json:"can_pickup_button"`
+	CanScoreButton            bool                                      `gorm:"-" json:"can_score_button"`
 }
 
 func (VmsTrnRequestVehicleInUseResponse) TableName() string {
