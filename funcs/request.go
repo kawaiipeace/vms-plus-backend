@@ -265,7 +265,12 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 
 		}
 	}
-
+	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
+	if request.CanScoreButton {
+		request.CanPickupButton = false
+	} else {
+		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+	}
 	//c.JSON(http.StatusOK, request)
 	return request, nil
 }
@@ -536,4 +541,40 @@ func CheckMustPassStatus(trnRequestUID string) {
 	CheckMustPassStatus30(trnRequestUID)
 	CheckMustPassStatus40(trnRequestUID)
 	CheckMustPassStatus50(trnRequestUID)
+}
+
+func IsAllowPickupButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code < '60'", trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
+}
+
+func IsAllowScoreButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code >= '60' AND ref_request_status_code < '70' AND date(reserve_end_datetime) >= date(?)", trnRequestUID, time.Now()).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
 }
