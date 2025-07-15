@@ -545,13 +545,14 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 	}
 
 	queryRole := h.SetQueryRole(user, config.DB)
+	queryRole = queryRole.Table("vms_mas_driver d")
 	queryRole = h.SetQueryRoleDept(user, queryRole)
 	if err := queryRole.First(&driver, "mas_driver_uid = ? and is_deleted = ?", request.MasDriverUID, "0").Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
 
-	if err := config.DB.Where("mas_driver_uid = ? AND is_deleted = ?", request.MasDriverUID, "0").
+	if err := config.DB.Where("d.mas_driver_uid = ? AND d.is_deleted = ?", request.MasDriverUID, "0").
 		Delete(&models.VmsMasDriverDocument{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete existing documents: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
