@@ -582,10 +582,11 @@ func (h *DriverManagementHandler) UpdateDriverDocuments(c *gin.Context) {
 		request.DriverDocuments[i].UpdatedAt = time.Now()
 		request.DriverDocuments[i].IsDeleted = "0"
 	}
-
-	if err := config.DB.Create(&request.DriverDocuments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents", "message": messages.ErrInternalServer.Error()})
-		return
+	if len(request.DriverDocuments) > 0 {
+		if err := config.DB.Create(&request.DriverDocuments).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update driver Documents", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
 
 	if err := config.DB.
