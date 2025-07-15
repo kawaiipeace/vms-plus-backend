@@ -265,7 +265,12 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 
 		}
 	}
-
+	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
+	if request.CanScoreButton {
+		request.CanPickupButton = false
+	} else {
+		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+	}
 	//c.JSON(http.StatusOK, request)
 	return request, nil
 }
