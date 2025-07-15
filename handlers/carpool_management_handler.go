@@ -44,6 +44,32 @@ func (h *CarpoolManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, 
 	return nil
 }
 
+func (h *CarpoolManagementHandler) SetQueryRoleDeptVehicle(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if slices.Contains(user.Roles, "admin-super") {
+		return query
+	}
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-department") {
+		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
+	}
+	return nil
+}
+
+func (h *CarpoolManagementHandler) SetQueryRoleDeptDriver(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
+	if slices.Contains(user.Roles, "admin-super") {
+		return query
+	}
+	if slices.Contains(user.Roles, "admin-region") {
+		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+	}
+	if slices.Contains(user.Roles, "admin-department") {
+		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
+	}
+	return nil
+}
+
 func GetCarpoolTypeName(carpoolType string) string {
 	switch carpoolType {
 	case "01":
@@ -451,14 +477,27 @@ func (h *CarpoolManagementHandler) CreateCarpool(c *gin.Context) {
 
 	carpool.MasCarpoolUID = uuid.New().String()
 	carpool.IsHaveDriverForCarpool = "0"
-	if carpool.CarpoolType == "01" {
+	switch carpool.CarpoolType {
+	case "01":
 		carpool.CarpoolMainBusinessArea = "Z000"
-	} else if carpool.CarpoolType == "02" {
+	case "02":
 		if carpool.CarpoolDeptSap == "" && len(carpool.CarpoolAuthorizedDepts) > 0 {
 			carpool.CarpoolDeptSap = carpool.CarpoolAuthorizedDepts[0].DeptSap
 		}
 		var department models.VmsMasDepartment
 		if err := config.DB.Where("dept_sap = ?", carpool.CarpoolDeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		carpool.CarpoolMainBusinessArea = department.BusinessArea
+	case "03":
+		//get business area from vms_mas_department
+		var department models.VmsMasDepartment
+		if len(carpool.CarpoolAuthorizedDepts) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No authorized dept", "message": messages.ErrNotfound.Error() + " กรุณาตรวจสอบอีกครั้ง"})
+			return
+		}
+		if err := config.DB.Where("dept_sap = ?", carpool.CarpoolAuthorizedDepts[0].DeptSap).First(&department).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 			return
 		}

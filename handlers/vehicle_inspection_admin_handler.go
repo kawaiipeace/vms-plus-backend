@@ -151,6 +151,12 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		requests[i].CanScoreButton = funcs.IsAllowScoreButton(requests[i].TrnRequestUID)
+		if requests[i].CanScoreButton {
+			requests[i].CanPickupButton = false
+		} else {
+			requests[i].CanPickupButton = funcs.IsAllowPickupButton(requests[i].TrnRequestUID)
+		}
 
 	}
 

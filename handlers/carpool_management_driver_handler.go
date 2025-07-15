@@ -296,10 +296,11 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	var drivers []models.VmsMasDriver
-	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
+	query := h.SetQueryRoleDeptDriver(funcs.GetAuthenUser(c, h.Role), config.DB)
+	query = query.Table("vms_mas_driver d")
 	query = query.Model(&models.VmsMasDriver{})
-	query = query.Where("is_deleted = ?", "0")
-	query = query.Where("not exists (select 1 from vms_mas_carpool_driver cd where cd.mas_driver_uid = vms_mas_driver.mas_driver_uid and cd.is_deleted = '0')")
+	query = query.Where("d.is_deleted = ?", "0")
+	query = query.Where("not exists (select 1 from vms_mas_carpool_driver cd where cd.mas_driver_uid = d.mas_driver_uid and cd.is_deleted = '0')")
 
 	// Apply search filter
 	if name != "" {

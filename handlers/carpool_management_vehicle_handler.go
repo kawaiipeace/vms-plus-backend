@@ -303,7 +303,7 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 
 	var vehicles []models.VmsMasVehicleCarpoolList
 	var total int64
-	query := h.SetQueryRoleDept(funcs.GetAuthenUser(c, h.Role), config.DB)
+	query := h.SetQueryRoleDeptVehicle(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Table("vms_mas_vehicle v")
 	query = query.Select("v.*,d.vehicle_owner_dept_sap vehicle_owner_dept_sap,fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_owner_dept_short" +
 		",d.fleet_card_no,d.vehicle_mileage vehicle_mileage" +

@@ -6150,25 +6150,6 @@ paths:
       summary: Retrieve all vehicle statuses
       tags:
       - REF
-  /api/service/request-booking/{request_no}:
-    get:
-      consumes:
-      - application/json
-      description: Get request booking
-      parameters:
-      - description: RequestNo
-        in: path
-        name: request_no
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ServiceKey: []
-      summary: Get request booking
-      tags:
-      - Service
   /api/service/vms-to-eems/{request_no}:
     get:
       consumes:

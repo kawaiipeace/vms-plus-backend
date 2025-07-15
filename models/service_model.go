@@ -138,14 +138,16 @@ func (VmsTrnRequesService) TableName() string {
 
 // MADE BY PEACE
 type VmsToEEMS struct {
-	TrnRequestUID        string       `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
-	RequestNo            string       `gorm:"column:request_no" json:"request_no"`
-	VehicleLicensePlate  string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
-	ReserveStartDatetime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00"`
-	ReserveEndDatetime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00"`
-	WorkPlace            string       `gorm:"column:work_place" json:"work_place" example:"Head Office"`
-	WorkDescription      string       `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
-	DocNo                string       `gorm:"column:doc_no" json:"reference_number" example:"REF123456"`
+	TrnRequestUID                    string       `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
+	RequestNo                        string       `gorm:"column:request_no" json:"request_no"`
+	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate" example:"ABC1234"`
+	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short" example:"กทม"`
+	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full" example:"กรุงเทพมหานคร"`
+	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00"`
+	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00"`
+	WorkPlace                        string       `gorm:"column:work_place" json:"work_place" example:"Head Office"`
+	WorkDescription                  string       `gorm:"column:work_description" json:"work_description" example:"Business Meeting"`
+	DocNo                            string       `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
 }
 
 func (VmsToEEMS) TableName() string {

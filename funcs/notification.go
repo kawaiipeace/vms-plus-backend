@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -16,6 +17,18 @@ import (
 
 	"github.com/google/uuid"
 )
+
+func IsAllowNotifyEmpID(empID string) bool {
+	empIDs := []string{
+		"465056", //นางสาวพจนา พานิชนิตินนท์
+		"499910", //นางสาวนพรัตน์ อภิชาตสิริธรรม
+		"460137", //นายวิทยา สว่างวงษ์
+		"505291", //นายศรัญยู บริรัตน์ฤทธิ์
+		"511181", //นายจอมภูภพ อิศโร
+		"514285", //นายธนพล วิจารณ์ปรีชา
+	}
+	return slices.Contains(empIDs, empID)
+}
 
 func GetNotifyURL(notify models.Notification) string {
 	if notify.NotifyRole == "vehicle-user" && notify.NotifyType == "request-booking" &&
@@ -186,7 +199,7 @@ func SendNotificationPEA(empID, message string) {
 	if config.AppConfig.PEANotificationEndPoint == "" || config.AppConfig.PEANotificationToken == "" {
 		return
 	}
-	if empID != "505291" {
+	if !IsAllowNotifyEmpID(empID) {
 		return
 	}
 	body := models.NotificationRequestBodyPEA{
@@ -243,7 +256,7 @@ func SendNotificationWorkD(empID, headline, subHeadline, content, url, deptSap, 
 		return
 	}
 
-	if empID != "505291" {
+	if !IsAllowNotifyEmpID(empID) {
 		return
 	}
 

@@ -150,10 +150,16 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
-
-		if requests[i].TripType == 0 {
+		requests[i].CanScoreButton = funcs.IsAllowScoreButton(requests[i].TrnRequestUid)
+		if requests[i].CanScoreButton {
+			requests[i].CanPickupButton = false
+		} else {
+			requests[i].CanPickupButton = funcs.IsAllowPickupButton(requests[i].TrnRequestUid)
+		}
+		switch requests[i].TripType {
+		case 0:
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 1 {
+		case 1:
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 	}
