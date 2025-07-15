@@ -411,8 +411,7 @@ func GetUserManager(DeptSAP string) []models.VmsMasManager {
 func GetBusinessAreaCodeFromDeptSap(deptSAP string) string {
 	//call db public.fn_get_business_area_code_from_dept_sap
 	var businessArea string
-	err := config.DB.Table("vms_mas_department").Where("dept_sap = ?", deptSAP).
-		Select("business_area").First(&businessArea).Error
+	err := config.DB.Raw("SELECT business_area FROM vms_mas_department WHERE dept_sap = ?", deptSAP).Scan(&businessArea).Error
 	if err != nil {
 		return "Z000"
 	}

@@ -7278,36 +7278,6 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/service/request-booking/{request_no}": {
-            "get": {
-                "security": [
-                    {
-                        "ServiceKey": []
-                    }
-                ],
-                "description": "Get request booking",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Service"
-                ],
-                "summary": "Get request booking",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "RequestNo",
-                        "name": "request_no",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/service/vms-to-eems/{request_no}": {
             "get": {
                 "security": [
