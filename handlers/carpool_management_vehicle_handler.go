@@ -395,7 +395,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.fleet_card_no,
 			v.is_tax_credit,
 			d.vehicle_mileage,
-			d.vehicle_registration_date,
+			v.vehicle_registration_date,
 			d.ref_vehicle_status_code,
 			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name,
 			d.is_active,
