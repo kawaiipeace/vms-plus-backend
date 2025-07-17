@@ -182,17 +182,34 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	query = query.Where("vms_mas_driver.is_deleted = ? AND vms_mas_driver.is_replacement = ?", "0", "0")
 	query = query.Where("vms_mas_driver.mas_driver_uid IN (?)", masDriverUIDs)
 
-	if masVehicleUID := c.Query("mas_vehicle_uid"); masVehicleUID != "" {
-		var masCarpoolUID string
-		if err := config.DB.Table("vms_v_info_vehicle_all_active").Where("mas_vehicle_uid = ?", masVehicleUID).Pluck("mas_carpool_uid", &masCarpoolUID).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "MasCarpoolUID not found", "message": messages.ErrNotfound.Error()})
+	isDepartment := false
+	masVehicleUID := c.Query("mas_vehicle_uid")
+	masCarpoolUID := c.Query("mas_carpool_uid")
+	var vehicleCarpoolOrDeptSap struct {
+		MasCarpoolUID string `gorm:"column:mas_carpool_uid"`
+		BureauDeptSap string `gorm:"column:bureau_dept_sap"`
+	}
+	if masVehicleUID != "" && masCarpoolUID == "" {
+
+		if err := config.DB.Table("vms_v_info_vehicle_all_active").Where("mas_vehicle_uid = ?", masVehicleUID).
+			Select("mas_carpool_uid,bureau_dept_sap").
+			First(&vehicleCarpoolOrDeptSap).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "MasVehicleUID not found", "message": messages.ErrNotfound.Error()})
 			return
 		}
+		if vehicleCarpoolOrDeptSap.BureauDeptSap != "" {
+			isDepartment = true
+		}
+		if vehicleCarpoolOrDeptSap.MasCarpoolUID != "" {
+			query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')",
+				vehicleCarpoolOrDeptSap.MasCarpoolUID)
+		}
+	}
+	if masCarpoolUID != "" {
 		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
 	}
-
-	if masCarpoolUID := c.Query("mas_carpool_uid"); masCarpoolUID != "" {
-		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
+	if isDepartment {
+		//query = query.Where("vms_mas_driver.bureau_dept_sap = ?", vehicleCarpoolOrDeptSap.BureauDeptSap)
 	}
 
 	// Apply search filter
@@ -213,7 +230,7 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 		Offset(offset)
 
 	if err := query.
-		Preload("DriverStatus").
+		Preload("DriverStatus").Debug().
 		Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
@@ -221,12 +238,11 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	for i := range drivers {
 		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 		drivers[i].Status = "ว่าง"
-		if strings.HasSuffix(drivers[i].DriverID, "1") {
-			drivers[i].Status = "ไม่ว่าง"
-		}
-		if drivers[i].WorkType == 1 {
+
+		switch drivers[i].WorkType {
+		case 1:
 			drivers[i].WorkTypeName = "ค้างคืน"
-		} else if drivers[i].WorkType == 2 {
+		case 2:
 			drivers[i].WorkTypeName = "ไป-กลับ"
 		}
 	}
@@ -294,12 +310,11 @@ func (h *DriverHandler) GetDriversOtherDept(c *gin.Context) {
 	for i := range drivers {
 		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 		drivers[i].Status = "ว่าง"
-		if strings.HasSuffix(drivers[i].DriverID, "1") {
-			drivers[i].Status = "ไม่ว่าง"
-		}
-		if drivers[i].WorkType == 1 {
+
+		switch drivers[i].WorkType {
+		case 1:
 			drivers[i].WorkTypeName = "ค้างคืน"
-		} else if drivers[i].WorkType == 2 {
+		case 2:
 			drivers[i].WorkTypeName = "ไป-กลับ"
 		}
 		drivers[i].WorkCount = 4
