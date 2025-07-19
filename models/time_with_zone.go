@@ -178,3 +178,49 @@ func ConvertUTCToTimezone(utcString string, timezoneOffset int) (string, error) 
 func ConvertUTCToBangkokTime(utcString string) (string, error) {
 	return ConvertUTCToTimezone(utcString, 7)
 }
+
+// GetTimeWithZone converts a date string to TimeWithZone using multiple possible formats and return TimeWithZone+07:00
+// All formats should return the same time in +07:00 timezone
+// Example: "2025-05-30T08:00:00Z", "2025-05-30 08:00:00", "2025-05-30T08:00:00+07:00" all return 2025-05-30T08:00:00+07:00
+func GetTimeWithZone(dateString string) (TimeWithZone, error) {
+	formats := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05.000Z",
+		"2006-01-02T15:04:05-07:00",
+		"2006-01-02T15:04:05.000-07:00",
+		"2006-01-02",
+	}
+	var date time.Time
+	var err error
+	for _, format := range formats {
+		date, err = time.Parse(format, dateString)
+		if err == nil {
+			// If the time is in UTC (ends with Z) or has no timezone, treat it as if it's already in +07:00 timezone
+			// This means 2025-05-30T08:00:00Z and 2025-05-30 08:00:00 should both become 2025-05-30T08:00:00+07:00
+			// Check for timezone indicators more specifically
+			hasTimezone := strings.Contains(dateString, "+07:00") || strings.Contains(dateString, "-07:00") ||
+				strings.Contains(dateString, "+") || (strings.Contains(dateString, "-") && strings.Contains(dateString, "T"))
+			if strings.HasSuffix(dateString, "Z") || !hasTimezone {
+				// Create location for +07:00 timezone
+				loc := time.FixedZone("Asia/Bangkok", 7*60*60)
+				// Use the same time value but in +07:00 timezone
+				date = time.Date(
+					date.Year(),
+					date.Month(),
+					date.Day(),
+					date.Hour(),
+					date.Minute(),
+					date.Second(),
+					date.Nanosecond(),
+					loc,
+				)
+			} else {
+				// For times that already have timezone info, convert to Bangkok timezone
+				date = date.In(time.FixedZone("Asia/Bangkok", 7*60*60))
+			}
+			return TimeWithZone{Time: date}, nil
+		}
+	}
+	return TimeWithZone{}, err
+}
