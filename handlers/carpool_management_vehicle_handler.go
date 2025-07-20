@@ -226,6 +226,18 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
+	//update vms_mas_department set is_in_carpool='1'
+	masVehicleDepartmentUIDs := make([]string, len(requests))
+	for i := range requests {
+		masVehicleDepartmentUIDs[i] = requests[i].MasVehicleDepartmentUID
+	}
+	if err := config.DB.Model(&models.VmsMasVehicleDepartment{}).Where("mas_vehicle_department_uid IN (?)", masVehicleDepartmentUIDs).UpdateColumns(map[string]interface{}{
+		"is_in_carpool": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":      "Carpool vehicles created successfully",
 		"data":         requests,
@@ -270,7 +282,13 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool vehicle", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	//update vms_mas_department set is_in_carpool='0'
+	if err := config.DB.Model(&models.VmsMasVehicleDepartment{}).Where("mas_vehicle_department_uid = ?", vehicle.MasVehicleDepartmentUID).UpdateColumns(map[string]interface{}{
+		"is_in_carpool": "0",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle deleted successfully", "carpool_name": GetCarpoolName(vehicle.MasCarpoolUID)})
 }
 
@@ -395,7 +413,7 @@ func (h *CarpoolManagementHandler) GetMasVehicleDetail(c *gin.Context) {
 			d.fleet_card_no,
 			v.is_tax_credit,
 			d.vehicle_mileage,
-			d.vehicle_registration_date,
+			v.vehicle_registration_date,
 			d.ref_vehicle_status_code,
 			(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name,
 			d.is_active,
