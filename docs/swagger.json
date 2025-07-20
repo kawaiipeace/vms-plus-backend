@@ -11274,6 +11274,32 @@
                 }
             }
         },
+        "models.VmsMasDriverCertificateRequest": {
+            "type": "object",
+            "properties": {
+                "driver_certificate_expire_date": {
+                    "type": "string",
+                    "example": "2025-12-31T00:00:00Z"
+                },
+                "driver_certificate_issue_date": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "driver_certificate_name": {
+                    "type": "string",
+                    "example": "Truck advance driver"
+                },
+                "driver_certificate_no": {
+                    "type": "string",
+                    "example": "12345678"
+                },
+                "ref_driver_certificate_type_code": {
+                    "description": "DriverCertificateImage       string       `gorm:\"column:driver_certificate_image\" json:\"driver_certificate_image\" example:\"https://example.com/certificate_image.jpg\"`",
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
         "models.VmsMasDriverContractUpdate": {
             "type": "object",
             "properties": {
@@ -11526,6 +11552,9 @@
                 "driver_birthdate": {
                     "type": "string",
                     "example": "1990-01-01T00:00:00Z"
+                },
+                "driver_certificate": {
+                    "$ref": "#/definitions/models.VmsMasDriverCertificateRequest"
                 },
                 "driver_contact_number": {
                     "type": "string",

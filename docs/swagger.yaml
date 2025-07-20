@@ -619,6 +619,26 @@ definitions:
         example: ec4a2cee-aded-47bd-9d93-4a1a74cb58a4
         type: string
     type: object
+  models.VmsMasDriverCertificateRequest:
+    properties:
+      driver_certificate_expire_date:
+        example: "2025-12-31T00:00:00Z"
+        type: string
+      driver_certificate_issue_date:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      driver_certificate_name:
+        example: Truck advance driver
+        type: string
+      driver_certificate_no:
+        example: "12345678"
+        type: string
+      ref_driver_certificate_type_code:
+        description: DriverCertificateImage       string       `gorm:"column:driver_certificate_image"
+          json:"driver_certificate_image" example:"https://example.com/certificate_image.jpg"`
+        example: "1"
+        type: string
+    type: object
   models.VmsMasDriverContractUpdate:
     properties:
       approved_job_driver_end_date:
@@ -800,6 +820,8 @@ definitions:
       driver_birthdate:
         example: "1990-01-01T00:00:00Z"
         type: string
+      driver_certificate:
+        $ref: '#/definitions/models.VmsMasDriverCertificateRequest'
       driver_contact_number:
         example: "+1234567890"
         type: string

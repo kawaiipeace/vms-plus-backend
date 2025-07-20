@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -155,6 +156,16 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 		return
 	}
 
+	StartTimeWithZone, err1 := models.GetTimeWithZone(startDate)
+	EndTimeWithZone, err2 := models.GetTimeWithZone(endDate)
+	if err1 != nil || err2 != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get start time with zone", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
+	fmt.Println(StartTimeWithZone)
+	fmt.Println(EndTimeWithZone)
+
 	var driverCanBookings []models.VmsMasDriverCanBooking
 	tripTypeCode := 0
 	if workType == "1" {
@@ -163,7 +174,7 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 		tripTypeCode = 0
 	}
 	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_drivers_view (?, ?, ?, ?, ?)`,
-		startDate, endDate, bureauDeptSap, businessArea, tripTypeCode)
+		StartTimeWithZone, EndTimeWithZone, bureauDeptSap, businessArea, tripTypeCode)
 	err := queryCanBooking.Scan(&driverCanBookings).Error
 
 	if err != nil {
