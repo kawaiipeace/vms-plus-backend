@@ -222,6 +222,15 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	driver.DriverLicense.IsDeleted = "0"
 	driver.DriverLicense.IsActive = "1"
 
+	driver.DriverCertificate.MasDriverUID = driver.MasDriverUID
+	driver.DriverCertificate.MasDriverCertificateUID = uuid.New().String()
+	driver.DriverCertificate.CreatedBy = user.EmpID
+	driver.DriverCertificate.UpdatedBy = user.EmpID
+	driver.DriverCertificate.CreatedAt = time.Now()
+	driver.DriverCertificate.UpdatedAt = time.Now()
+	driver.DriverCertificate.IsDeleted = "0"
+	driver.DriverCertificate.IsActive = "1"
+
 	BusinessArea := funcs.GetBusinessAreaCodeFromDeptSap(driver.DriverDeptSapHire)
 	BCode := BusinessArea[0:1]
 	driver.DriverID = fmt.Sprintf("D%s%06d", BCode, GetDriverRunningNumber("vehicle_driver_seq_"+BCode))
@@ -239,9 +248,11 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 
 	driverLicense := driver.DriverLicense
 	driverDocuments := driver.DriverDocuments
+	driverCertificate := driver.DriverCertificate
 
 	driver.DriverLicense = models.VmsMasDriverLicenseRequest{}
 	driver.DriverDocuments = []models.VmsMasDriverDocument{}
+	driver.DriverCertificate = models.VmsMasDriverCertificateRequest{}
 
 	if err := config.DB.Create(&driver).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver", "message": messages.ErrInternalServer.Error()})
@@ -249,6 +260,10 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	}
 	if err := config.DB.Create(&driverLicense).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver License", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	if err := config.DB.Create(&driverCertificate).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create driver Certificate", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if len(driverDocuments) > 0 {
@@ -260,6 +275,9 @@ func (h *DriverManagementHandler) CreateDriver(c *gin.Context) {
 	funcs.UpdateBusinessArea(driver.MasDriverUID)
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
 
+	driver.DriverCertificate = driverCertificate
+	driver.DriverLicense = driverLicense
+	driver.DriverDocuments = driverDocuments
 	// Return success response
 	c.JSON(http.StatusCreated, gin.H{"message": "Driver created successfully",
 		"data":           driver,

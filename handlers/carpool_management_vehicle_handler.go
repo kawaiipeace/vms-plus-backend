@@ -226,6 +226,18 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
+	//update vms_mas_department set is_in_carpool='1'
+	masVehicleDepartmentUIDs := make([]string, len(requests))
+	for i := range requests {
+		masVehicleDepartmentUIDs[i] = requests[i].MasVehicleDepartmentUID
+	}
+	if err := config.DB.Model(&models.VmsMasVehicleDepartment{}).Where("mas_vehicle_department_uid IN (?)", masVehicleDepartmentUIDs).UpdateColumns(map[string]interface{}{
+		"is_in_carpool": "1",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":      "Carpool vehicles created successfully",
 		"data":         requests,
@@ -270,7 +282,13 @@ func (h *CarpoolManagementHandler) DeleteCarpoolVehicle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool vehicle", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
+	//update vms_mas_department set is_in_carpool='0'
+	if err := config.DB.Model(&models.VmsMasVehicleDepartment{}).Where("mas_vehicle_department_uid = ?", vehicle.MasVehicleDepartmentUID).UpdateColumns(map[string]interface{}{
+		"is_in_carpool": "0",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Carpool vehicle deleted successfully", "carpool_name": GetCarpoolName(vehicle.MasCarpoolUID)})
 }
 
