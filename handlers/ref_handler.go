@@ -107,7 +107,7 @@ func (h *RefHandler) ListCostCenter(c *gin.Context) {
 		Select("DISTINCT cost_center_code || ' ' || cost_center_name as cost_center").
 		Where("cost_center_code IS NOT NULL AND cost_center_code != ''")
 	if search != "" {
-		query = query.Where("cost_center_code || ' ' || cost_center_name LIKE ?", "%"+search+"%")
+		query = query.Where("cost_center_code || ' ' || cost_center_name ILIKE ?", "%"+search+"%")
 	}
 	if err := query.
 		Order("cost_center").

@@ -52,8 +52,8 @@ type VmsDriverLicenseCardCertificate struct {
 	DriverCertificateNo         string                      `gorm:"column:driver_certificate_no" json:"driver_certificate_no" example:"CERT12345"`
 	DriverCertificateName       string                      `gorm:"column:driver_certificate_name" json:"driver_certificate_name" example:"Safety Certificate"`
 	DriverCertificateTypeCode   int                         `gorm:"column:driver_certificate_type_code" json:"driver_certificate_type_code" example:"1"`
-	DriverCertificateIssueDate  TimeWithZone                `gorm:"column:driver_certificate_issue_date" json:"driver_certificate_issue_date" example:"2023-01-01T00:00:00Z"`
-	DriverCertificateExpireDate TimeWithZone                `gorm:"column:driver_certificate_expire_date" json:"driver_certificate_expire_date" example:"2024-12-31T00:00:00Z"`
+	DriverCertificateIssueDate  TimeWithZone                `gorm:"column:driver_certificate_issue_date" json:"driver_certificate_issue_date" swaggertype:"string" example:"2023-01-01T00:00:00Z"`
+	DriverCertificateExpireDate TimeWithZone                `gorm:"column:driver_certificate_expire_date" json:"driver_certificate_expire_date" swaggertype:"string" example:"2024-12-31T00:00:00Z"`
 	DriverCertificateImg        string                      `gorm:"column:driver_certificate_img" json:"driver_certificate_img" example:"certificate_image_url"`
 	DriverCertificateType       VmsRefDriverCertificateType `gorm:"foreignKey:DriverCertificateTypeCode;references:RefDriverCertificateTypeCode" json:"driver_certificate_type"`
 }
