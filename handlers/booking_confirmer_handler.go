@@ -533,6 +533,7 @@ func (h *BookingConfirmerHandler) UpdateCanceled(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
 		return
 	}
+	request.RefRequestStatusCode = "90"
 	cancelUser := funcs.GetUserEmpInfo(user.EmpID)
 	request.CanceledRequestEmpID = cancelUser.EmpID
 	request.CanceledRequestEmpName = cancelUser.FullName
