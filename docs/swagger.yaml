@@ -587,6 +587,8 @@ definitions:
     type: object
   models.VmsMasDriverLicenseUpdate:
     properties:
+      driver_certificate:
+        $ref: '#/definitions/models.VmsMasDriverCertificateRequest'
       driver_license_end_date:
         example: "2025-12-31T23:59:59Z"
         type: string
