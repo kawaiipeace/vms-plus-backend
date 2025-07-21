@@ -669,4 +669,13 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	if err := config.DB.Save(&request).Error; err != nil {
 		return
 	}
+
+	//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
+		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
+		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		return
+	}
 }
