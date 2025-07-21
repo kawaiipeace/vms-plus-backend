@@ -142,32 +142,33 @@ func (VmsMasDriverCertificateRequest) TableName() string {
 
 // VmsMasDriverResponse
 type VmsMasDriverResponse struct {
-	MasDriverUID                   string                      `gorm:"primaryKey;column:mas_driver_uid" json:"mas_driver_uid"`
-	DriverImage                    string                      `gorm:"column:driver_image" json:"driver_image" example:"https://example.com/driver_image.jpg"`
-	DriverName                     string                      `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
-	DriverNickname                 string                      `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
-	DriverContactNumber            string                      `gorm:"column:driver_contact_number" json:"driver_contact_number" example:"+1234567890"`
-	DriverIdentificationNo         string                      `gorm:"column:driver_identification_no" json:"driver_identification_no" example:"ID123456789"`
-	DriverBirthdate                time.Time                   `gorm:"column:driver_birthdate" json:"driver_birthdate" example:"1990-01-01T00:00:00Z"`
-	WorkType                       int                         `gorm:"column:work_type" json:"work_type" example:"1"`
-	ContractNo                     string                      `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
-	DriverDeptSapHire              string                      `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"CON123456"`
-	DriverDeptSapShortNameHire     string                      `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire" example:"HR"`
-	VendorName                     string                      `gorm:"column:vendor_name" json:"vendor_name" example:"VENDOR123"`
-	DriverDeptSapWork              string                      `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_short_work" example:"กยจ."`
-	DriverDeptSapShortNameWork     string                      `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
-	ApprovedJobDriverStartDate     time.Time                   `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00Z"`
-	ApprovedJobDriverEndDate       time.Time                   `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
-	DriverLicense                  VmsMasDriverLicenseResponse `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
-	DriverDocuments                []VmsMasDriverDocument      `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_documents"`
-	DriverAverageSatisfactionScore float64                     `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
-	DriverTotalSatisfactionReview  int                         `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
-	CreatedAt                      time.Time                   `gorm:"column:created_at" json:"-"`
-	CreatedBy                      string                      `gorm:"column:created_by" json:"-"`
-	UpdatedAt                      time.Time                   `gorm:"column:updated_at" json:"-"`
-	UpdatedBy                      string                      `gorm:"column:updated_by" json:"-"`
-	IsDeleted                      string                      `gorm:"column:is_deleted" json:"-"`
-	IsActive                       string                      `gorm:"column:is_active" json:"is_active"`
+	MasDriverUID                   string                          `gorm:"primaryKey;column:mas_driver_uid" json:"mas_driver_uid"`
+	DriverImage                    string                          `gorm:"column:driver_image" json:"driver_image" example:"https://example.com/driver_image.jpg"`
+	DriverName                     string                          `gorm:"column:driver_name" json:"driver_name" example:"John Doe"`
+	DriverNickname                 string                          `gorm:"column:driver_nickname" json:"driver_nickname" example:"Johnny"`
+	DriverContactNumber            string                          `gorm:"column:driver_contact_number" json:"driver_contact_number" example:"+1234567890"`
+	DriverIdentificationNo         string                          `gorm:"column:driver_identification_no" json:"driver_identification_no" example:"ID123456789"`
+	DriverBirthdate                time.Time                       `gorm:"column:driver_birthdate" json:"driver_birthdate" example:"1990-01-01T00:00:00Z"`
+	WorkType                       int                             `gorm:"column:work_type" json:"work_type" example:"1"`
+	ContractNo                     string                          `gorm:"column:contract_no" json:"contract_no" example:"CON123456"`
+	DriverDeptSapHire              string                          `gorm:"column:driver_dept_sap_hire" json:"driver_dept_sap_hire" example:"CON123456"`
+	DriverDeptSapShortNameHire     string                          `gorm:"column:driver_dept_sap_short_name_hire" json:"driver_dept_sap_short_name_hire" example:"HR"`
+	VendorName                     string                          `gorm:"column:vendor_name" json:"vendor_name" example:"VENDOR123"`
+	DriverDeptSapWork              string                          `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_short_work" example:"กยจ."`
+	DriverDeptSapShortNameWork     string                          `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work" example:"กยจ."`
+	ApprovedJobDriverStartDate     time.Time                       `gorm:"column:approved_job_driver_start_date" json:"approved_job_driver_start_date" example:"2023-01-01T00:00:00Z"`
+	ApprovedJobDriverEndDate       time.Time                       `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date" example:"2023-12-31T23:59:59Z"`
+	DriverLicense                  VmsMasDriverLicenseResponse     `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
+	DriverCertificate              VmsMasDriverCertificateResponse `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_certificate"`
+	DriverDocuments                []VmsMasDriverDocument          `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_documents"`
+	DriverAverageSatisfactionScore float64                         `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverTotalSatisfactionReview  int                             `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
+	CreatedAt                      time.Time                       `gorm:"column:created_at" json:"-"`
+	CreatedBy                      string                          `gorm:"column:created_by" json:"-"`
+	UpdatedAt                      time.Time                       `gorm:"column:updated_at" json:"-"`
+	UpdatedBy                      string                          `gorm:"column:updated_by" json:"-"`
+	IsDeleted                      string                          `gorm:"column:is_deleted" json:"-"`
+	IsActive                       string                          `gorm:"column:is_active" json:"is_active"`
 
 	IsReplacement         string             `gorm:"column:is_replacement" json:"is_replacement"`
 	ReplacementDriverUID  string             `gorm:"column:replaced_mas_driver_uid" json:"replacement_driver_uid"`
@@ -200,12 +201,15 @@ func (VmsMasDriverLicenseResponse) TableName() string {
 
 // VmsMasDriverCertificateResponse
 type VmsMasDriverCertificateResponse struct {
-	MasDriverCertificateUid      string       `gorm:"column:mas_driver_certificate_uid;primaryKey" json:"mas_driver_certificate_uid"`
-	MasDriverUID                 string       `gorm:"column:mas_driver_uid;type:uuid" json:"-"`
-	DriverCertificateImage       string       `gorm:"column:driver_certificate_image" json:"driver_certificate_image" example:"https://example.com/certificate_image.jpg"`
-	RefDriverCertificateTypeCode string       `gorm:"column:ref_driver_certificate_type_code" json:"ref_driver_certificate_type_code" example:"1"`
-	DriverCertificateIssueDate   TimeWithZone `gorm:"column:driver_certificate_issue_date" json:"driver_certificate_issue_date" example:"2023-01-01T00:00:00Z"`
-	DriverCertificateExpireDate  TimeWithZone `gorm:"column:driver_certificate_expire_date" json:"driver_certificate_expire_date" example:"2025-12-31T23:59:59Z"`
+	MasDriverCertificateUid string `gorm:"column:mas_driver_certificate_uid;primaryKey" json:"mas_driver_certificate_uid"`
+	MasDriverUID            string `gorm:"column:mas_driver_uid;type:uuid" json:"-"`
+	DriverCertificateNo     string `gorm:"column:driver_certificate_no" json:"driver_certificate_no" example:"12345678"`
+	DriverCertificateName   string `gorm:"column:driver_certificate_name" json:"driver_certificate_name" example:"Truck advance driver"`
+	//DriverCertificateImage       string       `gorm:"column:driver_certificate_image" json:"driver_certificate_image" example:"https://example.com/certificate_image.jpg"`
+	RefDriverCertificateTypeCode string                      `gorm:"column:ref_driver_certificate_type_code" json:"ref_driver_certificate_type_code" example:"1"`
+	DriverCertificateIssueDate   TimeWithZone                `gorm:"column:driver_certificate_issue_date" json:"driver_certificate_issue_date" example:"2023-01-01T00:00:00Z"`
+	DriverCertificateExpireDate  TimeWithZone                `gorm:"column:driver_certificate_expire_date" json:"driver_certificate_expire_date" example:"2025-12-31T23:59:59Z"`
+	RefDriverCertificateType     VmsRefDriverCertificateType `gorm:"foreignKey:RefDriverCertificateTypeCode;references:RefDriverCertificateTypeCode" json:"ref_driver_certificate_type"`
 }
 
 func (VmsMasDriverCertificateResponse) TableName() string {
@@ -264,6 +268,8 @@ type VmsMasDriverLicenseUpdate struct {
 
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy string    `gorm:"column:updated_by" json:"-"`
+
+	DriverCertificate VmsMasDriverCertificateRequest `gorm:"-" json:"driver_certificate"`
 }
 
 func (VmsMasDriverLicenseUpdate) TableName() string {

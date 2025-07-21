@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	"vms_plus_be/models"
 )
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -126,4 +127,22 @@ func ParseCSV(reader io.Reader) ([]map[string]string, error) {
 	}
 
 	return records, nil
+}
+
+func IsHoliday(date time.Time, holidays []models.VmsMasHolidays) bool {
+	// Check if the date is a weekend
+	if date.Weekday() == time.Saturday || date.Weekday() == time.Sunday {
+		return true
+	}
+
+	// Check if the date is in the holidays list
+	for _, holiday := range holidays {
+		if holiday.HolidaysDate.Time.Year() == date.Year() &&
+			holiday.HolidaysDate.Time.Month() == date.Month() &&
+			holiday.HolidaysDate.Time.Day() == date.Day() {
+			return true
+		}
+	}
+
+	return false
 }

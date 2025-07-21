@@ -510,24 +510,6 @@ func CheckMustPassStatus30(trnRequestUID string) {
 	}
 }
 
-func IsHoliday(date time.Time, holidays []models.VmsMasHolidays) bool {
-	// Check if the date is a weekend
-	if date.Weekday() == time.Saturday || date.Weekday() == time.Sunday {
-		return true
-	}
-
-	// Check if the date is in the holidays list
-	for _, holiday := range holidays {
-		if holiday.HolidaysDate.Time.Year() == date.Year() &&
-			holiday.HolidaysDate.Time.Month() == date.Month() &&
-			holiday.HolidaysDate.Time.Day() == date.Day() {
-			return true
-		}
-	}
-
-	return false
-}
-
 func CheckMustPassStatus40(trnRequestUID string) {
 	var exists bool
 	err := config.DB.
@@ -551,61 +533,7 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			Update("ref_request_status_code", "40").Error; err != nil {
 			return
 		}
-
-		request := models.VmsTrnRequestApprovedWithRecieiveKey{
-			HandoverUID:              uuid.New().String(),
-			TrnRequestUID:            trnRequestUID,
-			ReceiverType:             0,
-			CreatedBy:                "system",
-			CreatedAt:                time.Now(),
-			UpdatedBy:                "system",
-			UpdatedAt:                time.Now(),
-			ReceivedKeyStartDatetime: models.TimeWithZone{Time: time.Now()},
-			ReceivedKeyEndDatetime:   models.TimeWithZone{Time: time.Now()},
-			ReceivedKeyPlace:         "-",
-		}
-		var requestDetail struct {
-			MasCarpoolUID        string
-			ReserveEndDatetime   time.Time
-			ReserveStartDatetime time.Time
-		}
-
-		if err := config.DB.Table("vms_trn_request").
-			Where("trn_request_uid = ?", trnRequestUID).Select("mas_carpool_uid, reserve_end_datetime, reserve_start_datetime").Scan(&requestDetail).Error; err != nil {
-			return
-		}
-		//ReceivedKeyPlace = carpool_contact_place
-		var carpoolContactPlace string
-		if err := config.DB.Table("vms_mas_carpool").
-			Select("contact_place").
-			Where("mas_carpool_uid = ?", requestDetail.MasCarpoolUID).
-			Scan(&carpoolContactPlace).Error; err == nil {
-			request.ReceivedKeyPlace = carpoolContactPlace
-		}
-		if requestDetail.ReserveStartDatetime.Hour() >= 12 {
-			date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
-			request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, date.Location())}
-			request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, date.Location())}
-		} else {
-			date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
-			var holidays []models.VmsMasHolidays
-			if err := config.DB.Table("vms_mas_holidays").
-				Select("mas_holidays_date").
-				Find(&holidays).Error; err != nil {
-				return
-			}
-			//find yesterday with not sunday,saturday,holiday
-			yesterday := date.AddDate(0, 0, -1)
-			for IsHoliday(yesterday, holidays) {
-				yesterday = yesterday.AddDate(0, 0, -1)
-			}
-			request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 8, 0, 0, 0, yesterday.Location())}
-			request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 12, 0, 0, 0, yesterday.Location())}
-		}
-		if err := config.DB.Save(&request).Error; err != nil {
-			return
-		}
-
+		SetReceivedKey(trnRequestUID, "")
 	}
 }
 
@@ -675,4 +603,70 @@ func IsAllowScoreButton(trnRequestUID string) bool {
 		return true
 	}
 	return false
+}
+
+// Test
+func SetReceivedKey(trnRequestUID string, handoverUID string) {
+	if handoverUID == "" {
+		handoverUID = uuid.New().String()
+	}
+	request := models.VmsTrnRequestApprovedWithRecieiveKey{
+		HandoverUID:              handoverUID,
+		TrnRequestUID:            trnRequestUID,
+		ReceiverType:             0,
+		CreatedBy:                "system",
+		CreatedAt:                time.Now(),
+		UpdatedBy:                "system",
+		UpdatedAt:                time.Now(),
+		ReceivedKeyStartDatetime: models.TimeWithZone{Time: time.Now()},
+		ReceivedKeyEndDatetime:   models.TimeWithZone{Time: time.Now()},
+		ReceivedKeyPlace:         "-",
+	}
+	var requestDetail struct {
+		MasCarpoolUID        string
+		ReserveEndDatetime   time.Time
+		ReserveStartDatetime time.Time
+	}
+
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).Select("mas_carpool_uid, reserve_end_datetime, reserve_start_datetime").Scan(&requestDetail).Error; err != nil {
+		return
+	}
+	//ReceivedKeyPlace = carpool_contact_place
+	var carpoolContactPlace string
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("carpool_contact_place").
+		Where("mas_carpool_uid = ?", requestDetail.MasCarpoolUID).
+		Scan(&carpoolContactPlace).Error; err == nil {
+		request.ReceivedKeyPlace = carpoolContactPlace
+	}
+	if requestDetail.ReserveStartDatetime.Hour() >= 12 {
+		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
+		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, time.Local)
+		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, time.Local)
+		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: date_8_00}
+		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: date_12_00}
+	} else {
+		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
+		var holidays []models.VmsMasHolidays
+		if err := config.DB.Table("vms_mas_holidays").
+			Select("mas_holidays_date").
+			Find(&holidays).Error; err != nil {
+			return
+		}
+		//find yesterday with not sunday,saturday,holiday
+		yesterday := date.AddDate(0, 0, -1)
+		for IsHoliday(yesterday, holidays) {
+			yesterday = yesterday.AddDate(0, 0, -1)
+		}
+
+		//settime yesterday to 8:00:00
+		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 8, 0, 0, 0, time.Local)
+		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 12, 0, 0, 0, time.Local)
+		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: yesterday_8_00}
+		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: yesterday_12_00}
+	}
+	if err := config.DB.Save(&request).Error; err != nil {
+		return
+	}
 }
