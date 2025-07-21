@@ -11521,6 +11521,9 @@ const docTemplate = `{
         "models.VmsMasDriverLicenseUpdate": {
             "type": "object",
             "properties": {
+                "driver_certificate": {
+                    "$ref": "#/definitions/models.VmsMasDriverCertificateRequest"
+                },
                 "driver_license_end_date": {
                     "type": "string",
                     "example": "2025-12-31T23:59:59Z"

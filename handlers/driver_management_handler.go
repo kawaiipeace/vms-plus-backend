@@ -314,7 +314,11 @@ func (h *DriverManagementHandler) GetDriver(c *gin.Context) {
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			return db.Order("driver_license_end_date DESC").Limit(1)
 		}).
+		Preload("DriverCertificate", func(db *gorm.DB) *gorm.DB {
+			return db.Order("driver_certificate_expire_date DESC").Limit(1)
+		}).
 		Preload("DriverLicense.DriverLicenseType").
+		Preload("DriverCertificate.RefDriverCertificateType").
 		Preload("DriverDocuments").
 		First(&driver).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Driver not found", "message": messages.ErrNotfound.Error()})
@@ -497,6 +501,28 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+
+	if request.DriverCertificate.DriverCertificateNo != "" {
+		//delete old driver certificate
+		if err := config.DB.Where("mas_driver_uid = ?", driver.MasDriverUID).Delete(&models.VmsMasDriverCertificateResponse{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		//create new driver certificate
+		request.DriverCertificate.MasDriverUID = driver.MasDriverUID
+		request.DriverCertificate.MasDriverCertificateUID = uuid.New().String()
+		request.DriverCertificate.CreatedAt = time.Now()
+		request.DriverCertificate.CreatedBy = user.EmpID
+		request.DriverCertificate.UpdatedAt = time.Now()
+		request.DriverCertificate.UpdatedBy = user.EmpID
+		request.DriverCertificate.IsDeleted = "0"
+		request.DriverCertificate.IsActive = "1"
+		if err := config.DB.Save(&request.DriverCertificate).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update: %v", err), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	}
+
 	/*
 		//if exists driver_license_no update else create
 		if err := config.DB.Where("driver_license_no = ?", request.DriverLicenseNo).First(&models.VmsMasDriverLicense{}).Error; err != nil {
@@ -527,6 +553,7 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	*/
 
 	funcs.CheckDriverIsActive(driver.MasDriverUID)
+
 	if err := config.DB.First(&result).
 		Order("updated_at desc").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch updated documents: %v", err), "message": messages.ErrInternalServer.Error()})
@@ -535,6 +562,7 @@ func (h *DriverManagementHandler) UpdateDriverLicense(c *gin.Context) {
 	result.DriverID = driver.DriverID
 	result.DriverName = driver.DriverName
 	result.DriverNickname = driver.DriverNickname
+	result.DriverCertificate = request.DriverCertificate
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
 }
 
