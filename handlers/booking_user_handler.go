@@ -52,7 +52,7 @@ func (h *BookingUserHandler) SetQueryStatusCanUpdate(query *gorm.DB) *gorm.DB {
 	return query.Where("ref_request_status_code in ('21','31','41') and is_deleted = '0'")
 }
 func (h *BookingUserHandler) SetQueryStatusCanCancel(query *gorm.DB) *gorm.DB {
-	return query.Where("ref_request_status_code in ('20','21','31','30','41') and is_deleted = '0'")
+	return query.Where("ref_request_status_code in ('20','21','31','30','40','41') and is_deleted = '0'")
 }
 
 // CreateRequest godoc

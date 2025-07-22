@@ -226,7 +226,7 @@ func (h *CarpoolManagementHandler) CreateCarpoolVehicle(c *gin.Context) {
 		return
 	}
 
-	//update vms_mas_department set is_in_carpool='1'
+	//update mas_vehicle_department set is_in_carpool='1'
 	masVehicleDepartmentUIDs := make([]string, len(requests))
 	for i := range requests {
 		masVehicleDepartmentUIDs[i] = requests[i].MasVehicleDepartmentUID
@@ -328,7 +328,7 @@ func (h *CarpoolManagementHandler) SearchMasVehicles(c *gin.Context) {
 		",(select max(s.ref_vehicle_status_short_name) from vms_ref_vehicle_status s where s.ref_vehicle_status_code=d.ref_vehicle_status_code) ref_vehicle_status_name" +
 		",(select max(s.ref_fuel_type_name_th) from vms_ref_fuel_type s where s.ref_fuel_type_id=v.ref_fuel_type_id) fuel_type_name")
 	query = query.Model(&models.VmsMasVehicleCarpoolList{})
-	query = query.Where("v.is_deleted = '0'")
+	query = query.Where("v.is_deleted = ? AND v.ref_vehicle_status_code = ?", "0", "0")
 	query = query.Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid")
 	query = query.Where("not exists (select 1 from vms_mas_carpool_vehicle cv where cv.mas_vehicle_uid = v.mas_vehicle_uid and cv.is_deleted = '0')")
 	// Apply text search (VehicleBrandName OR VehicleLicensePlate)

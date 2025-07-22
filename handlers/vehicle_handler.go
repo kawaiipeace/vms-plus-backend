@@ -237,12 +237,23 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	var vehicles []models.VmsMasVehicleList
 	var total int64
 
+	var carpoolReadyUIDs []string
+	if err := config.DB.Table("vms_mas_carpool cp").Where("cp.is_active = '1' AND cp.is_deleted = '0'").
+		Where("(select count(*) from vms_mas_carpool_vehicle cpv where cpv.is_deleted='0' and cpv.mas_carpool_uid=cp.mas_carpool_uid) > 0 AND "+
+			"(select count(*) from vms_mas_carpool_approver cpa where cpa.is_deleted='0' and cpa.mas_carpool_uid=cp.mas_carpool_uid) > 0").
+		Pluck("mas_carpool_uid", &carpoolReadyUIDs).Error; err != nil {
+		fmt.Println("ready carpool error", err)
+		//return
+	}
+
 	query := config.DB.Table("vms_mas_vehicle v").Select("v.*,vd.vehicle_owner_dept_sap,vd.vehicle_pea_id,vd.fleet_card_no,cpv.mas_carpool_uid as carpool_uid,vi.vehicle_img_file vehicle_img,cp.carpool_name")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_department WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_carpool_vehicle WHERE is_deleted = '0' AND is_active = '1' ORDER BY mas_vehicle_uid, created_at DESC) cpv ON cpv.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = cpv.mas_carpool_uid")
 	query = query.Joins("LEFT JOIN (SELECT DISTINCT ON (mas_vehicle_uid) * FROM vms_mas_vehicle_img WHERE ref_vehicle_img_side_code = 1 ORDER BY mas_vehicle_uid, ref_vehicle_img_side_code) vi ON vi.mas_vehicle_uid = v.mas_vehicle_uid")
 	query = query.Where("v.mas_vehicle_uid IN (?) AND v.is_deleted = '0' AND v.is_active = '1'", masVehicleUIDs)
+	query = query.Where("cpv.mas_carpool_uid is null OR (cp.is_active = '1' AND cp.is_deleted = '0' AND cp.mas_carpool_uid IN (?))", carpoolReadyUIDs)
+
 	if searchText != "" {
 		query = query.Where("vehicle_brand_name ILIKE ? OR vehicle_model_name ILIKE ? OR v.vehicle_license_plate ILIKE ?", "%"+searchText+"%", "%"+searchText+"%", "%"+searchText+"%")
 	}
