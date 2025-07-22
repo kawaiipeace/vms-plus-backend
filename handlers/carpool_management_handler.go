@@ -804,11 +804,19 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete carpool approver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-	//update vms_mas_department set is_in_carpool='0'
+	//update mas_vehicle_department set is_in_carpool='0'
 	if err := config.DB.Table("vms_mas_vehicle_department").Where("mas_vehicle_uid IN (SELECT mas_vehicle_uid FROM vms_mas_carpool_vehicle WHERE mas_carpool_uid = ? AND is_deleted = ?)", request.MasCarpoolUID, "0").UpdateColumns(map[string]interface{}{
 		"is_in_carpool": "0",
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	//update vms_mas_driver set is_in_carpool='0'
+	if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
+		"is_in_carpool":   "0",
+		"mas_carpool_uid": nil,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_driver", "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	if err := config.DB.Model(&models.VmsMasCarpoolVehicle{}).Where("mas_carpool_uid = ?", request.MasCarpoolUID).UpdateColumns(map[string]interface{}{
