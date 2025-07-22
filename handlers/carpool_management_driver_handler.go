@@ -219,7 +219,10 @@ func (h *CarpoolManagementHandler) CreateCarpoolDriver(c *gin.Context) {
 		masDriverUIDs = append(masDriverUIDs, requests[i].MasDriverUID)
 	}
 	query := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid in (?)", masDriverUIDs).
-		Update("mas_carpool_uid", requests[0].MasCarpoolUID)
+		UpdateColumns(map[string]interface{}{
+			"mas_carpool_uid": requests[0].MasCarpoolUID,
+			"is_in_carpool":   "1",
+		})
 	if err := query.Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -270,6 +273,14 @@ func (h *CarpoolManagementHandler) DeleteCarpoolDriver(c *gin.Context) {
 		return
 	}
 
+	if err := config.DB.Model(&models.VmsMasDriver{}).Where("mas_driver_uid = ?", driver.MasDriverUID).UpdateColumns(map[string]interface{}{
+		"is_in_carpool":   "0",
+		"mas_carpool_uid": nil,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update vms_mas_department", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Carpool driver deleted successfully", "carpool_name": GetCarpoolName(driver.MasCarpoolUID)})
 }
 
@@ -299,7 +310,7 @@ func (h *CarpoolManagementHandler) SearchMasDrivers(c *gin.Context) {
 	query := h.SetQueryRoleDeptDriver(funcs.GetAuthenUser(c, h.Role), config.DB)
 	query = query.Table("vms_mas_driver d")
 	query = query.Model(&models.VmsMasDriver{})
-	query = query.Where("d.is_deleted = ?", "0")
+	query = query.Where("d.is_deleted = ? AND d.ref_driver_status_code = ?", "0", "1")
 	query = query.Where("not exists (select 1 from vms_mas_carpool_driver cd where cd.mas_driver_uid = d.mas_driver_uid and cd.is_deleted = '0')")
 
 	// Apply search filter
