@@ -208,7 +208,7 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "MasVehicleUID not found", "message": messages.ErrNotfound.Error()})
 			return
 		}
-		if vehicleCarpoolOrDeptSap.BureauDeptSap != "" {
+		if vehicleCarpoolOrDeptSap.BureauDeptSap != "" && vehicleCarpoolOrDeptSap.MasCarpoolUID == "" {
 			isDepartment = true
 		}
 		if vehicleCarpoolOrDeptSap.MasCarpoolUID != "" {
