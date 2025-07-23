@@ -425,9 +425,8 @@ func main() {
 	// Start server
 	port := strconv.Itoa(config.AppConfig.Port)
 	log.Println("Server started at " + config.AppConfig.Host + ":" + port)
-	log.Println(time.Now())
-	log.Println(time.Now().Location())
 
 	//funcs.SetReceivedKey("1e8b1ffa-d784-45e6-98b1-4f7620a1fc15", "52e23b1e-0b08-48f7-ad30-630a7f2cd6cd")
+
 	router.Run(config.AppConfig.Host + ":" + port)
 }
