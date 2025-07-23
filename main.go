@@ -1,432 +1,683 @@
-package main
+package funcs
 
 import (
-	"log"
 	"net/http"
-	"strconv"
+	"sort"
+	"strings"
 	"time"
 	"vms_plus_be/config"
-	_ "vms_plus_be/docs"
-	"vms_plus_be/funcs"
-	"vms_plus_be/handlers"
+	"vms_plus_be/messages"
+	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-// @title VMS_PLUS
-// @version 1.0
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name X-ApiKey
+var StatusNameMap = map[string]string{
+	"20": "รออนุมัติ",
+	"21": "ถูกตีกลับ",
+	"30": "รอตรวจสอบ",
+	"31": "ถูกตีกลับ",
+	"40": "รออนุมัติ",
+	"41": "ถูกตีกลับ",
+	"50": "รอรับกุญแจ",
+	"51": "รอรับยานพาหนะ",
+	"60": "เดินทาง",
+	"70": "รอตรวจสอบ",
+	"71": "คืนยานพาหนะไม่สำเร็จ",
+	"80": "เสร็จสิ้น",
+	"90": "ยกเลิกคำขอ",
+}
 
-// @securityDefinitions.apikey AuthorizationAuth
-// @Description Bearer [your Authorization]
-// @in header
-// @name Authorization
+func GetRequestNo(empID string) (string, error) {
+	requestNo := empID
 
-// @securityDefinitions.apikey ServiceKey
-// @in header
-// @name ServiceKey
+	return requestNo, nil
+}
 
-func main() {
-	config.InitConfig()
-	config.InitDB()
-	handlers.InitMinIO(config.AppConfig.MinIoEndPoint, config.AppConfig.MinIoAccessKey, config.AppConfig.MinIoSecretKey, true)
-	funcs.InitCronJob()
+func MenuRequests(statusMenuMap map[string]string, query *gorm.DB) ([]models.VmsTrnRequestSummary, error) {
+	var summary []models.VmsTrnRequestSummary
 
-	router := gin.Default()
-	router.SetTrustedProxies([]string{"192.168.1.1", "192.168.1.2"})
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},                                         // Allowed domains
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},              // Allowed methods
-		AllowHeaders:     []string{"Content-Type", "Authorization", "X-ApiKey"}, // Allowed headers
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,           // Allow cookies
-		MaxAge:           12 * time.Hour, // Cache preflight request
-	}))
+	// Group the request counts by statusMenuMap
+	groupedSummary := make(map[string]int)
+	for key := range statusMenuMap {
+		statusCodes := strings.Split(key, ",")
+		querySummary := query.Table("vms_trn_request").Session(&gorm.Session{})
+		var count int64
+		if err := querySummary.Where("vms_trn_request.ref_request_status_code IN ?", statusCodes).Count(&count).Error; err != nil {
+			return nil, err
+		}
+		groupedSummary[key] += int(count)
+	}
 
-	// Initialize handler
-	//LoginHandler
-	loginHandler := handlers.LoginHandler{}
-	router.POST("/api/login/request-otp", funcs.ApiKeyMiddleware(), loginHandler.RequestOTP)
-	router.POST("/api/login/verify-otp", funcs.ApiKeyMiddleware(), loginHandler.VerifyOTP)
-	router.POST("/api/login/refresh-token", funcs.ApiKeyMiddleware(), loginHandler.RefreshToken)
-	router.POST("/api/login/request-keycloak", funcs.ApiKeyMiddleware(), loginHandler.RequestKeyCloak)
-	router.POST("/api/login/authen-keycloak", funcs.ApiKeyMiddleware(), loginHandler.AuthenKeyCloak)
-	router.POST("/api/login/request-thaiid", funcs.ApiKeyMiddleware(), loginHandler.RequestThaiID)
-	router.POST("/api/login/authen-thaiid", funcs.ApiKeyMiddleware(), loginHandler.AuthenThaiID)
-	router.GET("/api/login/profile", funcs.ApiKeyAuthenMiddleware(), loginHandler.Profile)
-	router.GET("/api/logout", funcs.ApiKeyAuthenMiddleware(), loginHandler.Logout)
-
-	//VehicleHandler
-	vehicleHandler := handlers.VehicleHandler{Role: "*"}
-	router.GET("/api/vehicle/search", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchVehicles)
-	router.GET("/api/vehicle/search-booking", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchBookingVehicles)
-	router.GET("/api/vehicle/search-booking-carpool", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.SearchBookingVehiclesCarpool)
-	router.GET("/api/vehicle/types", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetTypes)
-	router.GET("/api/vehicle/departments", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetDepartments)
-	router.GET("/api/vehicle/:mas_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicle)
-	router.GET("/api/vehicle-info", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetVehicleInfo)
-	router.GET("/api/vehicle/car-types-by-detail", funcs.ApiKeyAuthenMiddleware(), vehicleHandler.GetCarTypeDetails)
-
-	//DriverHandler
-	driverHandler := handlers.DriverHandler{Role: "*"}
-	router.GET("/api/driver/search", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDrivers)
-	router.GET("/api/driver/search-booking", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetBookingDrivers)
-	router.GET("/api/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriver)
-	router.GET("/api/driver/search-other-dept", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetDriversOtherDept)
-	router.GET("/api/driver/work-type", funcs.ApiKeyAuthenMiddleware(), driverHandler.GetWorkType)
-
-	//BookingUserHandler
-	bookingUserHandler := handlers.BookingUserHandler{Role: "vehicle-user"}
-	router.GET("/api/booking-user/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.MenuRequests)
-	router.POST("/api/booking-user/create-request", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.CreateRequest)
-	router.GET("/api/booking-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.GetRequest)
-	router.PUT("/api/booking-user/update-vehicle-user", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateVehicleUser)
-	router.PUT("/api/booking-user/update-trip", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateTrip)
-	router.PUT("/api/booking-user/update-pickup", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdatePickup)
-	router.PUT("/api/booking-user/update-document", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateDocument)
-	router.PUT("/api/booking-user/update-cost", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateCost)
-	router.PUT("/api/booking-user/update-vehicle-type", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateVehicleType)
-	router.PUT("/api/booking-user/update-confirmer", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateConfirmer)
-	router.GET("/api/booking-user/search-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.SearchRequests)
-	router.PUT("/api/booking-user/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateCanceled)
-	router.PUT("/api/booking-user/update-resend", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateResend)
-
-	//BookingConfirmerHandler
-	bookingConfirmerHandler := handlers.BookingConfirmerHandler{Role: "level1-approval"}
-	router.GET("/api/booking-confirmer/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.MenuRequests)
-	router.GET("/api/booking-confirmer/mmenu-requests", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.MenuRequests)
-	router.GET("/api/booking-confirmer/search-requests", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.SearchRequests)
-	router.GET("/api/booking-confirmer/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.GetRequest)
-	router.PUT("/api/booking-confirmer/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateRejected)
-	router.PUT("/api/booking-confirmer/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateApproved)
-	router.PUT("/api/booking-confirmer/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateCanceled)
-
-	//BookingAdminHandler
-	bookinAdminHandler := handlers.BookingAdminHandler{Role: "admin-department,admin-carpool"}
-	router.GET("/api/booking-admin/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.MenuRequests)
-	router.GET("/api/booking-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.SearchRequests)
-	router.GET("/api/booking-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.GetRequest)
-	router.PUT("/api/booking-admin/update-sended-back", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateRejected)
-	router.PUT("/api/booking-admin/update-approved", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateApproved)
-	router.PUT("/api/booking-admin/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateCanceled)
-	router.PUT("/api/booking-admin/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateRejected)
-	router.PUT("/api/booking-admin/update-vehicle-user", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateVehicleUser)
-	router.PUT("/api/booking-admin/update-trip", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateTrip)
-	router.PUT("/api/booking-admin/update-pickup", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdatePickup)
-	router.PUT("/api/booking-admin/update-document", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateDocument)
-	router.PUT("/api/booking-admin/update-cost", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateCost)
-	router.PUT("/api/booking-admin/update-vehicle", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateVehicle)
-	router.PUT("/api/booking-admin/update-driver", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateDriver)
-
-	//BookingFinalHandler
-	bookingFinalHandler := handlers.BookingFinalHandler{Role: "approval-department,approval-carpool"}
-	router.GET("/api/booking-final/menu-requests", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.MenuRequests)
-	router.GET("/api/booking-final/search-requests", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.SearchRequests)
-	router.GET("/api/booking-final/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.GetRequest)
-	router.PUT("/api/booking-final/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateRejected)
-	router.PUT("/api/booking-final/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateApproved)
-	router.PUT("/api/booking-final/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateCanceled)
-
-	//ReceivedKeyUserHandler
-	receivedKeyUserHandler := handlers.ReceivedKeyUserHandler{Role: "vehicle-user"}
-	router.GET("/api/received-key-user/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.SearchRequests)
-	router.GET("/api/received-key-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.GetRequest)
-	router.PUT("/api/received-key-user/update-key-pickup-pea", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupPEA)
-	router.PUT("/api/received-key-user/update-key-pickup-outsider", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupOutSider)
-	router.PUT("/api/received-key-user/update-key-pickup-driver", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateKeyPickupDriver)
-	router.PUT("/api/received-key-user/update-canceled", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateCanceled)
-	router.PUT("/api/received-key-user/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyUserHandler.UpdateRecieivedKeyConfirmed)
-
-	//ReceivedKeyAdminHandler
-	receivedKeyAdminHandler := handlers.ReceivedKeyAdminHandler{Role: "admin-department,admin-carpool"}
-	router.GET("/api/received-key-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.SearchRequests)
-	router.GET("/api/received-key-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.GetRequest)
-	router.PUT("/api/received-key-admin/update-recieived-key", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateRecieivedKey)
-	router.PUT("/api/received-key-admin/update-key-pickup-pea", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateKeyPickupPEA)
-	router.PUT("/api/received-key-admin/update-key-pickup-outsider", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateKeyPickupOutSider)
-	router.PUT("/api/received-key-admin/update-key-pickup-driver", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateKeyPickupDriver)
-	router.PUT("/api/received-key-admin/update-canceled", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateCanceled)
-	router.PUT("/api/received-key-admin/update-recieived-key-detail", funcs.ApiKeyAuthenMiddleware(), receivedKeyAdminHandler.UpdateRecieivedKeyDetail)
-
-	//ReceivedKeyDriverHandler
-	receivedKeyDriverHandler := handlers.ReceivedKeyDriverHandler{Role: "driver"}
-	router.GET("/api/received-key-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.SearchRequests)
-	router.GET("/api/received-key-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.GetRequest)
-	router.PUT("/api/received-key-driver/update-recieived-key-confirmed", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.UpdateRecieivedKeyConfirmed)
-	router.GET("/api/booking-driver/menu-requests", funcs.ApiKeyAuthenMiddleware(), receivedKeyDriverHandler.MenuRequests)
-
-	//ReceivedVehicleUserHandler
-	receivedVehicleUserHandler := handlers.ReceivedVehicleUserHandler{Role: "vehicle-user"}
-	router.GET("/api/received-vehicle-user/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.SearchRequests)
-	router.GET("/api/received-vehicle-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.GetRequest)
-	router.PUT("/api/received-vehicle-user/received-vehicle", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.ReceivedVehicle)
-	router.GET("/api/received-vehicle-user/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleUserHandler.GetTravelCard)
-
-	//ReceivedVehicleAdminHandler
-	receivedVehicleAdminHandler := handlers.ReceivedVehicleAdminHandler{Role: "admin-department,admin-carpool"}
-	router.GET("/api/received-vehicle-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedVehicleAdminHandler.SearchRequests)
-	router.GET("/api/received-vehicle-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleAdminHandler.GetRequest)
-	router.PUT("/api/received-vehicle-admin/received-vehicle", funcs.ApiKeyAuthenMiddleware(), receivedVehicleAdminHandler.ReceivedVehicle)
-	router.GET("/api/received-vehicle-admin/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleAdminHandler.GetTravelCard)
-
-	//ReceivedVehicleDriverHandler
-	receivedVehicleDriverHandler := handlers.ReceivedVehicleDriverHandler{Role: "driver"}
-	router.GET("/api/received-vehicle-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), receivedVehicleDriverHandler.SearchRequests)
-	router.GET("/api/received-vehicle-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleDriverHandler.GetRequest)
-	router.PUT("/api/received-vehicle-driver/received-vehicle", funcs.ApiKeyAuthenMiddleware(), receivedVehicleDriverHandler.ReceivedVehicle)
-	router.GET("/api/received-vehicle-driver/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), receivedVehicleDriverHandler.GetTravelCard)
-
-	//VehicleInUseUserHandler
-	vehicleInUseUserHandler := handlers.VehicleInUseUserHandler{Role: "vehicle-user"}
-	router.GET("/api/vehicle-in-use-user/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.SearchRequests)
-	router.GET("/api/vehicle-in-use-user/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetRequest)
-	router.GET("/api/vehicle-in-use-user/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleTripDetails)
-	router.GET("/api/vehicle-in-use-user/travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleTripDetail)
-	router.POST("/api/vehicle-in-use-user/create-travel-detail", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.CreateVehicleTripDetail)
-	router.PUT("/api/vehicle-in-use-user/update-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateVehicleTripDetail)
-	router.DELETE("/api/vehicle-in-use-user/delete-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.DeleteVehicleTripDetail)
-	router.GET("/api/vehicle-in-use-user/add-fuel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleAddFuelDetails)
-	router.GET("/api/vehicle-in-use-user/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetVehicleAddFuelDetail)
-	router.POST("/api/vehicle-in-use-user/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.CreateVehicleAddFuel)
-	router.PUT("/api/vehicle-in-use-user/update-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateVehicleAddFuel)
-	router.DELETE("/api/vehicle-in-use-user/delete-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.DeleteVehicleAddFuel)
-	router.GET("/api/vehicle-in-use-user/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.GetTravelCard)
-	router.PUT("/api/vehicle-in-use-user/returned-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.ReturnedVehicle)
-	router.PUT("/api/vehicle-in-use-user/update-satisfaction-survey/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseUserHandler.UpdateSatisfactionSurvey)
-
-	//VehicleInUseAdminHandler
-	vehicleInUseAdminHandler := handlers.VehicleInUseAdminHandler{Role: "admin-department,admin-carpool"}
-	router.GET("/api/vehicle-in-use-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.SearchRequests)
-	router.GET("/api/vehicle-in-use-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetRequest)
-	router.GET("/api/vehicle-in-use-admin/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetVehicleTripDetails)
-	router.GET("/api/vehicle-in-use-admin/travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetVehicleTripDetail)
-	router.POST("/api/vehicle-in-use-admin/create-travel-detail", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.CreateVehicleTripDetail)
-	router.PUT("/api/vehicle-in-use-admin/update-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.UpdateVehicleTripDetail)
-	router.DELETE("/api/vehicle-in-use-admin/delete-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.DeleteVehicleTripDetail)
-	router.GET("/api/vehicle-in-use-admin/add-fuel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetVehicleAddFuelDetails)
-	router.GET("/api/vehicle-in-use-admin/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetVehicleAddFuelDetail)
-	router.POST("/api/vehicle-in-use-admin/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.CreateVehicleAddFuel)
-	router.PUT("/api/vehicle-in-use-admin/update-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.UpdateVehicleAddFuel)
-	router.DELETE("/api/vehicle-in-use-admin/delete-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.DeleteVehicleAddFuel)
-	router.GET("/api/vehicle-in-use-admin/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.GetTravelCard)
-	router.PUT("/api/vehicle-in-use-admin/returned-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.ReturnedVehicle)
-	router.PUT("/api/vehicle-in-use-admin/update-received-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.UpdateReceivedVehicle)
-	router.PUT("/api/vehicle-in-use-admin/update-received-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInUseAdminHandler.UpdateReceivedVehicleImages)
-
-	//VehicleInUseDriverHandler
-	vehicleInUseDriverHandler := handlers.VehicleInUseDriverHandler{Role: "driver,vehicle-user,admin-department,admin-carpool"}
-	router.GET("/api/vehicle-in-use-driver/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.SearchRequests)
-	router.GET("/api/vehicle-in-use-driver/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetRequest)
-	router.GET("/api/vehicle-in-use-driver/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetVehicleTripDetails)
-	router.GET("/api/vehicle-in-use-driver/travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetVehicleTripDetail)
-	router.POST("/api/vehicle-in-use-driver/create-travel-detail", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.CreateVehicleTripDetail)
-	router.PUT("/api/vehicle-in-use-driver/update-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.UpdateVehicleTripDetail)
-	router.DELETE("/api/vehicle-in-use-driver/delete-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.DeleteVehicleTripDetail)
-	router.GET("/api/vehicle-in-use-driver/add-fuel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetVehicleAddFuelDetails)
-	router.GET("/api/vehicle-in-use-driver/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetVehicleAddFuelDetail)
-	router.POST("/api/vehicle-in-use-driver/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.CreateVehicleAddFuel)
-	router.PUT("/api/vehicle-in-use-driver/update-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.UpdateVehicleAddFuel)
-	router.DELETE("/api/vehicle-in-use-driver/delete-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.DeleteVehicleAddFuel)
-	router.GET("/api/vehicle-in-use-driver/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.GetTravelCard)
-	router.PUT("/api/vehicle-in-use-driver/returned-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.ReturnedVehicle)
-	router.PUT("/api/vehicle-in-use-driver/update-received-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.UpdateReceivedVehicle)
-	router.PUT("/api/vehicle-in-use-driver/update-received-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInUseDriverHandler.UpdateReceivedVehicleImages)
-
-	//VehicleInspectionAdminHandler
-	vehicleInspectionAdminHandler := handlers.VehicleInspectionAdminHandler{Role: "admin-department,admin-carpool"}
-	router.GET("/api/vehicle-inspection-admin/search-requests", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.SearchRequests)
-	router.GET("/api/vehicle-inspection-admin/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetRequest)
-	router.GET("/api/vehicle-inspection-admin/travel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetVehicleTripDetails)
-	router.GET("/api/vehicle-inspection-admin/travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetVehicleTripDetail)
-	router.POST("/api/vehicle-inspection-admin/create-travel-detail", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.CreateVehicleTripDetail)
-	router.PUT("/api/vehicle-inspection-admin/update-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateVehicleTripDetail)
-	router.DELETE("/api/vehicle-inspection-admin/delete-travel-detail/:trn_trip_detail_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.DeleteVehicleTripDetail)
-	router.GET("/api/vehicle-inspection-admin/add-fuel-details/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetVehicleAddFuelDetails)
-	router.GET("/api/vehicle-inspection-admin/add-fuel-detail/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetVehicleAddFuelDetail)
-	router.POST("/api/vehicle-inspection-admin/create-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.CreateVehicleAddFuel)
-	router.PUT("/api/vehicle-inspection-admin/update-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateVehicleAddFuel)
-	router.DELETE("/api/vehicle-inspection-admin/delete-add-fuel/:trn_add_fuel_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.DeleteVehicleAddFuel)
-	router.GET("/api/vehicle-inspection-admin/travel-card/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetTravelCard)
-	router.PUT("/api/vehicle-inspection-admin/update-returned-vehicle", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateReturnedVehicle)
-	router.PUT("/api/vehicle-inspection-admin/update-returned-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateReturnedVehicleImages)
-	router.GET("/api/vehicle-inspection-admin/satisfaction-survey/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.GetSatisfactionSurvey)
-	router.PUT("/api/vehicle-inspection-admin/update-rejected", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateRejected)
-	router.PUT("/api/vehicle-inspection-admin/update-accepted", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateAccepted)
-	router.PUT("/api/vehicle-inspection-admin/update-inspect-vehicle-images", funcs.ApiKeyAuthenMiddleware(), vehicleInspectionAdminHandler.UpdateInspectVehicleImages)
-
-	//VehicleManagementHandler
-	vehicleManagementHandler := handlers.VehicleManagementHandler{Role: "admin-super,admin-region,admin-department"}
-	router.GET("/api/vehicle-management/search", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.SearchVehicles)
-	router.PUT("/api/vehicle-management/update-vehicle-is-active", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.UpdateVehicleIsActive)
-	router.GET("/api/vehicle-management/timeline", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.GetVehicleTimeLine)
-	router.POST("/api/vehicle-management/report-trip-detail", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.ReportTripDetail)
-	router.POST("/api/vehicle-management/report-add-fuel", funcs.ApiKeyAuthenMiddleware(), vehicleManagementHandler.ReportAddFuel)
-
-	//DriverManagementHandler
-	driverManagementHandler := handlers.DriverManagementHandler{Role: "admin-super,admin-region,admin-department"}
-	router.GET("/api/driver-management/search", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.SearchDrivers)
-	router.POST("/api/driver-management/create-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.CreateDriver)
-	router.GET("/api/driver-management/driver/:mas_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriver)
-	router.PUT("/api/driver-management/update-driver-detail", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverDetail)
-	router.PUT("/api/driver-management/update-driver-contract", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverContract)
-	router.PUT("/api/driver-management/update-driver-license", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverLicense)
-	router.PUT("/api/driver-management/update-driver-documents", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverDocuments)
-	router.PUT("/api/driver-management/update-driver-leave-status", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverLeaveStatus)
-	router.PUT("/api/driver-management/update-driver-is-active", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverIsActive)
-	router.DELETE("/api/driver-management/delete-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.DeleteDriver)
-	router.PUT("/api/driver-management/update-driver-layoff-status", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverLayoffStatus)
-	router.PUT("/api/driver-management/update-driver-resign-status", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.UpdateDriverResignStatus)
-	router.GET("/api/driver-management/replacement-drivers", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetReplacementDrivers)
-	router.GET("/api/driver-management/timeline", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriverTimeLine)
-	router.POST("/api/driver-management/import-driver", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.ImportDriver)
-	router.POST("/api/driver-management/work-report", funcs.ApiKeyAuthenMiddleware(), driverManagementHandler.GetDriverWorkReport)
-
-	//DriverLicenseUserHandler
-	driverLicenseUserHandler := handlers.DriverLicenseUserHandler{Role: "vehicle-user"}
-	router.GET("/api/driver-license-user/card", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.GetLicenseCard)
-	router.POST("/api/driver-license-user/create-license-annual", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.CreateDriverLicenseAnnual)
-	router.GET("/api/driver-license-user/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.GetDriverLicenseAnnual)
-	router.PUT("/api/driver-license-user/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.UpdateDriverLicenseAnnualCanceled)
-	router.PUT("/api/driver-license-user/resend-license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseUserHandler.ResendDriverLicenseAnnual)
-
-	//DriverLicenseConfirmerHandler
-	driverLicenseConfirmerHandler := handlers.DriverLicenseConfirmerHandler{Role: "level1-approval"}
-	router.GET("/api/driver-license-confirmer/search-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.SearchRequests)
-	router.GET("/api/driver-license-confirmer/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.GetDriverLicenseAnnual)
-	router.PUT("/api/driver-license-confirmer/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualCanceled)
-	router.PUT("/api/driver-license-confirmer/update-license-annual-confirmed", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualConfirmed)
-	router.PUT("/api/driver-license-confirmer/update-license-annual-rejected", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualRejected)
-	router.PUT("/api/driver-license-confirmer/update-license-annual-approver", funcs.ApiKeyAuthenMiddleware(), driverLicenseConfirmerHandler.UpdateDriverLicenseAnnualApprover)
-
-	//DriverLicenseApproverHandler
-	driverLicenseApproverHandler := handlers.DriverLicenseApproverHandler{Role: "license-approval"}
-	router.GET("/api/driver-license-approver/menu-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.MenuRequests)
-	router.GET("/api/driver-license-approver/search-requests", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.SearchRequests)
-	router.GET("/api/driver-license-approver/license-annual/:trn_request_annual_driver_uid", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.GetDriverLicenseAnnual)
-	router.PUT("/api/driver-license-approver/update-license-annual-canceled", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.UpdateDriverLicenseAnnualCanceled)
-	router.PUT("/api/driver-license-approver/update-license-annual-approved", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.UpdateDriverLicenseAnnualApproved)
-	router.PUT("/api/driver-license-approver/update-license-annual-rejected", funcs.ApiKeyAuthenMiddleware(), driverLicenseApproverHandler.UpdateDriverLicenseAnnualRejected)
-
-	//CarpoolManagementHandler
-	carpoolManagementHandler := handlers.CarpoolManagementHandler{Role: "admin-super,admin-region,admin-department"}
-	router.GET("/api/carpool-management/search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpools)
-	router.GET("/api/carpool-management/export", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.ExportCarpools)
-	router.GET("/api/carpool-management/check-carpool-name-is-exist", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CheckCarpoolNameIsExist)
-	router.POST("/api/carpool-management/create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpool)
-	router.GET("/api/carpool-management/carpool/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpool)
-	router.PUT("/api/carpool-management/update/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpool)
-	router.DELETE("/api/carpool-management/delete", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpool)
-	router.GET("/api/carpool-management/mas-department", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasDepartment)
-	router.GET("/api/carpool-management/mas-department/:carpool_type", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasDepartment)
-
-	router.GET("/api/carpool-management/admin-mas-search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchMasAdminUser)
-	router.GET("/api/carpool-management/admin-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolAdmin)
-	router.GET("/api/carpool-management/admin-detail/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolAdmin)
-	router.POST("/api/carpool-management/admin-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolAdmin)
-	router.PUT("/api/carpool-management/admin-update/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolAdmin)
-	router.DELETE("/api/carpool-management/admin-delete/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolAdmin)
-	router.PUT("/api/carpool-management/set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpool)
-	router.PUT("/api/carpool-management/admin-update-main-admin/:mas_carpool_admin_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolMainAdmin)
-
-	router.GET("/api/carpool-management/approver-mas-search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchMasApprovalUser)
-	router.GET("/api/carpool-management/approver-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolApprover)
-	router.GET("/api/carpool-management/approver-detail/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolApprover)
-	router.POST("/api/carpool-management/approver-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolApprover)
-	router.PUT("/api/carpool-management/approver-update/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolApprover)
-	router.DELETE("/api/carpool-management/approver-delete/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolApprover)
-	router.PUT("/api/carpool-management/approver-update-main-approver/:mas_carpool_approver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.UpdateCarpoolMainApprover)
-
-	router.GET("/api/carpool-management/vehicle-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolVehicle)
-	router.POST("/api/carpool-management/vehicle-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolVehicle)
-	router.PUT("/api/carpool-management/vehicle-set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpoolVehicle)
-	router.DELETE("/api/carpool-management/vehicle-delete/:mas_carpool_vehicle_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolVehicle)
-	router.GET("/api/carpool-management/vehicle-mas-search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchMasVehicles)
-	router.POST("/api/carpool-management/vehicle-mas-details", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasVehicleDetail)
-	router.GET("/api/carpool-management/vehicle-timeline/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolVehicleTimeLine)
-
-	router.GET("/api/carpool-management/driver-search/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchCarpoolDriver)
-	router.POST("/api/carpool-management/driver-create", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.CreateCarpoolDriver)
-	router.PUT("/api/carpool-management/driver-set-active", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SetActiveCarpoolDriver)
-	router.DELETE("/api/carpool-management/driver-delete/:mas_carpool_driver_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.DeleteCarpoolDriver)
-	router.GET("/api/carpool-management/driver-mas-search", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.SearchMasDrivers)
-	router.POST("/api/carpool-management/driver-mas-details", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetMasDriverDetails)
-	router.GET("/api/carpool-management/driver-timeline/:mas_carpool_uid", funcs.ApiKeyAuthenMiddleware(), carpoolManagementHandler.GetCarpoolDriverTimeLine)
-
-	//MasHandler
-	masHandler := handlers.MasHandler{}
-	router.GET("/api/mas/user-vehicle-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleUser)
-	router.GET("/api/mas/user-driver-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverUser)
-	router.GET("/api/mas/user-confirmer-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListConfirmerUser)
-	router.GET("/api/mas/user-admin-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListAdminDepartmentOrCarpoolUser)
-	router.GET("/api/mas/user-final-approval-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListFinalApprovalUser)
-	router.GET("/api/mas/user-received-key-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListReceivedKeyUser)
-	router.GET("/api/mas/user/:emp_id", funcs.ApiKeyAuthenMiddleware(), masHandler.GetUserEmp)
-	router.GET("/api/mas/satisfaction_survey_questions", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVmsMasSatisfactionSurveyQuestions)
-	router.GET("/api/mas/vehicle-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListVehicleDepartment)
-	router.GET("/api/mas/department-tree", funcs.ApiKeyAuthenMiddleware(), masHandler.GetDepartmentTree)
-	router.GET("/api/mas/driver-departments", funcs.ApiKeyAuthenMiddleware(), masHandler.ListDriverDepartment)
-	router.GET("/api/mas/user-confirmer-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListConfirmerLicenseUser)
-	router.GET("/api/mas/user-approval-license-users", funcs.ApiKeyAuthenMiddleware(), masHandler.ListApprovalLicenseUser)
-	router.GET("/api/mas/holidays", funcs.ApiKeyAuthenMiddleware(), masHandler.ListHoliday)
-
-	//RefHandler
-	refHandler := handlers.RefHandler{}
-	router.GET("/api/ref/cost-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCostType)
-	router.GET("/api/ref/cost-type/:code", funcs.ApiKeyAuthenMiddleware(), refHandler.GetCostType)
-	router.GET("/api/ref/request-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListRequestStatus)
-	router.GET("/api/ref/fuel-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListFuelType)
-	router.GET("/api/ref/oil-station-brand", funcs.ApiKeyAuthenMiddleware(), refHandler.ListOilStationBrand)
-	router.GET("/api/ref/vehicle-img-side", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleImgSide)
-	router.GET("/api/ref/payment-type-code", funcs.ApiKeyAuthenMiddleware(), refHandler.ListPaymentTypeCode)
-	router.GET("/api/ref/driver-other-use", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverOtherUse)
-	router.GET("/api/ref/driver-license-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverLicenseType)
-	router.GET("/api/ref/driver-certificate-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverCertificateType)
-	router.GET("/api/ref/carpool-choose-driver", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseDriver)
-	router.GET("/api/ref/carpool-choose-car", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCarpoolChooseCar)
-	router.GET("/api/ref/vehicle-key-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleKeyType)
-	router.GET("/api/ref/leave-time-type", funcs.ApiKeyAuthenMiddleware(), refHandler.ListLeaveTimeType)
-	router.GET("/api/ref/driver-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListDriverStatus)
-	router.GET("/api/ref/cost-center", funcs.ApiKeyAuthenMiddleware(), refHandler.ListCostCenter)
-	router.GET("/api/ref/vehicle-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListVehicleStatus)
-	router.GET("/api/ref/timeline-status", funcs.ApiKeyAuthenMiddleware(), refHandler.ListTimelineStatus)
-
-	//NotificationHandler
-	notificationHandler := handlers.NotificationHandler{}
-	router.GET("/api/notification", funcs.ApiKeyAuthenMiddleware(), notificationHandler.GetNotification)
-	router.PUT("/api/notification/read/:notification_uid", funcs.ApiKeyAuthenMiddleware(), notificationHandler.UpdateReadNotification)
-	//LogHandler
-	logHandler := handlers.LogHandler{}
-	router.GET("/api/log/request/:trn_request_uid", funcs.ApiKeyAuthenMiddleware(), logHandler.GetLogRequest)
-
-	//ServiceHandler
-	serviceHandler := handlers.ServiceHandler{}
-	router.GET("/api/service/vms-to-eems/:request_no", serviceHandler.GetVMSToEEMS)
-
-	//UploadHandler
-	uploadHandler := handlers.UploadHandler{}
-	router.POST("/api/upload", funcs.ApiKeyMiddleware(), uploadHandler.UploadFile)
-	router.GET("/api/upload/files/:bucket", uploadHandler.ListFiles)
-	router.GET("/api/files/:bucket/:file", uploadHandler.GetFile)
-	//Job
-	router.GET("/api/job/driver-check-active", func(c *gin.Context) {
-		funcs.JobDriversCheckActive()
-		c.JSON(http.StatusOK, gin.H{"message": "Job drivers checked successfully"})
+	// Build the summary from the grouped data
+	for key, count := range groupedSummary {
+		summary = append(summary, models.VmsTrnRequestSummary{
+			RefRequestStatusCode: key,
+			RefRequestStatusName: statusMenuMap[key],
+			Count:                count,
+		})
+	}
+	// Sort the summary by RefRequestStatusCode
+	sort.Slice(summary, func(i, j int) bool {
+		return summary[i].RefRequestStatusCode < summary[j].RefRequestStatusCode
 	})
+	return summary, nil
+}
 
-	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
-	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.PersistAuthorization(true)))
+func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnRequestResponse, error) {
+	id := c.Param("trn_request_uid")
+	var request models.VmsTrnRequestResponse
+	trnRequestUID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID", "message": messages.ErrInvalidUID.Error()})
+		return request, err
+	}
 
-	// Start server
-	port := strconv.Itoa(config.AppConfig.Port)
-	log.Println("Server started at " + config.AppConfig.Host + ":" + port)
+	if err := config.DB.
+		Select("vms_trn_request.*,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
+		Preload("MasVehicle.RefFuelType").
+		Preload("MasVehicle.VehicleDepartment",
+			func(db *gorm.DB) *gorm.DB {
+				return db.Select("*, fn_get_vehicle_distance_two_months(mas_vehicle_uid, ?) AS vehicle_distance,public.fn_get_oil_station_eng_by_fleetcard(fleet_card_no) as fleet_card_oil_stations", time.Now())
+			},
+		).
+		Preload("RefCostType").
+		Preload("MasDriver").
+		Preload("MasDriver.DriverLicense.DriverLicenseType").
+		Preload("RefRequestStatus").
+		Preload("RefTripType").
+		Preload("RefCostType").
+		First(&request, "vms_trn_request.trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{})
+		return request, err
+	}
+	if request.MasDriver.DriverBirthdate != (time.Time{}) {
+		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
+	}
+	var carpool models.VmsMasCarpoolCarBookingResponse
+	if err := config.DB.First(&carpool, "mas_carpool_uid = ?", request.MasCarpoolUID).Error; err == nil {
+		request.CarpoolName = carpool.CarpoolName
+		if carpool.RefCarpoolChooseCarID == 2 {
+			request.IsAdminChooseVehicle = "1"
+		}
+		if carpool.RefCarpoolChooseDriverID == 2 {
+			request.IsAdminChooseDriver = "1"
+			var count int64
+			vehicleUser, _ := userhub.GetUserInfo(request.VehicleUserEmpID)
+			query := config.DB.Raw(`SELECT count(mas_driver_uid) FROM fn_get_available_drivers_view (?, ?, ?, ?, ?) where mas_carpool_uid = ?`,
+				request.ReserveStartDatetime, request.ReserveEndDatetime, vehicleUser.BureauDeptSap, vehicleUser.BusinessArea, request.RefTripType.RefTripTypeCode, request.MasCarpoolUID)
+			if err := query.Scan(&count).Error; err == nil {
+				request.NumberOfAvailableDrivers = int(count)
+			}
+		}
+		if carpool.RefCarpoolChooseDriverID == 2 && request.IsPEAEmployeeDriver == "0" && request.MasCarpoolDriverUID == "" {
+			request.CanChooseDriver = true
+		}
+		if carpool.RefCarpoolChooseCarID == 2 && request.MasVehicleUID == "" {
+			request.CanChooseVehicle = true
+		}
 
-	funcs.SetReceivedKey("0354d193-9d0e-43a6-a87e-40684391ab4f", "69ccfbe8-8649-4b8c-9f57-c1b4dd728f67")
+	}
 
-	router.Run(config.AppConfig.Host + ":" + port)
+	request.VehicleUserImageUrl = GetEmpImage(request.VehicleUserEmpID)
+	request.ConfirmedRequestImageUrl = GetEmpImage(request.ConfirmedRequestEmpID)
+	request.DriverEmpImageUrl = GetEmpImage(request.DriverEmpID)
+
+	request.DriverImageURL = config.DefaultAvatarURL
+	request.CanCancelRequest = true
+	request.IsUseDriver = request.MasCarpoolDriverUID != ""
+	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
+
+	request.VehicleLicensePlate = request.MasVehicle.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceShort = request.MasVehicle.VehicleLicensePlateProvinceShort
+	request.VehicleLicensePlateProvinceFull = request.MasVehicle.VehicleLicensePlateProvinceFull
+	request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = GetDeptSAPShort(request.MasVehicle.VehicleDepartment.VehicleOwnerDeptSap)
+
+	var vehicleImgs []models.VmsMasVehicleImg
+	if err := config.DB.Where("mas_vehicle_uid = ?", request.MasVehicle.MasVehicleUID).Find(&vehicleImgs).Error; err == nil {
+		request.MasVehicle.VehicleImgs = make([]string, 0)
+		for _, img := range vehicleImgs {
+			request.MasVehicle.VehicleImgs = append(request.MasVehicle.VehicleImgs, img.VehicleImgFile)
+		}
+	}
+
+	//replace vehicle_owner_dept_short with carpool_name if in carpool
+	vehicleCarpoolName := ""
+	if err := config.DB.Table("vms_mas_carpool mc").
+		Joins("INNER JOIN vms_mas_carpool_vehicle mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_vehicle_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasVehicle.MasVehicleUID).
+		Select("mc.carpool_name").
+		Scan(&vehicleCarpoolName).Error; err == nil {
+		if vehicleCarpoolName != "" {
+			request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = vehicleCarpoolName
+			request.VehicleDepartmentDeptSapShort = vehicleCarpoolName
+			request.VehicleDepartmentDeptSapFull = vehicleCarpoolName
+		}
+	}
+	//replace vehicle_owner_dept_short with carpool_name if in carpool
+	driverCarpoolName := ""
+	if err := config.DB.Table("vms_mas_carpool mc").
+		Joins("INNER JOIN vms_mas_carpool_driver mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_driver_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasDriver.MasDriverUID).
+		Select("mc.carpool_name").
+		Scan(&driverCarpoolName).Error; err == nil {
+		if driverCarpoolName != "" {
+			request.MasDriver.VendorName = driverCarpoolName
+		}
+	}
+	if request.RefRequestStatusCode == "90" {
+		// Check VmsLogRequest
+		var logRequest models.VmsLogRequest
+		if err := config.DB.
+			Where("trn_request_uid = ? AND is_deleted = '0' AND ref_request_status_code = ?", request.TrnRequestUID, request.RefRequestStatusCode).
+			First(&logRequest).Error; err == nil {
+			request.CanceledRequestRole = logRequest.ActionByRole
+		}
+	}
+
+	return request, nil
+}
+
+func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnRequestVehicleInUseResponse, error) {
+	id := c.Param("trn_request_uid")
+	var request models.VmsTrnRequestVehicleInUseResponse
+	trnRequestUID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TrnRequestUID", "message": messages.ErrInvalidUID.Error()})
+		return request, err
+	}
+
+	if err := config.DB.
+		Preload("MasVehicle.RefFuelType").
+		Preload("MasVehicle.VehicleDepartment").
+		Preload("RefCostType").
+		Preload("MasDriver").
+		Preload("RefRequestStatus").
+		Preload("RequestVehicleType").
+		Preload("VehicleImagesReceived").
+		Preload("VehicleImagesReturned").
+		Preload("VehicleImageInspect").
+		Preload("ReceiverKeyTypeDetail").
+		Preload("RefTripType").
+		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
+		Select("vms_trn_request.*,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
+		First(&request, "vms_trn_request.trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{})
+		return request, err
+	}
+	if request.MasDriver.DriverBirthdate != (time.Time{}) {
+		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
+	}
+	request.ParkingPlace = request.MasVehicle.VehicleDepartment.ParkingPlace
+	request.DriverImageURL = config.DefaultAvatarURL
+	request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	request.CanCancelRequest = true
+	request.IsUseDriver = request.MasCarpoolDriverUID != ""
+	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
+	request.FleetCardNo = request.MasVehicle.VehicleDepartment.FleetCardNo
+	request.VehicleLicensePlate = request.MasVehicle.VehicleLicensePlate
+	request.VehicleLicensePlateProvinceShort = request.MasVehicle.VehicleLicensePlateProvinceShort
+	request.VehicleLicensePlateProvinceFull = request.MasVehicle.VehicleLicensePlateProvinceFull
+
+	// Get vehicle department details
+	if err := config.DB.Where("mas_vehicle_uid = ?", request.MasVehicle.MasVehicleUID).
+		Select("*,public.fn_get_oil_station_eng_by_fleetcard(fleet_card_no) as fleet_card_oil_stations").
+		Where("is_deleted = '0' AND is_active = '1'").
+		First(&request.MasVehicle.VehicleDepartment).Error; err != nil {
+
+	}
+	request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = GetDeptSAPShort(request.MasVehicle.VehicleDepartment.VehicleOwnerDeptSap)
+
+	if request.MasCarpoolUID != "" {
+		var carpoolAdmin models.VmsMasCarpoolAdmin
+		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasCarpoolUID).
+			Select("admin_emp_no,admin_emp_name,admin_dept_sap,admin_position,mobile_contact_number,internal_contact_number").
+			Order("is_main_admin DESC").
+			First(&carpoolAdmin).Error; err == nil {
+			request.MasVehicle.VehicleDepartment.VehicleUser.EmpID = carpoolAdmin.AdminEmpNo
+			request.MasVehicle.VehicleDepartment.VehicleUser.FullName = carpoolAdmin.AdminEmpName
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAP = carpoolAdmin.AdminDeptSap
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPFull = GetDeptSAPFull(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPShort = GetDeptSAPShort(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.ImageUrl = GetEmpImage(carpoolAdmin.AdminEmpNo)
+			request.MasVehicle.VehicleDepartment.VehicleUser.Position = carpoolAdmin.AdminPosition
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelMobile = carpoolAdmin.MobileContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.IsEmployee = true
+		}
+	}
+
+	request.MileUsed = request.MileEnd - request.MileStart
+	if err := config.DB.
+		Table("vms_trn_add_fuel").
+		Where("trn_request_uid = ? AND is_deleted = '0'", request.TrnRequestUID).
+		Count(&request.AddFuelsCount).Error; err != nil {
+		request.AddFuelsCount = 0
+	}
+	if err := config.DB.
+		Table("vms_trn_trip_detail").
+		Where("trn_request_uid = ? AND is_deleted = '0'", request.TrnRequestUID).
+		Count(&request.TripDetailsCount).Error; err != nil {
+		request.TripDetailsCount = 0
+	}
+	request.IsReturnOverDue = false
+	if time.Now().Truncate(24 * time.Hour).After(request.ReserveEndDatetime.Truncate(24 * time.Hour)) {
+		request.IsReturnOverDue = true
+	}
+
+	//VmsTrnSatisfactionSurveyAnswersResponse
+
+	var satisfactionSurveyAnswers []models.VmsTrnSatisfactionSurveyAnswersResponse
+	if err := config.DB.Table("vms_trn_satisfaction_survey_answers").
+		Where("trn_request_uid = ?", request.TrnRequestUID).
+		Find(&satisfactionSurveyAnswers).Error; err == nil {
+		for i := range request.SatisfactionSurveyAnswers {
+			for j := range satisfactionSurveyAnswers {
+				if request.SatisfactionSurveyAnswers[i].MasSatisfactionSurveyQuestionsUID == satisfactionSurveyAnswers[j].MasSatisfactionSurveyQuestionsUID {
+					request.SatisfactionSurveyAnswers[i].SurveyAnswer = satisfactionSurveyAnswers[j].SurveyAnswer
+				}
+			}
+
+		}
+	}
+	//replace vehicle_owner_dept_short with carpool_name if in carpool
+	vehicleCarpoolName := ""
+	if err := config.DB.Table("vms_mas_carpool mc").
+		Joins("INNER JOIN vms_mas_carpool_vehicle mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_vehicle_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasVehicle.MasVehicleUID).
+		Select("mc.carpool_name").
+		Scan(&vehicleCarpoolName).Error; err == nil {
+		if vehicleCarpoolName != "" {
+			request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = vehicleCarpoolName
+		}
+	}
+	//replace vehicle_owner_dept_short with carpool_name if in carpool
+	driverCarpoolName := ""
+	request.MasDriver.VendorName = request.MasDriver.DriverDeptSAPShort
+	if err := config.DB.Table("vms_mas_carpool mc").
+		Joins("INNER JOIN vms_mas_carpool_driver mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_driver_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasDriver.MasDriverUID).
+		Select("mc.carpool_name").
+		Scan(&driverCarpoolName).Error; err == nil {
+		if driverCarpoolName != "" {
+			request.MasDriver.VendorName = driverCarpoolName
+		}
+	}
+	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
+	if request.CanScoreButton {
+		request.CanPickupButton = false
+	} else {
+		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+	}
+	//c.JSON(http.StatusOK, request)
+	return request, nil
+}
+
+func GetAdminApprovalEmpIDs(trnRequestUID string) ([]string, error) {
+	var result struct {
+		MasCarpoolUID string
+		MasVehicleUID string
+	}
+	if err := config.DB.Table("vms_trn_request").
+		Select("mas_carpool_uid, mas_vehicle_uid").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Scan(&result).Error; err != nil {
+		return nil, err
+	}
+
+	var empIDs []string
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != DefaultUUID() {
+		if err := config.DB.Table("vms_mas_carpool_admin").
+			Select("admin_emp_no").
+			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Pluck("admin_emp_no", &empIDs).Error; err != nil {
+			return nil, err
+		}
+		return empIDs, nil
+	} else {
+		var bureauDeptSap string
+		request := userhub.ServiceListUserRequest{
+			ServiceCode:   "vms",
+			Search:        "",
+			Role:          "admin_approval",
+			BureauDeptSap: bureauDeptSap,
+			Limit:         100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			return nil, err
+		}
+		for _, list := range lists {
+			empIDs = append(empIDs, list.EmpID)
+		}
+		return empIDs, nil
+	}
+}
+
+func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
+	var result struct {
+		MasCarpoolUID string
+		MasVehicleUID string
+	}
+	if err := config.DB.Table("vms_trn_request").
+		Select("mas_carpool_uid, mas_vehicle_uid").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Scan(&result).Error; err != nil {
+		return nil, err
+	}
+
+	var empIDs []string
+	if result.MasCarpoolUID != "" && result.MasCarpoolUID != DefaultUUID() {
+		if err := config.DB.Table("vms_mas_carpool_approver").
+			Select("approver_emp_no").
+			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Pluck("approver_emp_no", &empIDs).Error; err != nil {
+			return nil, err
+		}
+		return empIDs, nil
+	} else {
+		var bureauDeptSap string
+		request := userhub.ServiceListUserRequest{
+			ServiceCode:   "vms",
+			Search:        "",
+			Role:          "final_approval",
+			BureauDeptSap: bureauDeptSap,
+			Limit:         100,
+		}
+		lists, err := userhub.GetUserList(request)
+		if err != nil {
+			return nil, err
+		}
+		for _, list := range lists {
+			empIDs = append(empIDs, list.EmpID)
+		}
+		return empIDs, nil
+	}
+}
+
+func GetProgressRequestStatusEmp(trnRequestUID, refRequestStatusCode, actionRoleName string) models.ProgressRequestStatusEmp {
+	var logRequest models.VmsLogRequest
+	if err := config.DB.
+		Where("trn_request_uid = ? AND ref_request_status_code = ? AND is_deleted = '0'",
+			trnRequestUID, refRequestStatusCode).
+		First(&logRequest).Error; err != nil {
+		return models.ProgressRequestStatusEmp{}
+	}
+	empUser := GetUserEmpInfo(logRequest.ActionByPersonalID)
+	progressRequestStatusEmp := models.ProgressRequestStatusEmp{
+		ActionRole:   actionRoleName,
+		EmpID:        empUser.EmpID,
+		EmpName:      empUser.FullName,
+		EmpPosition:  empUser.Position,
+		DeptSAP:      empUser.DeptSAP,
+		DeptSAPShort: empUser.DeptSAPShort,
+		DeptSAPFull:  empUser.DeptSAPFull,
+		PhoneNumber:  empUser.TelInternal,
+		MobileNumber: empUser.TelMobile,
+	}
+
+	return progressRequestStatusEmp
+}
+
+func UpdateVehicleMileage(trnRequestUID string, mileage int) error {
+	var masVehicleUID string
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Select("mas_vehicle_uid").
+		Scan(&masVehicleUID).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Table("vms_mas_vehicle_department").
+		Where("mas_vehicle_uid = ?", masVehicleUID).
+		Update("vehicle_mileage", mileage).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateVehicleParkingPlace(trnRequestUID string, parkingPlace string) error {
+	var masVehicleUID string
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Select("mas_vehicle_uid").
+		Scan(&masVehicleUID).Error; err != nil {
+		return err
+	}
+
+	if err := config.DB.Table("vms_mas_vehicle_department").
+		Where("mas_vehicle_uid = ?", masVehicleUID).
+		Update("parking_place", parkingPlace).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func CheckMustPassStatus30Department(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where(`
+			vms_trn_request.ref_request_status_code = '20' AND
+			vms_trn_request.mas_carpool_uid is null AND
+			vms_trn_request.trn_request_uid = ?`, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='30'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus30(trnRequestUID string) {
+	CheckMustPassStatus30Department(trnRequestUID)
+
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_30 = '1' AND
+        vms_trn_request.ref_request_status_code = '20' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='30'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus40(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_40 = '1' AND
+        vms_trn_request.ref_request_status_code = '30' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='40'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "40").Error; err != nil {
+			return
+		}
+		SetReceivedKey(trnRequestUID, "")
+	}
+}
+
+func CheckMustPassStatus50(trnRequestUID string) {
+	var exists bool
+	err := config.DB.
+		Table("vms_mas_carpool").
+		Select("1").
+		Joins("INNER JOIN vms_trn_request ON vms_trn_request.mas_carpool_uid = vms_mas_carpool.mas_carpool_uid").
+		Where(`
+        vms_mas_carpool.is_must_pass_status_50 = '1' AND
+        vms_trn_request.ref_request_status_code = '40' AND
+        vms_trn_request.trn_request_uid = ?
+    `, trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return
+	} else if exists {
+		//update vms_trn_request set ref_request_status_code='50'
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "50").Error; err != nil {
+			return
+		}
+	}
+}
+
+func CheckMustPassStatus(trnRequestUID string) {
+	CheckMustPassStatus30(trnRequestUID)
+	CheckMustPassStatus40(trnRequestUID)
+	CheckMustPassStatus50(trnRequestUID)
+}
+
+func IsAllowPickupButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code < '60'", trnRequestUID).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
+}
+
+func IsAllowScoreButton(trnRequestUID string) bool {
+	var exists bool
+	err := config.DB.
+		Table("vms_trn_request").
+		Select("1").
+		Where("trn_request_uid = ? AND ref_request_status_code >= '60' AND ref_request_status_code < '70' AND date(reserve_end_datetime) >= date(?)", trnRequestUID, time.Now()).
+		Limit(1).
+		Scan(&exists).Error
+
+	if err != nil {
+		return false
+	}
+	if exists {
+		return true
+	}
+	return false
+}
+
+// Test
+func SetReceivedKey(trnRequestUID string, handoverUID string) {
+	if handoverUID == "" {
+		handoverUID = uuid.New().String()
+	}
+	request := models.VmsTrnRequestApprovedWithRecieiveKey{
+		HandoverUID:              handoverUID,
+		TrnRequestUID:            trnRequestUID,
+		ReceiverType:             0,
+		CreatedBy:                "system",
+		CreatedAt:                time.Now(),
+		UpdatedBy:                "system",
+		UpdatedAt:                time.Now(),
+		ReceivedKeyStartDatetime: models.TimeWithZone{Time: time.Now()},
+		ReceivedKeyEndDatetime:   models.TimeWithZone{Time: time.Now()},
+		ReceivedKeyPlace:         "-",
+	}
+	var requestDetail struct {
+		MasCarpoolUID        string
+		ReserveEndDatetime   time.Time
+		ReserveStartDatetime time.Time
+	}
+
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).Select("mas_carpool_uid, reserve_end_datetime, reserve_start_datetime").Scan(&requestDetail).Error; err != nil {
+		return
+	}
+	//ReceivedKeyPlace = carpool_contact_place
+	var carpoolContactPlace string
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("carpool_contact_place").
+		Where("mas_carpool_uid = ?", requestDetail.MasCarpoolUID).
+		Scan(&carpoolContactPlace).Error; err == nil {
+		request.ReceivedKeyPlace = carpoolContactPlace
+	}
+	if requestDetail.ReserveStartDatetime.Hour() >= 12 {
+		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
+
+		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, time.UTC)
+		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 5, 0, 0, 0, time.UTC)
+		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: date_8_00}
+		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: date_12_00}
+	} else {
+		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
+		var holidays []models.VmsMasHolidays
+		if err := config.DB.Table("vms_mas_holidays").
+			Select("mas_holidays_date").
+			Find(&holidays).Error; err != nil {
+			return
+		}
+		//find yesterday with not sunday,saturday,holiday
+		yesterday := date.AddDate(0, 0, -1)
+		for IsHoliday(yesterday, holidays) {
+			yesterday = yesterday.AddDate(0, 0, -1)
+		}
+
+		//settime yesterday to 8:00:00
+
+		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 1, 0, 0, 0, time.UTC)
+		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 5, 0, 0, 0, time.UTC)
+		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: yesterday_8_00}
+		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: yesterday_12_00}
+	}
+	if err := config.DB.Save(&request).Error; err != nil {
+		return
+	}
+
+	//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", trnRequestUID).
+		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
+		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
+		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		return
+	}
 }
