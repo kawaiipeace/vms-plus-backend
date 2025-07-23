@@ -643,7 +643,10 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	if requestDetail.ReserveStartDatetime.Hour() >= 12 {
 		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
 		// convert to 8:00 at Bangkok
-		bangkokLoc, _ := time.LoadLocation("Asia/Bangkok")
+		bangkokLoc, err := time.LoadLocation("Asia/Bangkok")
+		if err != nil {
+			bangkokLoc = time.UTC // fallback to UTC if Bangkok location fails to load
+		}
 		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, bangkokLoc)
 		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, bangkokLoc)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: date_8_00}
@@ -663,7 +666,10 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		}
 
 		//settime yesterday to 8:00:00
-		bangkokLoc, _ := time.LoadLocation("Asia/Bangkok")
+		bangkokLoc, err := time.LoadLocation("Asia/Bangkok")
+		if err != nil {
+			bangkokLoc = time.UTC // fallback to UTC if Bangkok location fails to load
+		}
 		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 8, 0, 0, 0, bangkokLoc)
 		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 12, 0, 0, 0, bangkokLoc)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: yesterday_8_00}
