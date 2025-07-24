@@ -188,7 +188,8 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	date, _ := time.Parse("2006-01-02 15:04:05", startDate)
 	var drivers []models.VmsMasDriver
 	query := config.DB.Model(&models.VmsMasDriver{})
-	query = query.Select("vms_mas_driver.*, w_thismth.job_count, w_thismth.total_days")
+	query = query.Select("vms_mas_driver.*, w_thismth.job_count, w_thismth.total_days,mc.carpool_name")
+	query = query.Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_mas_driver.mas_carpool_uid")
 	query = query.Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = vms_mas_driver.driver_id AND w_thismth.is_deleted = ?", date.Year(), date.Month(), "0")
 	query = query.Where("vms_mas_driver.is_deleted = ? AND vms_mas_driver.is_replacement = ?", "0", "0")
 	query = query.Where("vms_mas_driver.mas_driver_uid IN (?)", masDriverUIDs)
@@ -255,6 +256,10 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 			drivers[i].WorkTypeName = "ค้างคืน"
 		case 2:
 			drivers[i].WorkTypeName = "ไป-กลับ"
+		}
+		drivers[i].VendorName = drivers[i].DriverDeptSAPShort
+		if drivers[i].CarpoolName != "" {
+			drivers[i].VendorName = drivers[i].CarpoolName
 		}
 	}
 
@@ -388,10 +393,13 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 		return
 	}
 	driver.Age = driver.CalculateAgeInYearsMonths()
-	if driver.WorkType == 1 {
+	switch driver.WorkType {
+	case 1:
 		driver.WorkTypeName = "ค้างคืน"
-	} else if driver.WorkType == 2 {
+	case 2:
 		driver.WorkTypeName = "ไป-กลับ"
+	default:
+		driver.WorkTypeName = "ไม่ระบุ"
 	}
 	driver.DriverDeptSAPShort = funcs.GetDeptSAPShort(driver.DriverDeptSAP)
 	driver.WorkCount = 4

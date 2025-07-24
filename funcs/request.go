@@ -161,6 +161,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	}
 	//replace vehicle_owner_dept_short with carpool_name if in carpool
 	driverCarpoolName := ""
+	request.MasDriver.VendorName = request.MasDriver.DriverDeptSAPShort
 	if err := config.DB.Table("vms_mas_carpool mc").
 		Joins("INNER JOIN vms_mas_carpool_driver mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_driver_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasDriver.MasDriverUID).
 		Select("mc.carpool_name").
