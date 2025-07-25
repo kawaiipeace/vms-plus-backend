@@ -174,7 +174,6 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	CanPickupButton           bool                                      `gorm:"-" json:"can_pickup_button"`
 	CanScoreButton            bool                                      `gorm:"-" json:"can_score_button"`
 	CanTravelCardButton       bool                                      `gorm:"-" json:"can_travel_card_button"`
-	TravelDetails             []VmsTrnTripDetailList                    `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUid" json:"-"`
 }
 
 func (VmsTrnRequestVehicleInUseResponse) TableName() string {
