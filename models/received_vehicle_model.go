@@ -45,8 +45,8 @@ func (VehicleImageReceived) TableName() string {
 // VmsTrnTravelCard
 type VmsTrnTravelCard struct {
 	TrnRequestUID string       `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid" example:"a7de5318-1e05-4511-abe7-8c1c6374ab29"`
-	StartDateTime TimeWithZone `gorm:"column:start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00Z"`
-	EndDateTime   TimeWithZone `gorm:"column:end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00Z"`
+	StartDateTime TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-02-16T08:30:00Z"`
+	EndDateTime   TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-02-16T09:30:00Z"`
 
 	VehicleLicensePlate              string `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
@@ -64,7 +64,7 @@ type VmsTrnTravelCard struct {
 	ApprovedRequestEmpName      string `gorm:"column:approved_request_emp_name" json:"approved_request_emp_name" example:"Jane Doe"`
 	ApprovedRequestDeptSAP      string `gorm:"column:approved_request_dept_sap" json:"approved_request_dept_sap" example:"Finance"`
 	ApprovedRequestDeptSAPShort string `gorm:"column:approved_request_dept_name_short" json:"approved_request_dept_sap_short" example:"Finance"`
-	ApprovedRequestDeptSAPFull  string `gorm:"column:approved_request_dept_name_full" json:"approved_request_dept_sap_full" example:"Finance"`
+	ApprovedRequestDeptSAPFull  string `gorm:"column:approved_request_dept_na_full" json:"approved_request_dept_sap_full" example:"Finance"`
 }
 
 func (VmsTrnTravelCard) TableName() string {

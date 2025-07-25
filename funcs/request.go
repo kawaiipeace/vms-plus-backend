@@ -706,6 +706,7 @@ func UpdateApproverRequest(trnRequestUID string) {
 		request.ApprovedRequestDatetime = models.TimeWithZone{Time: time.Now()}
 		request.UpdatedAt = time.Now()
 		request.UpdatedBy = "system"
+		request.RefRequestStatusCode = "50"
 
 		if err := config.DB.Save(&request).Error; err != nil {
 			return
