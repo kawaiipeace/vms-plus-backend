@@ -69,7 +69,7 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
 		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place,"+
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place,"+
 			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
