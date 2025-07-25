@@ -779,6 +779,8 @@ func (h *VehicleInUseDriverHandler) GetTravelCard(c *gin.Context) {
 		return
 	}
 	request.VehicleUserImageURL = funcs.GetEmpImage(request.VehicleUserEmpID)
+	request.ApprovedRequestDeptSAPShort = request.ApprovedRequestPosition + " " + request.ApprovedRequestDeptSAPShort
+
 	c.JSON(http.StatusOK, request)
 }
 
