@@ -242,15 +242,27 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 		Offset(offset)
 
 	if err := query.
-		Preload("DriverStatus").Debug().
+		Preload("DriverStatus").
+		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
+			// Use COALESCE to treat NULL driver_license_end_date as the earliest possible date for ordering
+			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC")
+		}).
+		Preload("DriverLicense.DriverLicenseType").
 		Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
 	}
 	for i := range drivers {
 		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
-		drivers[i].Status = "ว่าง"
 
+		//อายุเกิน 60 ปี (60 years old)
+		if drivers[i].DriverBirthdate.Before(time.Now().AddDate(-60, 0, 0)) {
+			drivers[i].Status = "อายุเกิน 60 ปี"
+			drivers[i].CanSelect = false
+		} else {
+			drivers[i].Status = "ว่าง"
+			drivers[i].CanSelect = true
+		}
 		switch drivers[i].WorkType {
 		case 1:
 			drivers[i].WorkTypeName = "ค้างคืน"
@@ -384,7 +396,8 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 	var driver models.VmsMasDriver
 	if err := config.DB.
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
-			return db.Order("driver_license_end_date DESC").Limit(1)
+			// Use COALESCE to treat NULL driver_license_end_date as the earliest possible date for ordering
+			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC")
 		}).
 		Preload("DriverLicense.DriverLicenseType").
 		Preload("DriverStatus").

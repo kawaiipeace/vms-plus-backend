@@ -44,6 +44,7 @@ type VmsMasDriver struct {
 	DriverLicense                  VmsMasDriverLicense   `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	VendorName                     string                `gorm:"column:vendor_name" json:"vendor_name"`
 	CarpoolName                    string                `gorm:"column:carpool_name" json:"carpool_name"`
+	CanSelect                      bool                  `gorm:"-" json:"can_select"`
 	//remove driver_vender
 }
 
