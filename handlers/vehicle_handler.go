@@ -80,8 +80,8 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN vms_mas_vehicle_department vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Where("v.is_deleted = '0'")
 	query = query.Where("vd.ref_vehicle_status_code = '0' and vd.is_deleted = '0' and vd.is_active = '1'")
-	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba = ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))",
-		user.BureauDeptSap, user.BusinessArea, ref_trip_type_code)
+	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba like ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))",
+		user.BureauDeptSap, user.BusinessArea[:1]+"%", ref_trip_type_code)
 	//ref_other_use_code = 2 -> ref_trip_type_code=1 ค้างแรม
 	//ref_other_use_code = 1 -> ref_trip_type_code=0 ไปกลับ
 

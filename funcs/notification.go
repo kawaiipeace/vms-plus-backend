@@ -100,8 +100,12 @@ func CreateRequestBookingNotification(trnRequestUID string) {
 			notifyEmpID = request.DriverEmpID
 		case "level1-approval":
 			notifyEmpID = request.ConfirmedRequestEmpID
-		case "approval-department":
+		case "admin-department":
 			notifyEmpID = request.ApprovedRequestEmpID
+		case "approval-department":
+			//TODO:get emp_id from department
+			//notifyEmpID = request.ApprovedRequestEmpID
+			notifyEmpID = ""
 		case "approval-carpool":
 			notifyEmpID = request.ApprovedRequestEmpID
 		}
@@ -308,7 +312,9 @@ func SendNotificationWorkD(empID, headline, subHeadline, content, url, deptSap, 
 }
 
 func SendNotificationSMS(empID, message string) {
-
+	if empID == "700001" {
+		return
+	}
 	userInfo, err := userhub.GetUserInfo(empID)
 	if err != nil {
 		fmt.Printf("Error getting user info: %v", err)

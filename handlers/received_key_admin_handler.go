@@ -72,7 +72,7 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request").
 		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid) parking_place ").
+			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place ").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 	query = query.Where("vms_trn_request.is_deleted = ?", "0")

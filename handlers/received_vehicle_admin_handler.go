@@ -70,7 +70,7 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request").
 		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select parking_place from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid) parking_place ").
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place ").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
@@ -346,12 +346,19 @@ func (h *ReceivedVehicleAdminHandler) GetTravelCard(c *gin.Context) {
 	var request models.VmsTrnTravelCard
 
 	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid")
+
 	if err := query.
 		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	request.VehicleUserImageURL = config.DefaultAvatarURL
+	request.VehicleUserImageURL = funcs.GetEmpImage(request.VehicleUserEmpID)
+	request.VehicleUserDeptSAPShort = request.VehicleUserPosition + " " + request.VehicleUserDeptSAPShort
+	request.ApprovedRequestDeptSAPShort = request.ApprovedRequestPosition + " " + request.ApprovedRequestDeptSAPShort
+
 	c.JSON(http.StatusOK, request)
 
 }

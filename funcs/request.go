@@ -161,6 +161,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	}
 	//replace vehicle_owner_dept_short with carpool_name if in carpool
 	driverCarpoolName := ""
+	request.MasDriver.VendorName = request.MasDriver.DriverDeptSAPShort
 	if err := config.DB.Table("vms_mas_carpool mc").
 		Joins("INNER JOIN vms_mas_carpool_driver mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_driver_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasDriver.MasDriverUID).
 		Select("mc.carpool_name").
@@ -204,7 +205,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("ReceiverKeyTypeDetail").
 		Preload("RefTripType").
 		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
-		Select("vms_trn_request.*,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+		Select("vms_trn_request.*,k.receiver_type,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
@@ -308,11 +309,24 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			request.MasDriver.VendorName = driverCarpoolName
 		}
 	}
-	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
-	if request.CanScoreButton {
-		request.CanPickupButton = false
+	if IsAllowScoreButton(request.TrnRequestUID) {
+		if request.TripDetailsCount > 0 {
+			request.CanScoreButton = true
+			request.CanPickupButton = false
+			request.CanTravelCardButton = false
+		} else {
+			request.CanScoreButton = false
+			request.CanPickupButton = false
+			request.CanTravelCardButton = true
+		}
+	} else if IsAllowPickupButton(request.TrnRequestUID) {
+		request.CanScoreButton = false
+		request.CanPickupButton = true
+		request.CanTravelCardButton = false
 	} else {
-		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+		request.CanScoreButton = false
+		request.CanPickupButton = false
+		request.CanTravelCardButton = false
 	}
 	//c.JSON(http.StatusOK, request)
 	return request, nil
@@ -376,6 +390,7 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		if err := config.DB.Table("vms_mas_carpool_approver").
 			Select("approver_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Order("is_main_approver DESC").
 			Pluck("approver_emp_no", &empIDs).Error; err != nil {
 			return nil, err
 		}
@@ -560,6 +575,8 @@ func CheckMustPassStatus50(trnRequestUID string) {
 			Update("ref_request_status_code", "50").Error; err != nil {
 			return
 		}
+		UpdateApproverRequest(trnRequestUID)
+		UpdateRecievedKeyUser(trnRequestUID)
 	}
 }
 
@@ -642,8 +659,9 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	}
 	if requestDetail.ReserveStartDatetime.Hour() >= 12 {
 		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
-		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, time.Local)
-		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, time.Local)
+
+		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, time.UTC)
+		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 5, 0, 0, 0, time.UTC)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: date_8_00}
 		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: date_12_00}
 	} else {
@@ -661,8 +679,9 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		}
 
 		//settime yesterday to 8:00:00
-		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 8, 0, 0, 0, time.Local)
-		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 12, 0, 0, 0, time.Local)
+
+		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 1, 0, 0, 0, time.UTC)
+		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 5, 0, 0, 0, time.UTC)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: yesterday_8_00}
 		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: yesterday_12_00}
 	}
@@ -676,6 +695,69 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
 		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
 		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		return
+	}
+}
+
+func UpdateApproverRequest(trnRequestUID string) {
+	empIDs, err := GetFinalApprovalEmpIDs(trnRequestUID)
+	if err != nil {
+		return
+	}
+	if len(empIDs) > 0 {
+		empUser := GetUserEmpInfo(empIDs[0])
+		var request models.VmsTrnRequestApproved
+		request.TrnRequestUID = trnRequestUID
+		request.ApprovedRequestEmpID = empUser.EmpID
+		request.ApprovedRequestEmpName = empUser.FullName
+		request.ApprovedRequestDeptSAP = empUser.DeptSAP
+		request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
+		request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
+		request.ApprovedRequestDeskPhone = empUser.TelInternal
+		request.ApprovedRequestMobilePhone = empUser.TelMobile
+		request.ApprovedRequestPosition = empUser.Position
+		request.ApprovedRequestDatetime = models.TimeWithZone{Time: time.Now()}
+		request.UpdatedAt = time.Now()
+		request.UpdatedBy = "system"
+		request.RefRequestStatusCode = "50"
+
+		if err := config.DB.Save(&request).Error; err != nil {
+			return
+		}
+	}
+
+}
+
+func UpdateRecievedKeyUser(trnRequestUID string) {
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		return
+	}
+	var request = models.VmsTrnReceivedKeyPEA{}
+	request.TrnRequestUID = trnRequestUID
+	if trnRequest.DriverEmpID[:1] == "D" {
+		request.ReceiverType = 1 // Driver
+		request.ReceiverPersonalId = trnRequest.DriverEmpID
+		request.ReceiverFullname = trnRequest.DriverEmpName
+		request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+		request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+		request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+		request.ReceiverPosition = trnRequest.DriverEmpPosition
+		request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+		request.ReceiverDeskPhone = trnRequest.DriverInternalContact
+	} else {
+		request.ReceiverType = 2 // PEA
+		empUser := GetUserEmpInfo(trnRequest.VehicleUserEmpID)
+		request.ReceiverPersonalId = empUser.EmpID
+		request.ReceiverFullname = empUser.FullName
+		request.ReceiverDeptSAP = empUser.DeptSAP
+		request.ReceiverDeptNameShort = empUser.DeptSAPShort
+		request.ReceiverDeptNameFull = empUser.DeptSAPFull
+		request.ReceiverPosition = empUser.Position
+		request.ReceiverMobilePhone = empUser.TelMobile
+		request.ReceiverDeskPhone = empUser.TelInternal
+	}
+	if err := config.DB.Save(&request).Error; err != nil {
 		return
 	}
 }

@@ -31,16 +31,17 @@ type VmsTrnRequestVehicleInUseList struct {
 	ReturnedVehicleDatetime TimeWithZone         `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime"`
 	ReturnedVehicleRemark   string               `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 
-	ParkingPlace      string `gorm:"column:parking_place" json:"parking_place"`
-	NextStartDatetime string `gorm:"-" json:"next_start_datetime"`
-	WorkDescription   string `gorm:"column:work_description" json:"work_description"`
-	CanPickupButton   bool   `gorm:"-" json:"can_pickup_button"`
-	CanScoreButton    bool   `gorm:"-" json:"can_score_button"`
+	ParkingPlace        string `gorm:"column:parking_place" json:"parking_place"`
+	NextStartDatetime   string `gorm:"-" json:"next_start_datetime"`
+	WorkDescription     string `gorm:"column:work_description" json:"work_description"`
+	CanPickupButton     bool   `gorm:"-" json:"can_pickup_button"`
+	CanScoreButton      bool   `gorm:"-" json:"can_score_button"`
+	CanTravelCardButton bool   `gorm:"-" json:"can_travel_card_button"`
 }
 
 // VmsTrnRequestVehicleInUseResponse
 type VmsTrnRequestVehicleInUseResponse struct {
-	TrnRequestUID            string `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
+	TrnRequestUID            string `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid"`
 	RequestNo                string `gorm:"column:request_no" json:"request_no"`
 	MasCarpoolUID            string `gorm:"column:mas_carpool_uid" json:"mas_carpool_uid"`
 	VehicleUserEmpID         string `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id" example:"990001"`
@@ -107,7 +108,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 
 	RefVehicleKeyTypeCode int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	ReceivedKeyDatetime   TimeWithZone         `gorm:"column:received_key_datetime" json:"received_key_datetime" example:"2025-02-16T08:00:00Z"`
-	ReceiverKeyType       int                  `gorm:"column:receiver_key_type" json:"receiver_key_type" example:"3"`
+	ReceiverKeyType       int                  `gorm:"column:receiver_type" json:"receiver_key_type" example:"3"`
 	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 
@@ -172,6 +173,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	SatisfactionSurveyAnswers []VmsTrnSatisfactionSurveyAnswersResponse `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"satisfaction_survey_answers"`
 	CanPickupButton           bool                                      `gorm:"-" json:"can_pickup_button"`
 	CanScoreButton            bool                                      `gorm:"-" json:"can_score_button"`
+	CanTravelCardButton       bool                                      `gorm:"-" json:"can_travel_card_button"`
 }
 
 func (VmsTrnRequestVehicleInUseResponse) TableName() string {

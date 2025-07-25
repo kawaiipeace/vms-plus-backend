@@ -409,6 +409,7 @@ type VmsMasCarpoolDriverDetail struct {
 	DriverLicenseEndDate           TimeWithZone `gorm:"column:driver_license_end_date" json:"driver_license_end_date"`
 	IsActive                       string       `gorm:"column:is_active" json:"is_active"`
 	VendorName                     string       `gorm:"column:vendor_name" json:"vendor_name"`
+	WorkType                       int          `gorm:"column:work_type" json:"work_type"`
 }
 
 func (d *VmsMasCarpoolDriverDetail) CalculateAgeInYearsMonths() string {

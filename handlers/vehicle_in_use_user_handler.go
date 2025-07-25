@@ -142,7 +142,7 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	query = query.Offset(offset).Limit(pageSizeInt)
-
+	query = query.Preload("TravelDetails")
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -150,11 +150,24 @@ func (h *VehicleInUseUserHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
-		requests[i].CanScoreButton = funcs.IsAllowScoreButton(requests[i].TrnRequestUid)
-		if requests[i].CanScoreButton {
-			requests[i].CanPickupButton = false
+		if funcs.IsAllowScoreButton(requests[i].TrnRequestUid) {
+			if len(requests[i].TravelDetails) > 0 {
+				requests[i].CanScoreButton = true
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = false
+			} else {
+				requests[i].CanScoreButton = false
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = true
+			}
+		} else if funcs.IsAllowPickupButton(requests[i].TrnRequestUid) {
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = true
+			requests[i].CanTravelCardButton = false
 		} else {
-			requests[i].CanPickupButton = funcs.IsAllowPickupButton(requests[i].TrnRequestUid)
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = false
+			requests[i].CanTravelCardButton = false
 		}
 	}
 
@@ -784,12 +797,17 @@ func (h *VehicleInUseUserHandler) GetTravelCard(c *gin.Context) {
 	var request models.VmsTrnTravelCard
 
 	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid")
 	if err := query.
 		First(&request, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	request.VehicleUserImageURL = config.DefaultAvatarURL
+	request.VehicleUserImageURL = funcs.GetEmpImage(request.VehicleUserEmpID)
+	request.VehicleUserDeptSAPShort = request.VehicleUserPosition + " " + request.VehicleUserDeptSAPShort
+	request.ApprovedRequestDeptSAPShort = request.ApprovedRequestPosition + " " + request.ApprovedRequestDeptSAPShort
 	c.JSON(http.StatusOK, request)
 }
 
