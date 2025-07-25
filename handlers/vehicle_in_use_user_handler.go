@@ -792,7 +792,7 @@ func (h *VehicleInUseUserHandler) GetTravelCard(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
-	request.VehicleUserImageURL = config.DefaultAvatarURL
+	request.VehicleUserImageURL = funcs.GetEmpImage(request.VehicleUserEmpID)
 	c.JSON(http.StatusOK, request)
 }
 

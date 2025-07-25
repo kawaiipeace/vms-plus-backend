@@ -377,6 +377,7 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		if err := config.DB.Table("vms_mas_carpool_approver").
 			Select("approver_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Order("is_main_approver DESC").
 			Pluck("approver_emp_no", &empIDs).Error; err != nil {
 			return nil, err
 		}
@@ -561,6 +562,7 @@ func CheckMustPassStatus50(trnRequestUID string) {
 			Update("ref_request_status_code", "50").Error; err != nil {
 			return
 		}
+		UpdateApproverRequest(trnRequestUID)
 		UpdateRecievedKeyUser(trnRequestUID)
 	}
 }
@@ -684,8 +686,35 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	}
 }
 
-func UpdateRecievedKeyUser(trnRequestUID string) {
+func UpdateApproverRequest(trnRequestUID string) {
+	empIDs, err := GetFinalApprovalEmpIDs(trnRequestUID)
+	if err != nil {
+		return
+	}
+	if len(empIDs) > 0 {
+		empUser := GetUserEmpInfo(empIDs[0])
+		var request models.VmsTrnRequestApproved
+		request.TrnRequestUID = trnRequestUID
+		request.ApprovedRequestEmpID = empUser.EmpID
+		request.ApprovedRequestEmpName = empUser.FullName
+		request.ApprovedRequestDeptSAP = empUser.DeptSAP
+		request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
+		request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
+		request.ApprovedRequestDeskPhone = empUser.TelInternal
+		request.ApprovedRequestMobilePhone = empUser.TelMobile
+		request.ApprovedRequestPosition = empUser.Position
+		request.ApprovedRequestDatetime = models.TimeWithZone{Time: time.Now()}
+		request.UpdatedAt = time.Now()
+		request.UpdatedBy = "system"
 
+		if err := config.DB.Save(&request).Error; err != nil {
+			return
+		}
+	}
+
+}
+
+func UpdateRecievedKeyUser(trnRequestUID string) {
 	var trnRequest models.VmsTrnRequestResponse
 	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		return
