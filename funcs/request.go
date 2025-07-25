@@ -309,11 +309,24 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			request.MasDriver.VendorName = driverCarpoolName
 		}
 	}
-	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
-	if request.CanScoreButton {
-		request.CanPickupButton = false
+	if IsAllowScoreButton(request.TrnRequestUID) {
+		if request.TripDetailsCount > 0 {
+			request.CanScoreButton = true
+			request.CanPickupButton = false
+			request.CanTravelCardButton = false
+		} else {
+			request.CanScoreButton = false
+			request.CanPickupButton = false
+			request.CanTravelCardButton = true
+		}
+	} else if IsAllowPickupButton(request.TrnRequestUID) {
+		request.CanScoreButton = false
+		request.CanPickupButton = true
+		request.CanTravelCardButton = false
 	} else {
-		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+		request.CanScoreButton = false
+		request.CanPickupButton = false
+		request.CanTravelCardButton = false
 	}
 	//c.JSON(http.StatusOK, request)
 	return request, nil

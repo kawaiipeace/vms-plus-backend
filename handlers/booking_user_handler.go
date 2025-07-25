@@ -389,7 +389,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	query = query.Offset(offset).Limit(pageSizeInt)
-
+	query = query.Preload("TravelDetails")
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
@@ -397,11 +397,25 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
-		requests[i].CanScoreButton = funcs.IsAllowScoreButton(requests[i].TrnRequestUid)
-		if requests[i].CanScoreButton {
-			requests[i].CanPickupButton = false
+
+		if funcs.IsAllowScoreButton(requests[i].TrnRequestUid) {
+			if len(requests[i].TravelDetails) > 0 {
+				requests[i].CanScoreButton = true
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = false
+			} else {
+				requests[i].CanScoreButton = false
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = true
+			}
+		} else if funcs.IsAllowPickupButton(requests[i].TrnRequestUid) {
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = true
+			requests[i].CanTravelCardButton = false
 		} else {
-			requests[i].CanPickupButton = funcs.IsAllowPickupButton(requests[i].TrnRequestUid)
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = false
+			requests[i].CanTravelCardButton = false
 		}
 	}
 
