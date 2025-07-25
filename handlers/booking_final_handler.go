@@ -483,7 +483,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 			return
 		}
 	}
-	h.UpdateRecievedKeyUser(request.TrnRequestUID)
+	funcs.UpdateRecievedKeyUser(request.TrnRequestUID)
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
 		"ผู้อนุมัติ อนุมัติคำขอแล้ว",
@@ -493,29 +493,6 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
-}
-func (h *BookingFinalHandler) UpdateRecievedKeyUser(trnRequestUID string) {
-
-	var trnRequest models.VmsTrnRequestResponse
-	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
-		return
-	}
-	var request = models.VmsTrnReceivedKeyPEA{}
-	request.TrnRequestUID = trnRequestUID
-	request.ReceiverType = 2 // PEA
-	empUser := funcs.GetUserEmpInfo(trnRequest.VehicleUserEmpID)
-	request.ReceiverPersonalId = empUser.EmpID
-	request.ReceiverFullname = empUser.FullName
-	request.ReceiverDeptSAP = empUser.DeptSAP
-	request.ReceiverDeptNameShort = empUser.DeptSAPShort
-	request.ReceiverDeptNameFull = empUser.DeptSAPFull
-	request.ReceiverPosition = empUser.Position
-	request.ReceiverMobilePhone = empUser.TelMobile
-	request.ReceiverDeskPhone = empUser.TelInternal
-
-	if err := config.DB.Save(&request).Error; err != nil {
-		return
-	}
 }
 
 // UpdateCanceled godoc

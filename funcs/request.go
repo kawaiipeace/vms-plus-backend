@@ -205,7 +205,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("ReceiverKeyTypeDetail").
 		Preload("RefTripType").
 		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
-		Select("vms_trn_request.*,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+		Select("vms_trn_request.*,k.receiver_type,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
@@ -561,6 +561,7 @@ func CheckMustPassStatus50(trnRequestUID string) {
 			Update("ref_request_status_code", "50").Error; err != nil {
 			return
 		}
+		UpdateRecievedKeyUser(trnRequestUID)
 	}
 }
 
@@ -679,6 +680,41 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
 		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
 		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		return
+	}
+}
+
+func UpdateRecievedKeyUser(trnRequestUID string) {
+
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		return
+	}
+	var request = models.VmsTrnReceivedKeyPEA{}
+	request.TrnRequestUID = trnRequestUID
+	if trnRequest.DriverEmpID[:1] == "D" {
+		request.ReceiverType = 1 // Driver
+		request.ReceiverPersonalId = trnRequest.DriverEmpID
+		request.ReceiverFullname = trnRequest.DriverEmpName
+		request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+		request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+		request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+		request.ReceiverPosition = trnRequest.DriverEmpPosition
+		request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+		request.ReceiverDeskPhone = trnRequest.DriverInternalContact
+	} else {
+		request.ReceiverType = 2 // PEA
+		empUser := GetUserEmpInfo(trnRequest.VehicleUserEmpID)
+		request.ReceiverPersonalId = empUser.EmpID
+		request.ReceiverFullname = empUser.FullName
+		request.ReceiverDeptSAP = empUser.DeptSAP
+		request.ReceiverDeptNameShort = empUser.DeptSAPShort
+		request.ReceiverDeptNameFull = empUser.DeptSAPFull
+		request.ReceiverPosition = empUser.Position
+		request.ReceiverMobilePhone = empUser.TelMobile
+		request.ReceiverDeskPhone = empUser.TelInternal
+	}
+	if err := config.DB.Save(&request).Error; err != nil {
 		return
 	}
 }

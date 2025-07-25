@@ -74,6 +74,7 @@ func (h *CarpoolManagementHandler) SearchCarpoolDriver(c *gin.Context) {
 			d.contract_no,
 			d.end_date,
 			d.vendor_name,
+			d.work_type,
 			l.driver_license_end_date,
 			l.driver_license_no
 	`).
