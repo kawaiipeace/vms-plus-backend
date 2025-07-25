@@ -397,6 +397,12 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		requests[i].CanScoreButton = funcs.IsAllowScoreButton(requests[i].TrnRequestUid)
+		if requests[i].CanScoreButton {
+			requests[i].CanPickupButton = false
+		} else {
+			requests[i].CanPickupButton = funcs.IsAllowPickupButton(requests[i].TrnRequestUid)
+		}
 	}
 
 	// Build the summary query
