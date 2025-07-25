@@ -427,6 +427,7 @@ func main() {
 	log.Println("Server started at " + config.AppConfig.Host + ":" + port)
 
 	//funcs.SetReceivedKey("0354d193-9d0e-43a6-a87e-40684391ab4f", "69ccfbe8-8649-4b8c-9f57-c1b4dd728f67")
-	funcs.UpdateRecievedKeyUser("c5c2d5d9-c576-467a-ab70-09acdda7558e")
+	//funcs.UpdateRecievedKeyUser("f5a31391-e38b-4752-9fb9-7a91df8ac2bd")
+	funcs.UpdateApproverRequest("f5a31391-e38b-4752-9fb9-7a91df8ac2bd")
 	router.Run(config.AppConfig.Host + ":" + port)
 }
