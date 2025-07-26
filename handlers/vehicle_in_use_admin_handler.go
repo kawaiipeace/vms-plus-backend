@@ -896,7 +896,7 @@ func (h *VehicleInUseAdminHandler) ReturnedVehicle(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"ส่งคืนกุญแจและยานพาหนะ",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
 			user.EmpID,
 			"admin-department",
 			"",

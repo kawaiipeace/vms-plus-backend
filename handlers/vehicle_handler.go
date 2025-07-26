@@ -192,16 +192,22 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	masVehicleUIDs := make([]string, 0)
 	masCarpoolUIDs := make([]string, 0)
 	adminChooseDriverMasCarpoolUIDs := make([]string, 0)
+	systemChooseDriverMasCarpoolUIDs := make([]string, 0)
 	adminChooseDriverMasVehicleUIDs := make([]string, 0)
+	systemChooseDriverMasVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
 		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
 			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 		} else {
 			masVehicleUIDs = append(masVehicleUIDs, vehicleCanBooking.MasVehicleUID)
 		}
-		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 || vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
+		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 {
 			adminChooseDriverMasCarpoolUIDs = append(adminChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 			adminChooseDriverMasVehicleUIDs = append(adminChooseDriverMasVehicleUIDs, vehicleCanBooking.MasVehicleUID)
+		}
+		if vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
+			systemChooseDriverMasCarpoolUIDs = append(systemChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
+			systemChooseDriverMasVehicleUIDs = append(systemChooseDriverMasVehicleUIDs, vehicleCanBooking.MasVehicleUID)
 		}
 	}
 
@@ -218,6 +224,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			carpools[i].IsAdminChooseDriver = true
 		} else {
 			carpools[i].IsAdminChooseDriver = false
+		}
+		if funcs.Contains(systemChooseDriverMasCarpoolUIDs, carpools[i].MasCarpoolUID) {
+			carpools[i].IsSystemChooseDriver = true
+		} else {
+			carpools[i].IsSystemChooseDriver = false
 		}
 	}
 
@@ -281,6 +292,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			vehicles[i].IsAdminChooseDriver = true
 		} else {
 			vehicles[i].IsAdminChooseDriver = false
+		}
+		if funcs.Contains(systemChooseDriverMasVehicleUIDs, vehicles[i].MasVehicleUID) {
+			vehicles[i].IsSystemChooseDriver = true
+		} else {
+			vehicles[i].IsSystemChooseDriver = false
 		}
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {

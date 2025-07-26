@@ -785,6 +785,7 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 	}
 	if err := config.DB.Model(&carpool).UpdateColumns(map[string]interface{}{
 		"is_deleted": "1",
+		"is_active":  "0",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {

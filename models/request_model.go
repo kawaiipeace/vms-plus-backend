@@ -63,6 +63,8 @@ type VmsTrnRequestList struct {
 	CanScoreButton                   bool                   `gorm:"-" json:"can_score_button"`
 	CanTravelCardButton              bool                   `gorm:"-" json:"can_travel_card_button"`
 	TravelDetails                    []VmsTrnTripDetailList `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUid" json:"-"`
+	TripType                         int                    `gorm:"column:ref_trip_type_code" json:"trip_type" example:"1"`
+	TripTypeName                     string                 `gorm:"-" json:"trip_type_name" example:"1"`
 }
 
 func (VmsTrnRequestList) TableName() string {

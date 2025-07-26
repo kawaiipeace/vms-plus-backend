@@ -495,12 +495,20 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 		row.AddCell().Value = report.VehicleDeptName
 		row.AddCell().Value = report.CarpoolName
 		row.AddCell().Value = report.VehicleCarTypeDetail
-		row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		if report.TripStartDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
+		}
+		if report.TripEndDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		}
 		row.AddCell().Value = report.TripDeparturePlace
 		row.AddCell().Value = report.TripDestinationPlace
-		row.AddCell().Value = strconv.FormatFloat(float64(report.TripStartMiles), 'f', 2, 64)
-		row.AddCell().Value = strconv.FormatFloat(float64(report.TripEndMiles), 'f', 2, 64)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.TripStartMiles), 'f', 0, 64)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.TripEndMiles), 'f', 0, 64)
 		row.AddCell().Value = report.TripDetail
 	}
 	// Add style to the header row (bold, background color)
@@ -640,9 +648,17 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
 		row.AddCell().Value = report.VehicleDeptName
 		row.AddCell().Value = report.CarpoolName
-		row.AddCell().Value = report.AddFuelDateTime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = strconv.FormatFloat(float64(report.Mile), 'f', 2, 64)
-		row.AddCell().Value = report.TaxInvoiceDate.Format("2006-01-02")
+		if report.AddFuelDateTime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.AddFuelDateTime.Format("2006-01-02 15:04:05")
+		}
+		row.AddCell().Value = strconv.FormatFloat(float64(report.Mile), 'f', 0, 64)
+		if report.TaxInvoiceDate.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.TaxInvoiceDate.Format("2006-01-02")
+		}
 		row.AddCell().Value = report.TaxInvoiceNo
 		row.AddCell().Value = strconv.FormatFloat(float64(report.PricePerLiter), 'f', 2, 64)
 		row.AddCell().Value = strconv.FormatFloat(float64(report.SumLiter), 'f', 2, 64)

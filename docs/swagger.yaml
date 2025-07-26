@@ -116,209 +116,6 @@ definitions:
     type: object
   models.VmsDriverLicenseAnnualCanceled:
     properties:
-      ref_vehicle_img_side_code:
-        example: 1
-        type: integer
-      vehicle_img_file:
-        example: http://vms.pea.co.th/side_image.jpg
-        type: string
-    type: object
-  models.VmsTrnAddFuel:
-    properties:
-      add_fuel_date_time:
-        example: "2025-03-26T08:00:00Z"
-        type: string
-      mas_vehicle_department_uid:
-        type: string
-      mas_vehicle_uid:
-        type: string
-      mile:
-        example: 12000
-        type: integer
-      price_per_liter:
-        example: 35.5
-        type: number
-      receipt_img:
-        example: http://vms.pea.co.th/receipt.jpg
-        type: string
-      ref_cost_type_code:
-        example: 1
-        type: integer
-      ref_fuel_type_id:
-        example: 1
-        type: integer
-      ref_oil_station_brand_id:
-        example: 1
-        type: integer
-      ref_payment_type_code:
-        example: 1
-        type: integer
-      sum_liter:
-        example: 50
-        type: number
-      sum_price:
-        example: 1872.5
-        type: number
-      tax_invoice_date:
-        example: "2025-03-26T08:00:00Z"
-        type: string
-      tax_invoice_no:
-        example: INV1234567890
-        type: string
-      trn_add_fuel_uid:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-      vehicle_license_plate:
-        type: string
-      vehicle_license_plate_province_full:
-        type: string
-      vehicle_license_plate_province_short:
-        type: string
-    type: object
-  models.VmsTrnAddFuelRequest:
-    properties:
-      mile:
-        example: 12000
-        type: integer
-      price_per_liter:
-        example: 35.5
-        type: number
-      receipt_img:
-        example: http://vms.pea.co.th/receipt.jpg
-        type: string
-      ref_fuel_type_id:
-        example: 1
-        type: integer
-      ref_oil_station_brand_id:
-        example: 1
-        type: integer
-      ref_payment_type_code:
-        example: 1
-        type: integer
-      sum_liter:
-        example: 50
-        type: number
-      sum_price:
-        example: 1872.5
-        type: number
-      tax_invoice_date:
-        example: "2025-03-26T08:00:00Z"
-        type: string
-      tax_invoice_no:
-        example: INV1234567890
-        type: string
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-    type: object
-  models.VmsTrnReceivedKeyDriver:
-    properties:
-      ref_request_status_code:
-        type: string
-      trn_request_uid:
-        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
-        type: string
-    type: object
-  models.VmsTrnReceivedKeyOutSider:
-    properties:
-      outsider_name:
-        example: John Doe
-        type: string
-      received_key_mobile_contact_number:
-        example: "0812345678"
-        type: string
-      received_key_remark:
-        example: OutSider received the key
-        type: string
-      ref_request_status_code:
-        type: string
-      trn_request_uid:
-        example: 3045a994-ba0b-431d-acf2-98768a9c5fc9
-        type: string
-    type: object
-  models.VmsTrnReceivedKeyPEA:
-    properties:
-      received_key_emp_id:
-        example: "1234567890"
-        type: string
-      received_key_internal_contact_number:
-        example: "5551234"
-        type: string
-      received_key_mobile_contact_number:
-        example: "0812345678"
-        type: string
-      received_key_remark:
-        example: Employee received the key
-        type: string
-      ref_request_status_code:
-        type: string
-      trn_request_uid:
-        example: 3 w
-        type: string
-    type: object
-  models.VmsTrnReceivedVehicle:
-    properties:
-      comment_on_received_vehicle:
-        example: Minor scratch on bumper
-        type: string
-      fuel_start:
-        example: 50
-        type: integer
-      mile_start:
-        example: 10000
-        type: integer
-      pickup_datetime:
-        example: "2025-03-26T14:30:00Z"
-        type: string
-      received_vehicle_dept_sap:
-        type: string
-      received_vehicle_dept_sap_full:
-        type: string
-      received_vehicle_dept_sap_short:
-        type: string
-      received_vehicle_emp_id:
-        type: string
-      received_vehicle_emp_name:
-        type: string
-      ref_request_status_code:
-        type: string
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-      vehicle_images:
-        items:
-          $ref: '#/definitions/models.VehicleImageReceived'
-        type: array
-    type: object
-  models.VmsTrnRequestApproved:
-    properties:
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-    type: object
-  models.VmsTrnRequestApprover:
-    properties:
-      approved_request_emp_id:
-        type: string
-      trn_request_uid:
-        example: 8bd09808-61fa-42fd-8a03-bf961b5678cd
-        type: string
-    type: object
-  models.VmsTrnRequestCanceled:
-    properties:
-      canceled_request_dept_sap:
-        type: string
-      canceled_request_dept_sap_full:
-        type: string
-      canceled_request_dept_sap_short:
-        type: string
-      canceled_request_emp_id:
-        type: string
-      canceled_request_emp_name:
-        type: string
       canceled_request_reason:
         example: Test Cancel
         type: string
@@ -1599,6 +1396,47 @@ info:
   title: VMS_PLUS
   version: "1.0"
 paths:
+  /api/booking-admin/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-admin
   /api/booking-admin/menu-requests:
     get:
       consumes:
@@ -1912,6 +1750,47 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-admin
+  /api/booking-confirmer/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-confirmer
   /api/booking-confirmer/menu-requests:
     get:
       consumes:
@@ -2076,6 +1955,47 @@ paths:
       summary: Summary booking requests by request status code
       tags:
       - Received-key-driver
+  /api/booking-final/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-final
   /api/booking-final/menu-requests:
     get:
       consumes:
@@ -2242,6 +2162,47 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Create a new booking request
+      tags:
+      - Booking-user
+  /api/booking-user/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
       tags:
       - Booking-user
   /api/booking-user/menu-requests:

@@ -334,10 +334,18 @@ func (h *ReceivedKeyDriverHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+	var parkingPlace string
+	if err := config.DB.Table("public.vms_trn_request AS req").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_uid = req.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Select("d.parking_place").
+		Where("req.trn_request_uid = ?", request.TrnRequestUID).
+		First(&parkingPlace).Error; err != nil {
+		parkingPlace = ""
+	}
 
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว",
+		"สถานที่ "+parkingPlace+" สถานที่จอดรถ",
 		user.EmpID,
 		"driver",
 		"",

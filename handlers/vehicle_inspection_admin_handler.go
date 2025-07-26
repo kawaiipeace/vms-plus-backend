@@ -1000,7 +1000,7 @@ func (h *VehicleInspectionAdminHandler) UpdateRejected(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"ตีกลับยานพาหนะ",
+			"ถูกตีกลับจากผู้ดูแลยานพาหนะ",
 			user.EmpID,
 			"admin-department",
 			result.RejectedRequestReason,
@@ -1066,7 +1066,7 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"รับกุญแจและยานพาหนะคืนแล้ว จบคำขอ",
+			"ผู้ดูแลรับคืนยานพาหนะ สิ้นสุดคำขอ",
 			user.EmpID,
 			"admin-department",
 			"",
