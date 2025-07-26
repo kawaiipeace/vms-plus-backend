@@ -525,6 +525,13 @@ func CheckMustPassStatus30(trnRequestUID string) {
 			Update("ref_request_status_code", "30").Error; err != nil {
 			return
 		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"30",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
+			"system",
+			"level1-approval",
+			"",
+		)
 	}
 }
 
@@ -551,6 +558,13 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			Update("ref_request_status_code", "40").Error; err != nil {
 			return
 		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"40",
+			"รออนุมัติ จากเจ้าของยานพาหนะ",
+			"system",
+			"admin-department",
+			"",
+		)
 		SetReceivedKey(trnRequestUID, "")
 	}
 }
