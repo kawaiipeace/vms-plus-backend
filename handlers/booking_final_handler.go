@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -493,7 +492,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		receivedKey.ReceivedKeyStartDatetime.Format("02/01/2006")+" ("+strconv.Itoa(receivedKey.ReceivedKeyStartDatetime.Time.Year()+543)+")"+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+		funcs.GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 		user.EmpID,
 		"approval-department",
 		"",

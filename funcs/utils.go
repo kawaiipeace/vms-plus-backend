@@ -146,3 +146,10 @@ func IsHoliday(date time.Time, holidays []models.VmsMasHolidays) bool {
 
 	return false
 }
+
+func GetDateBuddhistYear(date time.Time) string {
+	day := date.Day()
+	month := int(date.Month())
+	year := date.Year() + 543
+	return fmt.Sprintf("%02d/%02d/%04d", day, month, year)
+}

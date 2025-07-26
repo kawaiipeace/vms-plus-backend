@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 	"vms_plus_be/config"
@@ -644,7 +643,7 @@ func CheckMustPassStatus50(trnRequestUID string) {
 		}
 		CreateTrnRequestActionLog(trnRequestUID,
 			"50",
-			receivedKey.ReceivedKeyStartDatetime.Format("02/01/2006")+" ("+strconv.Itoa(receivedKey.ReceivedKeyStartDatetime.Time.Year()+543)+")"+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+			GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 			approvedEmpID,
 			"approval-department",
 			"",
