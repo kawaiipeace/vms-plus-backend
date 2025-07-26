@@ -510,12 +510,20 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 	if err != nil {
 		return
 	} else if exists {
-		//update vms_trn_request set ref_request_status_code='30'
+		var confirmedRequestEmpID string
 		if err := config.DB.Table("vms_trn_request").
 			Where("trn_request_uid = ?", trnRequestUID).
-			Update("ref_request_status_code", "30").Error; err != nil {
+			Select("confirmed_request_emp_id").
+			Scan(&confirmedRequestEmpID).Error; err != nil {
 			return
 		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"30",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
+			confirmedRequestEmpID,
+			"level1-approval",
+			"",
+		)
 	}
 }
 
@@ -544,10 +552,18 @@ func CheckMustPassStatus30(trnRequestUID string) {
 			Update("ref_request_status_code", "30").Error; err != nil {
 			return
 		}
+
+		var confirmedRequestEmpID string
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Select("confirmed_request_emp_id").
+			Scan(&confirmedRequestEmpID).Error; err != nil {
+			return
+		}
 		CreateTrnRequestActionLog(trnRequestUID,
 			"30",
 			"รอผู้ดูแลยานพาหนะตรวจสอบ",
-			"system",
+			confirmedRequestEmpID,
 			"level1-approval",
 			"",
 		)
@@ -577,10 +593,18 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			Update("ref_request_status_code", "40").Error; err != nil {
 			return
 		}
+		var adminEmpNo string
+		if err := config.DB.Table("vms_trn_request").
+			Joins("INNER JOIN vms_mas_carpool_admin ON vms_mas_carpool_admin.mas_carpool_uid = vms_trn_request.mas_carpool_uid AND vms_mas_carpool_admin.is_deleted = '0' AND vms_mas_carpool_admin.is_active = '1' AND is_main_admin = '1'").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Select("admin_emp_no").
+			Scan(&adminEmpNo).Error; err != nil {
+			return
+		}
 		CreateTrnRequestActionLog(trnRequestUID,
 			"40",
 			"รออนุมัติ จากเจ้าของยานพาหนะ",
-			"system",
+			adminEmpNo,
 			"admin-department",
 			"",
 		)
@@ -611,7 +635,7 @@ func CheckMustPassStatus50(trnRequestUID string) {
 			Update("ref_request_status_code", "50").Error; err != nil {
 			return
 		}
-		UpdateApproverRequest(trnRequestUID)
+		approvedEmpID := UpdateApproverRequest(trnRequestUID)
 		UpdateRecievedKeyUser(trnRequestUID)
 
 		var receivedKey models.VmsTrnRequestApprovedWithRecieiveKey
@@ -621,7 +645,7 @@ func CheckMustPassStatus50(trnRequestUID string) {
 		CreateTrnRequestActionLog(trnRequestUID,
 			"50",
 			receivedKey.ReceivedKeyStartDatetime.Format("02/01/2006")+" ("+strconv.Itoa(receivedKey.ReceivedKeyStartDatetime.Time.Year()+543)+")"+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
-			"system",
+			approvedEmpID,
 			"approval-department",
 			"",
 		)
@@ -747,10 +771,10 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	}
 }
 
-func UpdateApproverRequest(trnRequestUID string) {
+func UpdateApproverRequest(trnRequestUID string) string {
 	empIDs, err := GetFinalApprovalEmpIDs(trnRequestUID)
 	if err != nil {
-		return
+		return ""
 	}
 	if len(empIDs) > 0 {
 		empUser := GetUserEmpInfo(empIDs[0])
@@ -770,10 +794,11 @@ func UpdateApproverRequest(trnRequestUID string) {
 		request.RefRequestStatusCode = "50"
 
 		if err := config.DB.Save(&request).Error; err != nil {
-			return
+			return ""
 		}
+		return empIDs[0]
 	}
-
+	return ""
 }
 
 func UpdateRecievedKeyUser(trnRequestUID string) {
