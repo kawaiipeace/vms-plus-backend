@@ -93,6 +93,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		Preload("RefCostType").
 		Preload("MasDriver").
 		Preload("MasDriver.DriverLicense.DriverLicenseType").
+		Preload("MasDriver.DriverStatus").
 		Preload("RefRequestStatus").
 		Preload("RefTripType").
 		Preload("RefCostType").
@@ -132,7 +133,11 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	request.ConfirmedRequestImageUrl = GetEmpImage(request.ConfirmedRequestEmpID)
 	request.DriverEmpImageUrl = GetEmpImage(request.DriverEmpID)
 
-	request.DriverImageURL = config.DefaultAvatarURL
+	if request.MasDriver.DriverImage != "" {
+		request.DriverImageURL = request.MasDriver.DriverImage
+	} else {
+		request.DriverImageURL = GetEmpImage(request.DriverEmpID)
+	}
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
@@ -200,6 +205,8 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("MasVehicle.VehicleDepartment").
 		Preload("RefCostType").
 		Preload("MasDriver").
+		Preload("MasDriver.DriverLicense.DriverLicenseType").
+		Preload("MasDriver.DriverStatus").
 		Preload("RefRequestStatus").
 		Preload("RequestVehicleType").
 		Preload("VehicleImagesReceived").
@@ -220,8 +227,20 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
 	}
 	request.ParkingPlace = request.MasVehicle.VehicleDepartment.ParkingPlace
-	request.DriverImageURL = config.DefaultAvatarURL
-	request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	if request.MasDriver.DriverImage != "" {
+		request.DriverImageURL = request.MasDriver.DriverImage
+	} else {
+		request.DriverImageURL = GetEmpImage(request.DriverEmpID)
+	}
+	switch request.ReceiverKeyType {
+	case 1:
+		request.ReceivedKeyImageURL = request.MasDriver.DriverImage
+	case 2:
+		request.ReceivedKeyImageURL = GetEmpImage(request.ReceivedKeyEmpID)
+	default:
+		request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	}
+
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
