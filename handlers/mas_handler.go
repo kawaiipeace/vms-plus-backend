@@ -77,7 +77,6 @@ func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		Role:          "vehicle-user",
 		Limit:         100,
 	}
 
