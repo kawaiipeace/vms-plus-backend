@@ -764,11 +764,17 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
 	queryRole = queryRole.Table("vms_mas_carpool cp")
-	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ? AND carpool_name = ?", request.MasCarpoolUID, "0", request.CarpoolName).First(&carpool).Error; err != nil {
+	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	//check if carpool name=request.CarpoolName (trim space)
+	carpool.CarpoolName = strings.TrimSpace(carpool.CarpoolName)
+	request.CarpoolName = strings.TrimSpace(request.CarpoolName)
+	if carpool.CarpoolName != request.CarpoolName {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Carpool name is not match", "message": "ชื่อกลุ่มยานพาหนะไม่ตรงกัน"})
+		return
+	}
 	var requests int64
 	if err := config.DB.Table("vms_trn_request").
 		Where("mas_vehicle_uid IN (SELECT mas_vehicle_uid FROM vms_mas_carpool_vehicle WHERE mas_carpool_uid = ? AND is_deleted = ?)", request.MasCarpoolUID, "0").
