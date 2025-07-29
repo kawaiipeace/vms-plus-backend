@@ -719,6 +719,33 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 	request.CreatedAt = existingCarpool.CreatedAt
 	request.CreatedBy = existingCarpool.CreatedBy
 
+	switch request.CarpoolType {
+	case "01":
+		request.CarpoolMainBusinessArea = "Z000"
+	case "02":
+		if request.CarpoolDeptSap == "" && len(request.CarpoolAuthorizedDepts) > 0 {
+			request.CarpoolDeptSap = request.CarpoolAuthorizedDepts[0].DeptSap
+		}
+		var department models.VmsMasDepartment
+		if err := config.DB.Where("dept_sap = ?", request.CarpoolDeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		request.CarpoolMainBusinessArea = department.BusinessArea
+	case "03":
+		//get business area from vms_mas_department
+		var department models.VmsMasDepartment
+		if len(request.CarpoolAuthorizedDepts) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No authorized dept", "message": messages.ErrNotfound.Error() + " กรุณาตรวจสอบอีกครั้ง"})
+			return
+		}
+		if err := config.DB.Where("dept_sap = ?", request.CarpoolAuthorizedDepts[0].DeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		request.CarpoolMainBusinessArea = department.BusinessArea
+	}
+
 	if err := config.DB.Where("mas_carpool_uid = ?", masCarpoolUID).Delete(&models.VmsMasCarpoolAuthorizedDept{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete authorized departments: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
