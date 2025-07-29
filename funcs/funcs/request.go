@@ -835,10 +835,10 @@ func UpdateRecievedKeyUser(trnRequestUID string) {
 	}
 }
 func ExportRequests(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
-	if c.Query("format") == "xlsx" {
-		ExportRequestsXLSX(c, user, query, statusNameMap)
-	} else {
+	if c.Query("format") == "csv" {
 		ExportRequestsCSV(c, user, query, statusNameMap)
+	} else {
+		ExportRequestsXLSX(c, user, query, statusNameMap)
 	}
 }
 
