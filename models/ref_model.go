@@ -151,7 +151,7 @@ func (VmsRefVehicleStatus) TableName() string {
 
 //VmsRefTripType
 type VmsRefTripType struct {
-	RefTripTypeCode int    `gorm:"column:ref_trip_type_code;primaryKey" json:"ref_trip_type_code"`
+	RefTripTypeCode *int   `gorm:"column:ref_trip_type_code;primaryKey" json:"ref_trip_type_code"`
 	RefTripTypeName string `gorm:"column:ref_trip_type_name" json:"ref_trip_type_name"`
 }
 
@@ -161,7 +161,7 @@ func (VmsRefTripType) TableName() string {
 
 // VmsRefDriverStatus
 type VmsRefDriverStatus struct {
-	RefDriverStatusCode int    `gorm:"column:ref_driver_status_code;primaryKey" json:"ref_driver_status_code"`
+	RefDriverStatusCode *int   `gorm:"column:ref_driver_status_code;primaryKey" json:"ref_driver_status_code"`
 	RefDriverStatusDesc string `gorm:"column:ref_driver_status_desc" json:"ref_driver_status_desc"`
 }
 
