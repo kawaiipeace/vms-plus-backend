@@ -353,7 +353,7 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 	var request models.VmsTrnReceivedKeyDriver
-	var trnRequest models.VmsTrnRequestList
+	var trnRequest models.VmsTrnRequestResponse
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
 		models.VmsTrnRequestRequestNo
@@ -370,6 +370,14 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 	request.ReceiverType = 1 // Driver
+	request.ReceiverPersonalId = trnRequest.DriverEmpID
+	request.ReceiverFullname = trnRequest.DriverEmpName
+	request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+	request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+	request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+	request.ReceiverPosition = trnRequest.DriverEmpPosition
+	request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+	request.ReceiverDeskPhone = trnRequest.DriverInternalContact
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
