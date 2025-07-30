@@ -312,7 +312,7 @@ func (h *ReceivedVehicleAdminHandler) ReceivedVehicle(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 			result.RefRequestStatusCode,
-			"นำยานพาหนะออกไปปฎิบัติงานแล้ว",
+			"กรุณาบันทึกเลขไมล์และการเติมเชื้อเพลิง",
 			user.EmpID,
 			"admin-department",
 			"",

@@ -353,7 +353,7 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 	var request models.VmsTrnReceivedKeyDriver
-	var trnRequest models.VmsTrnRequestList
+	var trnRequest models.VmsTrnRequestResponse
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
 		models.VmsTrnRequestRequestNo
@@ -370,6 +370,14 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 	request.ReceiverType = 1 // Driver
+	request.ReceiverPersonalId = trnRequest.DriverEmpID
+	request.ReceiverFullname = trnRequest.DriverEmpName
+	request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+	request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+	request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+	request.ReceiverPosition = trnRequest.DriverEmpPosition
+	request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+	request.ReceiverDeskPhone = trnRequest.DriverInternalContact
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -393,9 +401,18 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 
+	var parkingPlace string
+	if err := config.DB.Table("public.vms_trn_request AS req").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_uid = req.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Select("d.parking_place").
+		Where("req.trn_request_uid = ?", request.TrnRequestUID).
+		First(&parkingPlace).Error; err != nil {
+		parkingPlace = ""
+	}
+
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว",
+		"สถานที่ "+parkingPlace+" สถานที่จอดรถ",
 		user.EmpID,
 		"admin-department",
 		"",
@@ -463,9 +480,18 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupPEA(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+	var parkingPlace string
+	if err := config.DB.Table("public.vms_trn_request AS req").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_uid = req.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Select("d.parking_place").
+		Where("req.trn_request_uid = ?", request.TrnRequestUID).
+		First(&parkingPlace).Error; err != nil {
+		parkingPlace = ""
+	}
+
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว",
+		"สถานที่ "+parkingPlace+" สถานที่จอดรถ",
 		user.EmpID,
 		"admin-department",
 		"",
@@ -529,9 +555,18 @@ func (h *ReceivedKeyAdminHandler) UpdateKeyPickupOutSider(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
 		return
 	}
+	var parkingPlace string
+	if err := config.DB.Table("public.vms_trn_request AS req").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_uid = req.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Select("d.parking_place").
+		Where("req.trn_request_uid = ?", request.TrnRequestUID).
+		First(&parkingPlace).Error; err != nil {
+		parkingPlace = ""
+	}
+
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว",
+		"สถานที่ "+parkingPlace+" สถานที่จอดรถ",
 		user.EmpID,
 		"admin-department",
 		"",

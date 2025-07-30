@@ -95,6 +95,7 @@ func main() {
 	router.GET("/api/booking-user/search-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.SearchRequests)
 	router.PUT("/api/booking-user/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateCanceled)
 	router.PUT("/api/booking-user/update-resend", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.UpdateResend)
+	router.GET("/api/booking-user/export-requests", funcs.ApiKeyAuthenMiddleware(), bookingUserHandler.ExportRequests)
 
 	//BookingConfirmerHandler
 	bookingConfirmerHandler := handlers.BookingConfirmerHandler{Role: "level1-approval"}
@@ -105,6 +106,7 @@ func main() {
 	router.PUT("/api/booking-confirmer/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateRejected)
 	router.PUT("/api/booking-confirmer/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateApproved)
 	router.PUT("/api/booking-confirmer/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.UpdateCanceled)
+	router.GET("/api/booking-confirmer/export-requests", funcs.ApiKeyAuthenMiddleware(), bookingConfirmerHandler.ExportRequests)
 
 	//BookingAdminHandler
 	bookinAdminHandler := handlers.BookingAdminHandler{Role: "admin-department,admin-carpool,admin-department-main"}
@@ -122,6 +124,7 @@ func main() {
 	router.PUT("/api/booking-admin/update-cost", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateCost)
 	router.PUT("/api/booking-admin/update-vehicle", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateVehicle)
 	router.PUT("/api/booking-admin/update-driver", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.UpdateDriver)
+	router.GET("/api/booking-admin/export-requests", funcs.ApiKeyAuthenMiddleware(), bookinAdminHandler.ExportRequests)
 
 	//BookingFinalHandler
 	bookingFinalHandler := handlers.BookingFinalHandler{Role: "approval-department,approval-carpool"}
@@ -131,6 +134,7 @@ func main() {
 	router.PUT("/api/booking-final/update-rejected", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateRejected)
 	router.PUT("/api/booking-final/update-approved", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateApproved)
 	router.PUT("/api/booking-final/update-canceled", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.UpdateCanceled)
+	router.GET("/api/booking-final/export-requests", funcs.ApiKeyAuthenMiddleware(), bookingFinalHandler.ExportRequests)
 
 	//ReceivedKeyUserHandler
 	receivedKeyUserHandler := handlers.ReceivedKeyUserHandler{Role: "vehicle-user"}
@@ -429,5 +433,9 @@ func main() {
 	//funcs.SetReceivedKey("0354d193-9d0e-43a6-a87e-40684391ab4f", "69ccfbe8-8649-4b8c-9f57-c1b4dd728f67")
 	//funcs.UpdateRecievedKeyUser("f5a31391-e38b-4752-9fb9-7a91df8ac2bd")
 	//funcs.UpdateApproverRequest("97f04cea-dbeb-4e10-9502-7fe4693dacea")
+	//funcs.CheckMustPassStatus("1c381a71-ce5d-4d63-a26d-9cee648c0ebe")
+
+	//funcs.UpdateDriverAvgScore("DZ000006")
+	//funcs.UpdateDriverAvgScore("DZ000159")
 	router.Run(config.AppConfig.Host + ":" + port)
 }

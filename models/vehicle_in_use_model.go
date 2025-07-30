@@ -60,7 +60,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 
 	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" example:"2025-01-01T08:00:00Z"`
 	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" example:"2025-01-01T10:00:00Z"`
-	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
+	RefTripTypeCode      *int           `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`

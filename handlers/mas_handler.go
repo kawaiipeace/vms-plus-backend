@@ -77,7 +77,6 @@ func (h *MasHandler) ListReceivedKeyUser(c *gin.Context) {
 		ServiceCode:   "vms",
 		Search:        search,
 		BureauDeptSap: user.BureauDeptSap,
-		Role:          "vehicle-user",
 		Limit:         100,
 	}
 
@@ -311,6 +310,15 @@ func (h *MasHandler) ListConfirmerUser(c *gin.Context) {
 		list[i].TelMobile = empInfo.TelMobile
 		list[i].TelInternal = empInfo.TelInternal
 	}
+
+	//if empID=list[i].EmpID move to list[0]
+	for i := range list {
+		if list[i].EmpID == empID {
+			list[0], list[i] = list[i], list[0]
+			break
+		}
+	}
+
 	c.JSON(http.StatusOK, list)
 }
 

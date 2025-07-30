@@ -63,6 +63,8 @@ type VmsTrnRequestList struct {
 	CanScoreButton                   bool                   `gorm:"-" json:"can_score_button"`
 	CanTravelCardButton              bool                   `gorm:"-" json:"can_travel_card_button"`
 	TravelDetails                    []VmsTrnTripDetailList `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUid" json:"-"`
+	TripType                         int                    `gorm:"column:ref_trip_type_code" json:"trip_type" example:"1"`
+	TripTypeName                     string                 `gorm:"-" json:"trip_type_name" example:"1"`
 }
 
 func (VmsTrnRequestList) TableName() string {
@@ -192,7 +194,7 @@ type VmsTrnRequestResponse struct {
 
 	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" swaggertype:"string" example:"2025-01-01T08:00:00Z"`
 	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" swaggertype:"string" example:"2025-01-01T10:00:00Z"`
-	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
+	RefTripTypeCode      *int           `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`

@@ -884,6 +884,7 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 			}
 		}
 	}
+	funcs.UpdateDriverAvgScore(driver.DriverID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": reqs})
 }
 
@@ -961,7 +962,7 @@ func (h *VehicleInUseUserHandler) ReturnedVehicle(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"ส่งคืนกุญแจและยานพาหนะ",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
 			user.EmpID,
 			"vehicle-user",
 			"",

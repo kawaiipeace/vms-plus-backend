@@ -1360,14 +1360,30 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 		row.AddCell().Value = report.DriverNickname
 		row.AddCell().Value = report.DriverDeptSapShortWork
 		row.AddCell().Value = report.DriverDeptSapFullWork
-		row.AddCell().Value = report.ReserveStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+		if report.ReserveStartDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.ReserveStartDatetime.Format("2006-01-02 15:04:05")
+		}
+		if report.ReserveEndDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+		}
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
 		row.AddCell().Value = report.VehicleCarTypeDetail
-		row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		if report.TripStartDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
+		}
+		if report.TripEndDatetime.IsZero() {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
+		}
 		row.AddCell().Value = report.TripDeparturePlace
 		row.AddCell().Value = report.TripDestinationPlace
 		row.AddCell().Value = fmt.Sprintf("%f", report.TripStartMiles)

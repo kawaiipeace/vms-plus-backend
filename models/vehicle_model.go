@@ -21,6 +21,7 @@ type VmsMasVehicleList struct {
 	LastMonthMileage                 int            `gorm:"column:last_month_mileage" json:"last_month_mileage"`
 	Seat                             int            `gorm:"column:seat" json:"seat"`
 	IsAdminChooseDriver              bool           `json:"is_admin_choose_driver"`
+	IsSystemChooseDriver             bool           `json:"is_system_choose_driver"`
 	CarpoolName                      string         `gorm:"column:carpool_name" json:"-"`
 	FleetCardNo                      string         `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 	RefFuelTypeID                    int            `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
@@ -70,6 +71,7 @@ type VmsMasCarpoolCarBooking struct {
 	RefCarpoolChooseCarID int                    `gorm:"column:ref_carpool_choose_car_id" json:"ref_carpool_choose_car_id" example:"1"`
 	RefCarpoolChooseCar   VmsRefCarpoolChooseCar `gorm:"foreignKey:RefCarpoolChooseCarID;references:RefCarpoolChooseCarID" json:"ref_carpool_choose_car"`
 	IsAdminChooseDriver   bool                   `json:"is_admin_choose_driver"`
+	IsSystemChooseDriver  bool                   `json:"is_system_choose_driver"`
 }
 
 func (VmsMasCarpoolCarBooking) TableName() string {
