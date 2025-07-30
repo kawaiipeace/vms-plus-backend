@@ -27,7 +27,7 @@ type VmsMasDriver struct {
 	DriverDeptSAPShort             string                `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short"`
 	DriverIdentificationNo         string                `gorm:"column:driver_identification_no" json:"driver_identification_no"`
 	DriverContactNumber            string                `gorm:"column:driver_contact_number" json:"driver_contact_number"`
-	DriverAverageSatisfactionScore float64               `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score                 `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                   `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	DriverBirthdate                time.Time             `gorm:"column:driver_birthdate" json:"driver_birthdate"`
 	WorkType                       int                   `gorm:"column:work_type" json:"work_type"`

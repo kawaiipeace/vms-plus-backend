@@ -53,7 +53,6 @@ func DefaultUUID() string {
 }
 
 func CalculateAge(date time.Time) string {
-	fmt.Println("date", date)
 	today := time.Now()
 	years := today.Year() - date.Year()
 	months := today.Month() - date.Month()

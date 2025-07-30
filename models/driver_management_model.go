@@ -12,7 +12,7 @@ type VmsMasDriverList struct {
 	DriverDeptSapWork              string             `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
 	DriverDeptSapShortWork         string             `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work"`
 	DriverContactNumber            string             `gorm:"column:driver_contact_number" json:"driver_contact_number"`
-	DriverAverageSatisfactionScore float64            `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score              `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	WorkType                       int                `gorm:"column:work_type" json:"work_type"`
 	IsActive                       int                `gorm:"column:is_active" json:"is_active"`
@@ -161,7 +161,7 @@ type VmsMasDriverResponse struct {
 	DriverLicense                  VmsMasDriverLicenseResponse     `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	DriverCertificate              VmsMasDriverCertificateResponse `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_certificate"`
 	DriverDocuments                []VmsMasDriverDocument          `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_documents"`
-	DriverAverageSatisfactionScore float64                         `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score                           `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                             `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	CreatedAt                      time.Time                       `gorm:"column:created_at" json:"-"`
 	CreatedBy                      string                          `gorm:"column:created_by" json:"-"`
