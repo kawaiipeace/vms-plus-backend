@@ -959,8 +959,9 @@ func ExportRequestsXLSX(c *gin.Context, user *models.AuthenUserEmp, query *gorm.
 		row.AddCell().Value = request.VehicleLicensePlate + " " + request.VehicleLicensePlateProvinceFull
 		row.AddCell().Value = request.VehicleDepartmentDeptSapShort
 		row.AddCell().Value = request.WorkPlace
-		row.AddCell().Value = request.ReserveStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = request.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+
+		row.AddCell().Value = request.ReserveStartDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
+		row.AddCell().Value = request.ReserveEndDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
 		row.AddCell().Value = request.TripTypeName
 		row.AddCell().Value = request.ActionDetail
 		row.AddCell().Value = request.RefRequestStatusName
@@ -1137,4 +1138,25 @@ func ExportRequestsCSV(c *gin.Context, user *models.AuthenUserEmp, query *gorm.D
 			return
 		}
 	}
+}
+
+func UpdateDriverAvgScore(driverID string) {
+	//fn_driver_avg_score('DZ000229')
+	var driverScore struct {
+		AvgScore        float64 `json:"avg_score"`
+		TotalEvaluation int     `json:"total_evaluation"`
+	}
+	query := fmt.Sprintf("SELECT * FROM fn_driver_avg_score('%s')", driverID)
+	if err := config.DB.Raw(query).Scan(&driverScore).Error; err != nil {
+		fmt.Println("Error getting driver score:", err)
+		return
+	}
+	//update to vms_mas_driver
+	config.DB.Model(&models.VmsMasDriver{}).Where("driver_id = ?", driverID).
+		Updates(map[string]interface{}{
+			"driver_average_satisfaction_score": driverScore.AvgScore,
+			"driver_total_satisfaction_review":  driverScore.TotalEvaluation,
+		})
+
+	fmt.Println("Driver score:", driverScore)
 }

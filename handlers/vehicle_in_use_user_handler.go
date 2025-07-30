@@ -884,6 +884,7 @@ func (h *VehicleInUseUserHandler) UpdateSatisfactionSurvey(c *gin.Context) {
 			}
 		}
 	}
+	funcs.UpdateDriverAvgScore(driver.DriverID)
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "data": reqs})
 }
 
