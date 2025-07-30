@@ -1,6 +1,7 @@
 package funcs
 
 import (
+	"encoding/csv"
 	"fmt"
 	"net/http"
 	"sort"
@@ -833,8 +834,15 @@ func UpdateRecievedKeyUser(trnRequestUID string) {
 		return
 	}
 }
-
 func ExportRequests(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
+	if c.Query("format") == "csv" {
+		ExportRequestsCSV(c, user, query, statusNameMap)
+	} else {
+		ExportRequestsXLSX(c, user, query, statusNameMap)
+	}
+}
+
+func ExportRequestsXLSX(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
 	var requests []models.VmsTrnRequestList
 
 	// Use the keys from statusNameMap as the list of valid status codes
@@ -951,8 +959,9 @@ func ExportRequests(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, 
 		row.AddCell().Value = request.VehicleLicensePlate + " " + request.VehicleLicensePlateProvinceFull
 		row.AddCell().Value = request.VehicleDepartmentDeptSapShort
 		row.AddCell().Value = request.WorkPlace
-		row.AddCell().Value = request.ReserveStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = request.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+
+		row.AddCell().Value = request.ReserveStartDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
+		row.AddCell().Value = request.ReserveEndDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
 		row.AddCell().Value = request.TripTypeName
 		row.AddCell().Value = request.ActionDetail
 		row.AddCell().Value = request.RefRequestStatusName
@@ -993,5 +1002,140 @@ func ExportRequests(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, 
 	if err := file.Write(c.Writer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
 		return
+	}
+}
+
+func ExportRequestsCSV(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
+	var requests []models.VmsTrnRequestList
+
+	// Use the keys from statusNameMap as the list of valid status codes
+	statusCodes := make([]string, 0, len(statusNameMap))
+	for code := range statusNameMap {
+		statusCodes = append(statusCodes, code)
+	}
+
+	query = query.Table("public.vms_trn_request").
+		Select(`vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,ref_trip_type_code,       
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=vms_trn_request.mas_carpool_uid) vehicle_carpool_name,
+			(select log.action_detail from vms_log_request_action log where log.trn_request_uid=vms_trn_request.trn_request_uid order by log.log_request_action_datetime desc limit 1) action_detail
+		`).
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+	query = query.Where("vms_trn_request.is_deleted = ?", "0")
+	// Apply additional filters (search, date range, etc.)
+	if search := c.Query("search"); search != "" {
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if startDate := c.Query("startdate"); startDate != "" {
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
+	}
+	if endDate := c.Query("enddate"); endDate != "" {
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
+	}
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		//fmt.Println("codes", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+	}
+
+	// Ordering
+	orderBy := c.Query("order_by")
+	orderDir := c.Query("order_dir")
+	if orderDir != "desc" {
+		orderDir = "asc"
+	}
+	switch orderBy {
+	case "request_no":
+		query = query.Order("vms_trn_request.request_no " + orderDir)
+	case "start_datetime":
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
+	case "ref_request_status_code":
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	}
+
+	// Execute the main query
+	if err := query.Scan(&requests).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range requests {
+		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		switch requests[i].TripType {
+		case 0:
+			requests[i].TripTypeName = "ไป-กลับ"
+		case 1:
+			requests[i].TripTypeName = "ค้างแรม"
+		}
+	}
+
+	// Set headers
+	headers := []string{
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"รหัสพนักงาน",
+		"หน่วยงานที่สังกัด",
+		"ยานพาหนะ",
+		"สังกัดยานพาหนะ",
+		"สถานที่ปฏิบัติงาน",
+		"วันที่เดินทางเริ่มต้น",
+		"วันที่เดินทางสิ้นสุด",
+		"ประเภทการเดินทาง",
+		"รายละเอียด",
+		"สถานะคำขอ",
+	}
+
+	// Set CSV headers
+	c.Header("Content-Disposition", "attachment; filename=requests.csv")
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("File-Name", fmt.Sprintf("requests_%s.csv", time.Now().Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+
+	writer := csv.NewWriter(c.Writer)
+	defer writer.Flush()
+
+	// Write header row
+	if err := writer.Write(headers); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV header", "message": err.Error()})
+		return
+	}
+
+	// Write data rows
+	for _, request := range requests {
+		row := []string{
+			request.RequestNo,
+			request.VehicleUserEmpName,
+			request.VehicleUserEmpID,
+			request.VehicleUserDeptNameShort,
+			request.VehicleLicensePlate + " " + request.VehicleLicensePlateProvinceFull,
+			request.VehicleDepartmentDeptSapShort,
+			request.WorkPlace,
+			request.ReserveStartDatetime.Format("2006-01-02 15:04:05"),
+			request.ReserveEndDatetime.Format("2006-01-02 15:04:05"),
+			request.TripTypeName,
+			request.ActionDetail,
+			request.RefRequestStatusName,
+		}
+		if err := writer.Write(row); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV row", "message": err.Error()})
+			return
+		}
 	}
 }
