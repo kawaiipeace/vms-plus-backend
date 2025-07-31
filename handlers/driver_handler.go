@@ -75,16 +75,15 @@ func (h *DriverHandler) GetDrivers(c *gin.Context) {
 	for i := range drivers {
 		drivers[i].Age = drivers[i].CalculateAgeInYearsMonths()
 		drivers[i].Status = "ว่าง"
-		if strings.HasSuffix(drivers[i].DriverID, "1") {
-			drivers[i].Status = "ไม่ว่าง"
-		}
-		if drivers[i].WorkType == 1 {
+
+		switch drivers[i].WorkType {
+		case 1:
 			drivers[i].WorkTypeName = "ค้างคืน"
-		} else if drivers[i].WorkType == 2 {
+		case 2:
 			drivers[i].WorkTypeName = "ไป-กลับ"
 		}
-		drivers[i].WorkCount = 4
-		drivers[i].WorkDays = 16
+		drivers[i].WorkCount = 0
+		drivers[i].WorkDays = 0
 	}
 
 	if len(drivers) == 0 {
@@ -393,8 +392,14 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid MasDriverUID", "message": messages.ErrInvalidUID.Error()})
 		return
 	}
+	date := time.Now()
 	var driver models.VmsMasDriver
-	if err := config.DB.
+	query := config.DB.Model(&models.VmsMasDriver{})
+	query = query.Select("vms_mas_driver.*, w_thismth.job_count, w_thismth.total_days,mc.carpool_name")
+	query = query.Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_mas_driver.mas_carpool_uid")
+	query = query.Joins("LEFT JOIN public.vms_trn_driver_monthly_workload AS w_thismth ON w_thismth.workload_year = ? AND w_thismth.workload_month = ? AND w_thismth.driver_emp_id = vms_mas_driver.driver_id AND w_thismth.is_deleted = ?", date.Year(), date.Month(), "0")
+
+	if err := query.
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			// Use COALESCE to treat NULL driver_license_end_date as the earliest possible date for ordering
 			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC")
@@ -415,53 +420,9 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 		driver.WorkTypeName = "ไม่ระบุ"
 	}
 	driver.DriverDeptSAPShort = funcs.GetDeptSAPShort(driver.DriverDeptSAP)
-	driver.WorkCount = 4
-	driver.WorkDays = 16
-	driver.Status = "ว่าง"
-	if strings.HasSuffix(driver.DriverID, "1") {
-		driver.Status = "ไม่ว่าง"
-		vehicleUser1 := models.MasUserEmp{
-			EmpID:        "E123",
-			FullName:     "Somchai Prasert",
-			DeptSAP:      "D01",
-			DeptSAPShort: "Admin",
-			DeptSAPFull:  "Administration Department",
-			TelMobile:    "0812345678",
-			TelInternal:  "5678",
-		}
-
-		vehicleUser2 := models.MasUserEmp{
-			EmpID:        "E456",
-			FullName:     "Nidnoi Chaiyaphum",
-			DeptSAP:      "D02",
-			DeptSAPShort: "HR",
-			DeptSAPFull:  "Human Resources Department",
-			TelMobile:    "0818765432",
-			TelInternal:  "4321",
-		}
-
-		// Create two trip detail instances
-		tripDetail1 := models.VmsDriverTripDetail{
-			TrnRequestUID: "456e4567-e89b-12d3-a456-426614174001",
-			RequestNo:     "REQ12345",
-			WorkPlace:     "Bangkok",
-			StartDatetime: "2025-03-29T08:00:00",
-			EndDatetime:   "2025-03-29T18:00:00",
-			VehicleUser:   vehicleUser1,
-		}
-
-		tripDetail2 := models.VmsDriverTripDetail{
-			TrnRequestUID: "456e4567-e89b-12d3-a456-426614174002",
-			RequestNo:     "REQ67890",
-			WorkPlace:     "Chiang Mai",
-			StartDatetime: "2025-03-30T09:00:00",
-			EndDatetime:   "2025-03-30T19:00:00",
-			VehicleUser:   vehicleUser2,
-		}
-
-		// Append the trip details to the DriverTripDetails slice
-		driver.DriverTripDetails = append(driver.DriverTripDetails, tripDetail1, tripDetail2)
-
+	driver.VendorName = driver.DriverDeptSAPShort
+	if driver.CarpoolName != "" {
+		driver.VendorName = driver.CarpoolName
 	}
 
 	c.JSON(http.StatusOK, driver)
