@@ -152,3 +152,17 @@ func GetDateBuddhistYear(date time.Time) string {
 	year := date.Year() + 543
 	return fmt.Sprintf("%02d/%02d/%04d", day, month, year)
 }
+
+func GetDateWithZone(date time.Time) string {
+	if date.IsZero() {
+		return ""
+	}
+	return date.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
+}
+
+func GetReportNumber(number float64) string {
+	if number == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%.0f", number)
+}

@@ -960,8 +960,8 @@ func ExportRequestsXLSX(c *gin.Context, user *models.AuthenUserEmp, query *gorm.
 		row.AddCell().Value = request.VehicleDepartmentDeptSapShort
 		row.AddCell().Value = request.WorkPlace
 
-		row.AddCell().Value = request.ReserveStartDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
-		row.AddCell().Value = request.ReserveEndDatetime.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
+		row.AddCell().Value = GetDateWithZone(request.ReserveStartDatetime.Time)
+		row.AddCell().Value = GetDateWithZone(request.ReserveEndDatetime.Time)
 		row.AddCell().Value = request.TripTypeName
 		row.AddCell().Value = request.ActionDetail
 		row.AddCell().Value = request.RefRequestStatusName

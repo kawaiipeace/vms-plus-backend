@@ -78,7 +78,6 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 		v.vehicle_registration_date, d.ref_vehicle_status_code, v.ref_fuel_type_id, v.is_active, mc.carpool_name vehicle_carpool_name, vs.ref_vehicle_status_short_name
 	`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
-		Joins("LEFT JOIN vms_ref_vehicle_type AS rt ON rt.ref_vehicle_type_code = v.ref_vehicle_type_code").
 		Joins("LEFT JOIN vms_mas_department AS md ON md.dept_sap = d.vehicle_owner_dept_sap").
 		Joins("LEFT JOIN vms_mas_carpool_vehicle AS mcv ON mcv.mas_vehicle_uid = v.mas_vehicle_uid AND mcv.is_deleted = '0'").
 		Joins("LEFT JOIN vms_mas_carpool AS mc ON mc.mas_carpool_uid = mcv.mas_carpool_uid AND mc.is_deleted = '0'").
@@ -441,25 +440,29 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
-		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
-				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
-				d.vehicle_license_plate_province_short, d.vehicle_license_plate_province_full, 
-				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name, 
+		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, v.vehicle_license_plate_province_full,
+				d.vehicle_pea_id, public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name_short, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name_full, 
 				(select max(mc.carpool_name) from vms_mas_carpool mc, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = mc.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
 				v."CarTypeDetail" AS vehicle_car_type_detail,
-				v.vehicle_brand_name,v.vehicle_model_name,
-				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_detail`).
+				r.request_no,r.vehicle_user_emp_name,r.vehicle_user_position,r.vehicle_user_dept_name_short,
+				r.work_place,r.ref_trip_type_code, rt.ref_trip_type_name, r.ref_request_status_code,
+				r.driver_emp_name,r.reserve_start_datetime,r.reserve_end_datetime,r.number_of_passengers,
+				td.trip_start_datetime, td.trip_end_datetime,td.trip_departure_place,td.trip_destination_place,td.trip_start_miles,td.trip_end_miles,td.trip_end_miles-td.trip_start_miles AS trip_distance,td.trip_detail,rf.ref_fuel_type_name_th`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
-		Joins("LEFT JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
 			startDate, endDate, startDate, endDate, startDate, endDate).
 		Joins("LEFT JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid AND td.is_deleted = '0'").
+		Joins("LEFT JOIN vms_ref_fuel_type rf ON rf.ref_fuel_type_id = v.ref_fuel_type_id").
+		Joins("LEFT JOIN vms_ref_trip_type rt ON rt.ref_trip_type_code = r.ref_trip_type_code").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
-	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs).Debug()
+	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
+	query = query.Order("v.vehicle_license_plate, r.reserve_start_datetime")
 
 	if err := query.Find(&tripReports).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Internal server error"})
@@ -476,9 +479,33 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 	// Add header row
 	headerRow := sheet.AddRow()
 	headers := []string{
-		"รหัสยานพาหนะ", "ป้ายทะเบียน", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)",
-		"ชื่อหน่วยงาน", "ชื่อคาร์พูล", "รายละเอียดประเภทรถ", "เวลาเริ่มต้นการเดินทาง", "เวลาสิ้นสุดการเดินทาง",
-		"สถานที่ออกเดินทาง", "สถานที่ปลายทาง", "ระยะไมล์เริ่มต้น", "ระยะไมล์สิ้นสุด", "รายละเอียดการเดินทาง",
+		"เลขทะเบียน",
+		"จังหวัด (ย่อ)",
+		"จังหวัด (เต็ม)",
+		"รหัสยานพาหนะ",
+		"หน่วยงาน (ย่อ)",
+		"หน่วยงาน (เต็ม)",
+		"ชื่อกลุ่มยานพาหนะ",
+		"ประเภทยานพาหนะ",
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"ตำแหน่ง/สังกัด",
+		"สถานที่ปฏิบัติงาน",
+		"ประเภทการเดินทาง",
+		"ชื่อพนักงานขับรถ",
+		"วันที่เริ่มต้นการจอง",
+		"วันที่สิ้นสุดการจอง",
+		"จำนวนผู้โดยสาร (รวมผู้ขับขี่)",
+		"สถานะ",
+		"วันที่เริ่มต้นการเดินทาง",
+		"วันที่สิ้นสุดการเดินทาง",
+		"สถานที่ออกเดินทาง",
+		"สถานที่ปลายทาง",
+		"เลขไมล์ต้นทาง",
+		"เลขไมล์ปลายทาง",
+		"ระยะทางเดินทาง (กม.)",
+		"รายละเอียดการเดินทาง",
+		"ประเภทเชื้อเพลิง",
 	}
 	for _, header := range headers {
 		cell := headerRow.AddCell()
@@ -487,29 +514,45 @@ func (h *VehicleManagementHandler) ReportTripDetail(c *gin.Context) {
 
 	// Add data rows
 	for _, report := range tripReports {
+
+		if report.RefRequestStatusCode == "80" {
+			report.RefRequestStatusName = "เสร็จสิ้น"
+		} else if report.RefRequestStatusCode < "50" {
+			report.RefRequestStatusName = "รออนุมัติ"
+		} else if report.RefTripTypeCode == 0 {
+			report.RefRequestStatusName = "ไป-กลับ"
+		} else if report.RefTripTypeCode == 1 {
+			report.RefRequestStatusName = "ค้างแรม"
+		}
+
 		row := sheet.AddRow()
-		row.AddCell().Value = report.VehiclePEAID
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
-		row.AddCell().Value = report.VehicleDeptName
+		row.AddCell().Value = report.VehiclePEAID
+		row.AddCell().Value = report.VehicleDeptNameShort
+		row.AddCell().Value = report.VehicleDeptNameFull
 		row.AddCell().Value = report.CarpoolName
 		row.AddCell().Value = report.VehicleCarTypeDetail
-		if report.TripStartDatetime.IsZero() {
-			row.AddCell().Value = ""
-		} else {
-			row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
-		}
-		if report.TripEndDatetime.IsZero() {
-			row.AddCell().Value = ""
-		} else {
-			row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
-		}
+		row.AddCell().Value = report.RequestNo
+		row.AddCell().Value = report.VehicleUserEmpName
+		row.AddCell().Value = report.VehicleUserPosition + " " + report.VehicleUserDeptNameShort
+		row.AddCell().Value = report.WorkPlace
+		row.AddCell().Value = report.RefTripTypeName
+		row.AddCell().Value = report.DriverEmpName
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveStartDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveEndDatetime.Time)
+		row.AddCell().Value = strconv.Itoa(report.NumberOfPassengers)
+		row.AddCell().Value = report.RefRequestStatusName
+		row.AddCell().Value = funcs.GetDateWithZone(report.TripStartDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.TripEndDatetime.Time)
 		row.AddCell().Value = report.TripDeparturePlace
 		row.AddCell().Value = report.TripDestinationPlace
-		row.AddCell().Value = strconv.FormatFloat(float64(report.TripStartMiles), 'f', 0, 64)
-		row.AddCell().Value = strconv.FormatFloat(float64(report.TripEndMiles), 'f', 0, 64)
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripStartMiles))
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripEndMiles))
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripDistance))
 		row.AddCell().Value = report.TripDetail
+		row.AddCell().Value = report.RefFuelType
 	}
 	// Add style to the header row (bold, background color)
 	headerStyle := xlsx.NewStyle()
@@ -592,28 +635,39 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_vehicle AS v").
-		Select(`v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
-				v.vehicle_license_plate_province_full, d.county, d.vehicle_get_date, d.vehicle_pea_id, 
-				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name, 
+		Select(`
+				v.mas_vehicle_uid, v.vehicle_license_plate, v.vehicle_license_plate_province_short, v.vehicle_license_plate_province_full,
+				d.vehicle_pea_id, public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name_short, 
+				public.fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) AS vehicle_dept_name_full, 
 				(select max(mc.carpool_name) from vms_mas_carpool mc, vms_mas_carpool_vehicle cpv where cpv.is_deleted = '0' and cpv.is_active = '1' and cpv.mas_carpool_uid = mc.mas_carpool_uid and cpv.mas_vehicle_uid = v.mas_vehicle_uid) AS vehicle_carpool_name, 
-				v.vehicle_brand_name,v.vehicle_model_name,
+				v."CarTypeDetail" AS vehicle_car_type_detail,
+				r.request_no, r.vehicle_user_emp_name, r.vehicle_user_position, r.vehicle_user_dept_name_short,
+				r.work_place, r.ref_trip_type_code, rt.ref_trip_type_name, r.ref_request_status_code,
+				r.driver_emp_name, r.reserve_start_datetime, r.reserve_end_datetime, r.number_of_passengers,
 				af.add_fuel_date_time, af.mile, af.tax_invoice_date, af.tax_invoice_no,af.price_per_liter,af.sum_liter,af.sum_price,
-				(select ref_cost_type_name from vms_ref_cost_type where ref_cost_type_code = af.ref_cost_type_code) as cost_type_name,
-				(select ref_oil_station_brand_name_th from vms_ref_oil_station_brand where ref_oil_station_brand_id = af.ref_oil_station_brand_id) as oil_station_brand_name,	
-				(select ref_fuel_type_name_th from vms_ref_fuel_type where ref_fuel_type_id = af.ref_fuel_type_id) as fuel_type_name,
-				(select ref_payment_type_name from vms_ref_payment_type where ref_payment_type_code = af.ref_payment_type_code) as payment_type_name
+				ct.ref_cost_type_name, osb.ref_oil_station_brand_name_th, ft.ref_fuel_type_name_th, pt.ref_payment_type_name,
+				af.add_fuel_date_time, af.mile, af.tax_invoice_date, af.tax_invoice_no,af.price_per_liter,af.sum_liter,
+				af.is_tax_credit,af.vat,af.sum_price,
+				r.cost_center,
+				r.wbs_no, r.network_no, r.activity_no, r.pm_order_no
 				`).
 		Joins("INNER JOIN public.vms_mas_vehicle_department AS d ON v.mas_vehicle_uid = d.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
-		Joins("LEFT JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
+		Joins("INNER JOIN vms_trn_request r ON r.mas_vehicle_uid = v.mas_vehicle_uid AND ("+
 			"r.reserve_start_datetime BETWEEN ? AND ? "+
 			"OR r.reserve_end_datetime BETWEEN ? AND ? "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime "+
 			"OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime)",
 			startDate, endDate, startDate, endDate, startDate, endDate).
-		Joins("LEFT JOIN vms_trn_add_fuel af ON af.is_deleted = '0' AND af.trn_request_uid = r.trn_request_uid").
+		Joins("INNER JOIN vms_trn_add_fuel af ON af.is_deleted = '0' AND af.trn_request_uid = r.trn_request_uid").
+		Joins("LEFT JOIN vms_ref_cost_type ct ON ct.ref_cost_type_code = af.ref_cost_type_code").
+		Joins("LEFT JOIN vms_ref_oil_station_brand osb ON osb.ref_oil_station_brand_id = af.ref_oil_station_brand_id").
+		Joins("LEFT JOIN vms_ref_fuel_type ft ON ft.ref_fuel_type_id = af.ref_fuel_type_id").
+		Joins("LEFT JOIN vms_ref_payment_type pt ON pt.ref_payment_type_code = af.ref_payment_type_code").
+		Joins("LEFT JOIN vms_ref_trip_type rt ON rt.ref_trip_type_code = r.ref_trip_type_code").
 		Where("v.is_deleted = ? AND d.is_deleted = ? AND d.is_active = ?", "0", "0", "1")
 
 	query = query.Where("v.mas_vehicle_uid::Text IN (?)", masVehicleUIDs)
+	query = query.Order("v.vehicle_license_plate, af.add_fuel_date_time")
 
 	if err := query.Find(&fuelReports).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
@@ -630,9 +684,40 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	// Add header row
 	headerRow := sheet.AddRow()
 	headers := []string{
-		"รหัสยานพาหนะ", "ป้ายทะเบียน", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)", "ชื่อหน่วยงาน", "ชื่อคาร์พูล",
-		"วันที่เติมน้ำมัน", "เลขไมล์", "วันที่ใบกำกับภาษี", "เลขที่ใบกำกับภาษี", "ราคาต่อลิตร", "จำนวนลิตร",
-		"ราคารวม", "ประเภทค่าใช้จ่าย", "แบรนด์สถานีบริการน้ำมัน", "ประเภทน้ำมัน", "ประเภทการชำระเงิน",
+		"เลขทะเบียน",
+		"จังหวัด (ย่อ)",
+		"จังหวัด (เต็ม)",
+		"รหัสยานพาหนะ",
+		"หน่วยงาน (ย่อ)",
+		"หน่วยงาน (เต็ม)",
+		"ชื่อกลุ่มยานพาหนะ",
+		"ประเภทยานพาหนะ",
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"ตำแหน่ง/สังกัด",
+		"สถานที่ปฏิบัติงาน",
+		"ประเภทการเดินทาง",
+		"ชื่อพนักงานขับรถ",
+		"วันที่เริ่มต้นการจอง",
+		"วันที่สิ้นสุดการจอง",
+		"วันเวลาที่เติมเชื้อเพลิง",
+		"เลขไมล์",
+		"เลขที่ใบกำกับภาษี",
+		"วันที่ใบกำกับภาษี",
+		"จำนวนลิตร/จำนวนหน่วย",
+		"ราคาต่อลิตร /ราคาต่อหน่วย",
+		"เครดิตภาษี",
+		"ภาษีมูลค่าเพิ่ม",
+		"ราคารวม",
+		"สถานีบริการ",
+		"ประเภทเชื้อเพลิง",
+		"ประเภทการชำระเงิน",
+		"ประเภทงบประมาณ",
+		"ศูนย์ต้นทุน",
+		"เลขที่ WBS",
+		"เลขที่โครงข่าย",
+		"เลขที่กิจกรรม",
+		"เลขที่ใบสั่ง",
 	}
 	for _, header := range headers {
 		cell := headerRow.AddCell()
@@ -642,31 +727,39 @@ func (h *VehicleManagementHandler) ReportAddFuel(c *gin.Context) {
 	// Add data rows
 	for _, report := range fuelReports {
 		row := sheet.AddRow()
-		row.AddCell().Value = report.VehiclePEAID
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
-		row.AddCell().Value = report.VehicleDeptName
+		row.AddCell().Value = report.VehiclePEAID
+		row.AddCell().Value = report.VehicleDeptNameShort
+		row.AddCell().Value = report.VehicleDeptNameFull
 		row.AddCell().Value = report.CarpoolName
-		if report.AddFuelDateTime.IsZero() {
-			row.AddCell().Value = ""
-		} else {
-			row.AddCell().Value = report.AddFuelDateTime.Format("2006-01-02 15:04:05")
-		}
-		row.AddCell().Value = strconv.FormatFloat(float64(report.Mile), 'f', 0, 64)
-		if report.TaxInvoiceDate.IsZero() {
-			row.AddCell().Value = ""
-		} else {
-			row.AddCell().Value = report.TaxInvoiceDate.Format("2006-01-02")
-		}
+		row.AddCell().Value = report.VehicleCarTypeDetail
+		row.AddCell().Value = report.RequestNo
+		row.AddCell().Value = report.VehicleUserEmpName
+		row.AddCell().Value = report.VehicleUserPosition + " " + report.VehicleUserDeptNameShort
+		row.AddCell().Value = report.WorkPlace
+		row.AddCell().Value = report.RefTripTypeName
+		row.AddCell().Value = report.DriverEmpName
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveStartDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveEndDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.AddFuelDateTime.Time)
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.Mile))
 		row.AddCell().Value = report.TaxInvoiceNo
+		row.AddCell().Value = funcs.GetDateWithZone(report.TaxInvoiceDate.Time)
 		row.AddCell().Value = strconv.FormatFloat(float64(report.PricePerLiter), 'f', 2, 64)
 		row.AddCell().Value = strconv.FormatFloat(float64(report.SumLiter), 'f', 2, 64)
+		row.AddCell().Value = strconv.FormatBool(report.IsTaxCredit)
+		row.AddCell().Value = strconv.FormatFloat(float64(report.Vat), 'f', 2, 64)
 		row.AddCell().Value = strconv.FormatFloat(float64(report.SumPrice), 'f', 2, 64)
-		row.AddCell().Value = report.RefCostType
 		row.AddCell().Value = report.RefOilStationBrand
 		row.AddCell().Value = report.RefFuelType
 		row.AddCell().Value = report.RefPaymentType
+		row.AddCell().Value = report.CostCenter
+		row.AddCell().Value = report.WbsNo
+		row.AddCell().Value = report.NetworkNo
+		row.AddCell().Value = report.ActivityNo
+		row.AddCell().Value = report.PmOrderNo
 	}
 	// Add style to the header row (bold, background color)
 	headerStyle := xlsx.NewStyle()
