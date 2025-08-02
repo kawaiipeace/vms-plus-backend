@@ -434,5 +434,8 @@ func main() {
 	//funcs.UpdateRecievedKeyUser("f5a31391-e38b-4752-9fb9-7a91df8ac2bd")
 	//funcs.UpdateApproverRequest("97f04cea-dbeb-4e10-9502-7fe4693dacea")
 	//funcs.CheckMustPassStatus("1c381a71-ce5d-4d63-a26d-9cee648c0ebe")
+
+	//funcs.UpdateDriverAvgScore("DZ000006")
+	//funcs.UpdateDriverAvgScore("DZ000159")
 	router.Run(config.AppConfig.Host + ":" + port)
 }
