@@ -157,7 +157,8 @@ func GetDateWithZone(date time.Time) string {
 	if date.IsZero() {
 		return ""
 	}
-	return date.In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02 15:04:05")
+	thaiYear := date.Year() + 543
+	return fmt.Sprintf("%02d-%02d-%04d %02d:%02d:%02d", date.Day(), date.Month(), thaiYear, date.Hour(), date.Minute(), date.Second())
 }
 
 func GetReportNumber(number float64) string {

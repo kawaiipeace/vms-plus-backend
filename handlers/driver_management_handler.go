@@ -1395,7 +1395,12 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 		}
 
 		row := sheet.AddRow()
-		row.AddCell().Value = report.DriverID
+		if report.DriverID == driverWorkReports[len(driverWorkReports)-1].DriverID {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.DriverID
+		}
+		driverWorkReports = append(driverWorkReports, report)
 		row.AddCell().Value = report.DriverName
 		row.AddCell().Value = report.DriverNickname
 		row.AddCell().Value = report.DriverDeptSapShortWork
