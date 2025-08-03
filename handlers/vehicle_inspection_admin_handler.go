@@ -780,12 +780,19 @@ func (h *VehicleInspectionAdminHandler) GetTravelCard(c *gin.Context) {
 	}
 	var request models.VmsTrnTravelCard
 	query := h.SetQueryRole(user, config.DB)
+	query = query.Table("public.vms_trn_request AS req").
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full").
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid")
+
 	if err := query.
 		First(&request, "trn_request_uid = ?", trnRequestUid).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
-	request.VehicleUserImageURL = config.DefaultAvatarURL
+	request.VehicleUserImageURL = funcs.GetEmpImage(request.VehicleUserEmpID)
+	request.VehicleUserDeptSAPShort = request.VehicleUserPosition + " " + request.VehicleUserDeptSAPShort
+	request.ApprovedRequestDeptSAPShort = request.ApprovedRequestPosition + " " + request.ApprovedRequestDeptSAPShort
+
 	c.JSON(http.StatusOK, request)
 }
 
@@ -993,7 +1000,7 @@ func (h *VehicleInspectionAdminHandler) UpdateRejected(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"ตีกลับยานพาหนะ",
+			"ถูกตีกลับจากผู้ดูแลยานพาหนะ",
 			user.EmpID,
 			"admin-department",
 			result.RejectedRequestReason,
@@ -1059,7 +1066,7 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 	if result.RefRequestStatusCode == request.RefRequestStatusCode {
 		funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 			request.RefRequestStatusCode,
-			"รับกุญแจและยานพาหนะคืนแล้ว จบคำขอ",
+			"ผู้ดูแลรับคืนยานพาหนะ สิ้นสุดคำขอ",
 			user.EmpID,
 			"admin-department",
 			"",

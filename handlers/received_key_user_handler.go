@@ -68,7 +68,7 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
 		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid) parking_place,"+
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place,"+
 			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
@@ -246,7 +246,7 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 		return
 	}
 	var request models.VmsTrnReceivedKeyDriver
-	var trnRequest models.VmsTrnRequestList
+	var trnRequest models.VmsTrnRequestResponse
 	var result struct {
 		models.VmsTrnReceivedKeyDriver
 		models.VmsTrnRequestRequestNo
@@ -264,6 +264,14 @@ func (h *ReceivedKeyUserHandler) UpdateKeyPickupDriver(c *gin.Context) {
 	}
 
 	request.ReceiverType = 1 // Driver
+	request.ReceiverPersonalId = trnRequest.DriverEmpID
+	request.ReceiverFullname = trnRequest.DriverEmpName
+	request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+	request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+	request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+	request.ReceiverPosition = trnRequest.DriverEmpPosition
+	request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+	request.ReceiverDeskPhone = trnRequest.DriverInternalContact
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 
@@ -503,9 +511,18 @@ func (h *ReceivedKeyUserHandler) UpdateRecieivedKeyConfirmed(c *gin.Context) {
 		return
 	}
 
+	var parkingPlace string
+	if err := config.DB.Table("public.vms_trn_request AS req").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_uid = req.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1'").
+		Select("d.parking_place").
+		Where("req.trn_request_uid = ?", request.TrnRequestUID).
+		First(&parkingPlace).Error; err != nil {
+		parkingPlace = ""
+	}
+
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"รับกุญแจยานพาหนะแล้ว",
+		"สถานที่ "+parkingPlace+" สถานที่จอดรถ",
 		user.EmpID,
 		"vehicle-user",
 		"",

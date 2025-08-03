@@ -15,6 +15,68 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/booking-admin/export-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export booking requests by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-admin"
+                ],
+                "summary": "Export booking requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/booking-admin/menu-requests": {
             "get": {
                 "security": [
@@ -508,6 +570,68 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/booking-confirmer/export-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export booking requests by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-confirmer"
+                ],
+                "summary": "Export booking requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/booking-confirmer/menu-requests": {
             "get": {
                 "security": [
@@ -765,6 +889,68 @@ const docTemplate = `{
                     "Received-key-driver"
                 ],
                 "summary": "Summary booking requests by request status code",
+                "responses": {}
+            }
+        },
+        "/api/booking-final/export-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export booking requests by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-final"
+                ],
+                "summary": "Export booking requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -1026,6 +1212,68 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.VmsTrnRequestRequest"
                         }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/booking-user/export-requests": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "AuthorizationAuth": []
+                    }
+                ],
+                "description": "Export booking requests by criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Booking-user"
+                ],
+                "summary": "Export booking requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')",
+                        "name": "ref_request_status_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start datetime (YYYY-MM-DD format)",
+                        "name": "startdate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end datetime (YYYY-MM-DD format)",
+                        "name": "enddate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by request_no, start_datetime, ref_request_status_code",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order direction: asc or desc",
+                        "name": "order_dir",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -1615,6 +1863,18 @@ const docTemplate = `{
                         "name": "mas_carpool_uid",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Carpool Type (carpool_type) example: 01",
+                        "name": "carpool_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457",
+                        "name": "dept_saps",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -1902,6 +2162,18 @@ const docTemplate = `{
                         "name": "mas_carpool_uid",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Carpool Type (carpool_type) example: 01",
+                        "name": "carpool_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457",
+                        "name": "dept_saps",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -5362,25 +5634,6 @@ const docTemplate = `{
         },
         "/api/mas/user-vehicle-users": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to retrieve Vehicle Users.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MAS"
-                ],
-                "summary": "Retrieve the Vehicle Users",
                 "parameters": [
                     {
                         "type": "string",

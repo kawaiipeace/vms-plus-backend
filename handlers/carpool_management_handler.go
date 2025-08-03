@@ -49,7 +49,7 @@ func (h *CarpoolManagementHandler) SetQueryRoleDeptVehicle(user *models.AuthenUs
 		return query
 	}
 	if slices.Contains(user.Roles, "admin-region") {
-		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+		return query.Where("d.bureau_ba like ?", user.BusinessArea[:1]+"%")
 	}
 	if slices.Contains(user.Roles, "admin-department") {
 		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
@@ -62,7 +62,7 @@ func (h *CarpoolManagementHandler) SetQueryRoleDeptDriver(user *models.AuthenUse
 		return query
 	}
 	if slices.Contains(user.Roles, "admin-region") {
-		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+		return query.Where("d.bureau_ba like ?", user.BusinessArea[:1]+"%")
 	}
 	if slices.Contains(user.Roles, "admin-department") {
 		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
@@ -719,6 +719,33 @@ func (h *CarpoolManagementHandler) UpdateCarpool(c *gin.Context) {
 	request.CreatedAt = existingCarpool.CreatedAt
 	request.CreatedBy = existingCarpool.CreatedBy
 
+	switch request.CarpoolType {
+	case "01":
+		request.CarpoolMainBusinessArea = "Z000"
+	case "02":
+		if request.CarpoolDeptSap == "" && len(request.CarpoolAuthorizedDepts) > 0 {
+			request.CarpoolDeptSap = request.CarpoolAuthorizedDepts[0].DeptSap
+		}
+		var department models.VmsMasDepartment
+		if err := config.DB.Where("dept_sap = ?", request.CarpoolDeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		request.CarpoolMainBusinessArea = department.BusinessArea
+	case "03":
+		//get business area from vms_mas_department
+		var department models.VmsMasDepartment
+		if len(request.CarpoolAuthorizedDepts) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No authorized dept", "message": messages.ErrNotfound.Error() + " กรุณาตรวจสอบอีกครั้ง"})
+			return
+		}
+		if err := config.DB.Where("dept_sap = ?", request.CarpoolAuthorizedDepts[0].DeptSap).First(&department).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		request.CarpoolMainBusinessArea = department.BusinessArea
+	}
+
 	if err := config.DB.Where("mas_carpool_uid = ?", masCarpoolUID).Delete(&models.VmsMasCarpoolAuthorizedDept{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete authorized departments: %v", err), "message": messages.ErrInternalServer.Error()})
 		return
@@ -764,11 +791,17 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 	queryRole := h.SetQueryRole(user, config.DB)
 	queryRole = h.SetQueryRoleDept(user, queryRole)
 	queryRole = queryRole.Table("vms_mas_carpool cp")
-	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ? AND carpool_name = ?", request.MasCarpoolUID, "0", request.CarpoolName).First(&carpool).Error; err != nil {
+	if err := queryRole.Where("mas_carpool_uid = ? AND is_deleted = ?", request.MasCarpoolUID, "0").First(&carpool).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Carpool not found", "message": messages.ErrNotfound.Error()})
 		return
 	}
-
+	//check if carpool name=request.CarpoolName (trim space)
+	carpool.CarpoolName = strings.TrimSpace(carpool.CarpoolName)
+	request.CarpoolName = strings.TrimSpace(request.CarpoolName)
+	if carpool.CarpoolName != request.CarpoolName {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Carpool name is not match", "message": "ชื่อกลุ่มยานพาหนะไม่ตรงกัน"})
+		return
+	}
 	var requests int64
 	if err := config.DB.Table("vms_trn_request").
 		Where("mas_vehicle_uid IN (SELECT mas_vehicle_uid FROM vms_mas_carpool_vehicle WHERE mas_carpool_uid = ? AND is_deleted = ?)", request.MasCarpoolUID, "0").
@@ -785,6 +818,7 @@ func (h *CarpoolManagementHandler) DeleteCarpool(c *gin.Context) {
 	}
 	if err := config.DB.Model(&carpool).UpdateColumns(map[string]interface{}{
 		"is_deleted": "1",
+		"is_active":  "0",
 		"updated_by": user.EmpID,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
@@ -1289,6 +1323,8 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Param mas_carpool_uid query string true "MasCarpoolUID (mas_carpool_uid)"
+// @Param carpool_type query string false "Carpool Type (carpool_type) example: 01"
+// @Param dept_saps query string false "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457"
 // @Router /api/carpool-management/admin-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -1303,9 +1339,16 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 		adminUsers = []models.VmsMasCarpoolAdminList{}
 	}
 
+	carpoolType := c.Query("carpool_type")
+	deptSaps := c.Query("dept_saps")
+	if carpoolType == "01" {
+		deptSaps = ""
+	}
+
 	request := userhub.ServiceListUserRequest{
 		ServiceCode: "vms",
 		Search:      search,
+		DeptSaps:    deptSaps,
 		Limit:       100,
 	}
 	lists, err := userhub.GetUserList(request)
@@ -1338,6 +1381,8 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Param mas_carpool_uid query string true "MasCarpoolUID (mas_carpool_uid)"
+// @Param carpool_type query string false "Carpool Type (carpool_type) example: 01"
+// @Param dept_saps query string false "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457"
 // @Router /api/carpool-management/approver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -1353,10 +1398,15 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	}
 
 	search := c.Query("search")
-
+	carpoolType := c.Query("carpool_type")
+	deptSaps := c.Query("dept_saps")
+	if carpoolType == "01" {
+		deptSaps = ""
+	}
 	request := userhub.ServiceListUserRequest{
 		ServiceCode: "vms",
 		Search:      search,
+		DeptSaps:    deptSaps,
 		Limit:       100 + len(approvers),
 	}
 	lists, err := userhub.GetUserList(request)

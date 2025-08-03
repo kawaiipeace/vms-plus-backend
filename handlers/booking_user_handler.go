@@ -238,7 +238,7 @@ func (h *BookingUserHandler) CreateRequest(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(result.TrnRequestUID,
 		result.RefRequestStatusCode,
-		"สร้างคำขอ",
+		"รออนุมัติ จากต้นสังกัด",
 		user.EmpID,
 		"vehicle-user",
 		"",
@@ -389,7 +389,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	query = query.Offset(offset).Limit(pageSizeInt)
-
+	query = query.Preload("TravelDetails")
 	// Execute the main query
 	if err := query.Scan(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
@@ -397,6 +397,26 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+
+		if funcs.IsAllowScoreButton(requests[i].TrnRequestUid) {
+			if len(requests[i].TravelDetails) > 0 {
+				requests[i].CanScoreButton = true
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = false
+			} else {
+				requests[i].CanScoreButton = false
+				requests[i].CanPickupButton = false
+				requests[i].CanTravelCardButton = true
+			}
+		} else if funcs.IsAllowPickupButton(requests[i].TrnRequestUid) {
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = true
+			requests[i].CanTravelCardButton = false
+		} else {
+			requests[i].CanScoreButton = false
+			requests[i].CanPickupButton = false
+			requests[i].CanTravelCardButton = false
+		}
 	}
 
 	// Build the summary query
@@ -471,6 +491,30 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		"requests": requests,
 		"summary":  summary,
 	})
+}
+
+// ExportRequests godoc
+// @Summary Export booking requests
+// @Description Export booking requests by criteria
+// @Tags Booking-user
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)"
+// @Param ref_request_status_code query string false "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')"
+// @Param startdate query string false "Filter by start datetime (YYYY-MM-DD format)"
+// @Param enddate query string false "Filter by end datetime (YYYY-MM-DD format)"
+// @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
+// @Param order_dir query string false "Order direction: asc or desc"
+// @Router /api/booking-user/export-requests [get]
+func (h *BookingUserHandler) ExportRequests(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	query := h.SetQueryRole(user, config.DB)
+	funcs.ExportRequests(c, user, query, StatusNameMapUser)
 }
 
 // GetRequest godoc

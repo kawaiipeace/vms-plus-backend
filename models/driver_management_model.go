@@ -12,7 +12,7 @@ type VmsMasDriverList struct {
 	DriverDeptSapWork              string             `gorm:"column:driver_dept_sap_work" json:"driver_dept_sap_work"`
 	DriverDeptSapShortWork         string             `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_name_work"`
 	DriverContactNumber            string             `gorm:"column:driver_contact_number" json:"driver_contact_number"`
-	DriverAverageSatisfactionScore float64            `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score              `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	WorkType                       int                `gorm:"column:work_type" json:"work_type"`
 	IsActive                       int                `gorm:"column:is_active" json:"is_active"`
@@ -161,7 +161,7 @@ type VmsMasDriverResponse struct {
 	DriverLicense                  VmsMasDriverLicenseResponse     `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_license"`
 	DriverCertificate              VmsMasDriverCertificateResponse `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_certificate"`
 	DriverDocuments                []VmsMasDriverDocument          `gorm:"foreignKey:MasDriverUID;references:MasDriverUID" json:"driver_documents"`
-	DriverAverageSatisfactionScore float64                         `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score                           `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int                             `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	CreatedAt                      time.Time                       `gorm:"column:created_at" json:"-"`
 	CreatedBy                      string                          `gorm:"column:created_by" json:"-"`
@@ -423,24 +423,33 @@ func (DriverTrnRequest) TableName() string {
 }
 
 type DriverWorkReport struct {
-	MasDriverUID                     string       `json:"mas_driver_uid"`
-	DriverName                       string       `json:"driver_name"`
-	DriverNickname                   string       `json:"driver_nickname"`
-	DriverID                         string       `json:"driver_id"`
-	DriverDeptSapShortWork           string       `json:"driver_dept_sap_short_work"`
-	DriverDeptSapFullWork            string       `json:"driver_dept_sap_full_work"`
-	ReserveStartDatetime             TimeWithZone `json:"reserve_start_datetime"`
-	ReserveEndDatetime               TimeWithZone `json:"reserve_end_datetime"`
-	WorkType                         string       `json:"work_type"`
-	VehicleLicensePlate              string       `json:"vehicle_license_plate"`
-	VehicleLicensePlateProvinceShort string       `json:"vehicle_license_plate_province_short"`
-	VehicleLicensePlateProvinceFull  string       `json:"vehicle_license_plate_province_full"`
-	VehicleCarTypeDetail             string       `json:"vehicle_car_type_detail"`
-	TripStartDatetime                TimeWithZone `json:"trip_start_datetime"`
-	TripEndDatetime                  TimeWithZone `json:"trip_end_datetime"`
-	TripDeparturePlace               string       `json:"trip_departure_place"`
-	TripDestinationPlace             string       `json:"trip_destination_place"`
-	TripStartMiles                   float64      `json:"trip_start_miles"`
-	TripEndMiles                     float64      `json:"trip_end_miles"`
-	TripDetail                       string       `json:"trip_detail"`
+	DriverID                         string       `gorm:"column:driver_id" json:"driver_id"`
+	DriverName                       string       `gorm:"column:driver_name" json:"driver_name"`
+	DriverNickname                   string       `gorm:"column:driver_nickname" json:"driver_nickname"`
+	DriverDeptSapShortWork           string       `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_work"`
+	DriverDeptSapFullWork            string       `gorm:"column:driver_dept_sap_full_work" json:"driver_dept_sap_full_work"`
+	CarpoolName                      string       `gorm:"column:carpool_name" json:"carpool_name"`
+	TripStartDatetime                TimeWithZone `gorm:"column:trip_start_datetime" json:"trip_start_datetime"`
+	TripEndDatetime                  TimeWithZone `gorm:"column:trip_end_datetime" json:"trip_end_datetime"`
+	TripDay                          string       `gorm:"-" json:"trip_day"`
+	RequestNo                        string       `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpName               string       `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserPosition              string       `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserDeptNameShort         string       `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
+	WorkPlace                        string       `gorm:"column:work_place" json:"work_place"`
+	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName             string       `gorm:"column:ref_request_status_name" json:"ref_request_status_name"`
+	RefTripTypeCode                  int          `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
+	RefTripTypeName                  string       `gorm:"column:ref_trip_type_name" json:"ref_trip_type_name"`
+	DriverEmpName                    string       `gorm:"column:driver_emp_name" json:"driver_emp_name"`
+	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"reserve_start_datetime"`
+	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"reserve_end_datetime"`
+	NumberOfPassengers               int          `gorm:"column:number_of_passengers" json:"number_of_passengers"`
+	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleCarTypeDetail             string       `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
+	TripStartMiles                   float64      `gorm:"column:trip_start_miles" json:"trip_start_miles"`
+	TripEndMiles                     float64      `gorm:"column:trip_end_miles" json:"trip_end_miles"`
+	TripDistance                     float64      `gorm:"column:trip_distance" json:"trip_distance"`
 }
