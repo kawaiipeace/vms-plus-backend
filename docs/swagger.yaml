@@ -1599,6 +1599,47 @@ info:
   title: VMS_PLUS
   version: "1.0"
 paths:
+  /api/booking-admin/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-admin
   /api/booking-admin/menu-requests:
     get:
       consumes:
@@ -1912,6 +1953,47 @@ paths:
       summary: Update vehicle information for a booking user
       tags:
       - Booking-admin
+  /api/booking-confirmer/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-confirmer
   /api/booking-confirmer/menu-requests:
     get:
       consumes:
@@ -2076,6 +2158,47 @@ paths:
       summary: Summary booking requests by request status code
       tags:
       - Received-key-driver
+  /api/booking-final/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
+      tags:
+      - Booking-final
   /api/booking-final/menu-requests:
     get:
       consumes:
@@ -2242,6 +2365,47 @@ paths:
       - ApiKeyAuth: []
       - AuthorizationAuth: []
       summary: Create a new booking request
+      tags:
+      - Booking-user
+  /api/booking-user/export-requests:
+    get:
+      consumes:
+      - application/json
+      description: Export booking requests by criteria
+      parameters:
+      - description: Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name,
+          or work_place)
+        in: query
+        name: search
+        type: string
+      - description: Filter by multiple request status codes (comma-separated, e.g.,
+          'A,B,C')
+        in: query
+        name: ref_request_status_code
+        type: string
+      - description: Filter by start datetime (YYYY-MM-DD format)
+        in: query
+        name: startdate
+        type: string
+      - description: Filter by end datetime (YYYY-MM-DD format)
+        in: query
+        name: enddate
+        type: string
+      - description: Order by request_no, start_datetime, ref_request_status_code
+        in: query
+        name: order_by
+        type: string
+      - description: 'Order direction: asc or desc'
+        in: query
+        name: order_dir
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      - AuthorizationAuth: []
+      summary: Export booking requests
       tags:
       - Booking-user
   /api/booking-user/menu-requests:
@@ -2605,6 +2769,14 @@ paths:
         name: mas_carpool_uid
         required: true
         type: string
+      - description: 'Carpool Type (carpool_type) example: 01'
+        in: query
+        name: carpool_type
+        type: string
+      - description: 'Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457'
+        in: query
+        name: dept_saps
+        type: string
       produces:
       - application/json
       responses: {}
@@ -2783,6 +2955,14 @@ paths:
         in: query
         name: mas_carpool_uid
         required: true
+        type: string
+      - description: 'Carpool Type (carpool_type) example: 01'
+        in: query
+        name: carpool_type
+        type: string
+      - description: 'Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457'
+        in: query
+        name: dept_saps
         type: string
       produces:
       - application/json
@@ -4979,23 +5159,12 @@ paths:
       - MAS
   /api/mas/user-vehicle-users:
     get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to retrieve Vehicle Users.
       parameters:
       - description: Search by Employee ID or Full Name
         in: query
         name: search
         type: string
-      produces:
-      - application/json
       responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Retrieve the Vehicle Users
-      tags:
-      - MAS
   /api/mas/user/{emp_id}:
     get:
       consumes:

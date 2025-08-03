@@ -1,6 +1,8 @@
 package funcs
 
 import (
+	"encoding/csv"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tealeg/xlsx"
 	"gorm.io/gorm"
 )
 
@@ -90,6 +93,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 		Preload("RefCostType").
 		Preload("MasDriver").
 		Preload("MasDriver.DriverLicense.DriverLicenseType").
+		Preload("MasDriver.DriverStatus").
 		Preload("RefRequestStatus").
 		Preload("RefTripType").
 		Preload("RefCostType").
@@ -129,7 +133,11 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	request.ConfirmedRequestImageUrl = GetEmpImage(request.ConfirmedRequestEmpID)
 	request.DriverEmpImageUrl = GetEmpImage(request.DriverEmpID)
 
-	request.DriverImageURL = config.DefaultAvatarURL
+	if request.MasDriver.DriverImage != "" {
+		request.DriverImageURL = request.MasDriver.DriverImage
+	} else {
+		request.DriverImageURL = GetEmpImage(request.DriverEmpID)
+	}
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
@@ -138,7 +146,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	request.VehicleLicensePlateProvinceShort = request.MasVehicle.VehicleLicensePlateProvinceShort
 	request.VehicleLicensePlateProvinceFull = request.MasVehicle.VehicleLicensePlateProvinceFull
 	request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = GetDeptSAPShort(request.MasVehicle.VehicleDepartment.VehicleOwnerDeptSap)
-
+	request.MasVehicle.Age = CalculateAgeInt(request.MasVehicle.VehicleRegistrationDate)
 	var vehicleImgs []models.VmsMasVehicleImg
 	if err := config.DB.Where("mas_vehicle_uid = ?", request.MasVehicle.MasVehicleUID).Find(&vehicleImgs).Error; err == nil {
 		request.MasVehicle.VehicleImgs = make([]string, 0)
@@ -161,6 +169,7 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 	}
 	//replace vehicle_owner_dept_short with carpool_name if in carpool
 	driverCarpoolName := ""
+	request.MasDriver.VendorName = request.MasDriver.DriverDeptSAPShort
 	if err := config.DB.Table("vms_mas_carpool mc").
 		Joins("INNER JOIN vms_mas_carpool_driver mcv ON mcv.mas_carpool_uid = mc.mas_carpool_uid AND mcv.mas_driver_uid = ? AND mcv.is_deleted = '0' AND mcv.is_active = '1'", request.MasDriver.MasDriverUID).
 		Select("mc.carpool_name").
@@ -196,6 +205,8 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("MasVehicle.VehicleDepartment").
 		Preload("RefCostType").
 		Preload("MasDriver").
+		Preload("MasDriver.DriverLicense.DriverLicenseType").
+		Preload("MasDriver.DriverStatus").
 		Preload("RefRequestStatus").
 		Preload("RequestVehicleType").
 		Preload("VehicleImagesReceived").
@@ -204,7 +215,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("ReceiverKeyTypeDetail").
 		Preload("RefTripType").
 		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
-		Select("vms_trn_request.*,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+		Select("vms_trn_request.*,k.receiver_type,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
@@ -216,8 +227,20 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
 	}
 	request.ParkingPlace = request.MasVehicle.VehicleDepartment.ParkingPlace
-	request.DriverImageURL = config.DefaultAvatarURL
-	request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	if request.MasDriver.DriverImage != "" {
+		request.DriverImageURL = request.MasDriver.DriverImage
+	} else {
+		request.DriverImageURL = GetEmpImage(request.DriverEmpID)
+	}
+	switch request.ReceiverKeyType {
+	case 1:
+		request.ReceivedKeyImageURL = request.MasDriver.DriverImage
+	case 2:
+		request.ReceivedKeyImageURL = GetEmpImage(request.ReceivedKeyEmpID)
+	default:
+		request.ReceivedKeyImageURL = config.DefaultAvatarURL
+	}
+
 	request.CanCancelRequest = true
 	request.IsUseDriver = request.MasCarpoolDriverUID != ""
 	request.RefRequestStatusName = StatusNameMap[request.RefRequestStatusCode]
@@ -234,7 +257,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 
 	}
 	request.MasVehicle.VehicleDepartment.VehicleOwnerDeptShort = GetDeptSAPShort(request.MasVehicle.VehicleDepartment.VehicleOwnerDeptSap)
-
+	request.MasVehicle.Age = CalculateAgeInt(request.MasVehicle.VehicleRegistrationDate)
 	if request.MasCarpoolUID != "" {
 		var carpoolAdmin models.VmsMasCarpoolAdmin
 		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasCarpoolUID).
@@ -308,11 +331,24 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			request.MasDriver.VendorName = driverCarpoolName
 		}
 	}
-	request.CanScoreButton = IsAllowScoreButton(request.TrnRequestUID)
-	if request.CanScoreButton {
-		request.CanPickupButton = false
+	if IsAllowScoreButton(request.TrnRequestUID) {
+		if request.TripDetailsCount > 0 {
+			request.CanScoreButton = true
+			request.CanPickupButton = false
+			request.CanTravelCardButton = false
+		} else {
+			request.CanScoreButton = false
+			request.CanPickupButton = false
+			request.CanTravelCardButton = true
+		}
+	} else if IsAllowPickupButton(request.TrnRequestUID) {
+		request.CanScoreButton = false
+		request.CanPickupButton = true
+		request.CanTravelCardButton = false
 	} else {
-		request.CanPickupButton = IsAllowPickupButton(request.TrnRequestUID)
+		request.CanScoreButton = false
+		request.CanPickupButton = false
+		request.CanTravelCardButton = false
 	}
 	//c.JSON(http.StatusOK, request)
 	return request, nil
@@ -376,6 +412,7 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		if err := config.DB.Table("vms_mas_carpool_approver").
 			Select("approver_emp_no").
 			Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasCarpoolUID).
+			Order("is_main_approver DESC").
 			Pluck("approver_emp_no", &empIDs).Error; err != nil {
 			return nil, err
 		}
@@ -473,12 +510,20 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 	if err != nil {
 		return
 	} else if exists {
-		//update vms_trn_request set ref_request_status_code='30'
+		var confirmedRequestEmpID string
 		if err := config.DB.Table("vms_trn_request").
 			Where("trn_request_uid = ?", trnRequestUID).
-			Update("ref_request_status_code", "30").Error; err != nil {
+			Select("confirmed_request_emp_id").
+			Scan(&confirmedRequestEmpID).Error; err != nil {
 			return
 		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"30",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
+			confirmedRequestEmpID,
+			"level1-approval",
+			"",
+		)
 	}
 }
 
@@ -507,6 +552,21 @@ func CheckMustPassStatus30(trnRequestUID string) {
 			Update("ref_request_status_code", "30").Error; err != nil {
 			return
 		}
+
+		var confirmedRequestEmpID string
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Select("confirmed_request_emp_id").
+			Scan(&confirmedRequestEmpID).Error; err != nil {
+			return
+		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"30",
+			"รอผู้ดูแลยานพาหนะตรวจสอบ",
+			confirmedRequestEmpID,
+			"level1-approval",
+			"",
+		)
 	}
 }
 
@@ -533,6 +593,21 @@ func CheckMustPassStatus40(trnRequestUID string) {
 			Update("ref_request_status_code", "40").Error; err != nil {
 			return
 		}
+		var adminEmpNo string
+		if err := config.DB.Table("vms_trn_request").
+			Joins("INNER JOIN vms_mas_carpool_admin ON vms_mas_carpool_admin.mas_carpool_uid = vms_trn_request.mas_carpool_uid AND vms_mas_carpool_admin.is_deleted = '0' AND vms_mas_carpool_admin.is_active = '1' AND is_main_admin = '1'").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Select("admin_emp_no").
+			Scan(&adminEmpNo).Error; err != nil {
+			return
+		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"40",
+			"รออนุมัติ จากเจ้าของยานพาหนะ",
+			adminEmpNo,
+			"admin-department",
+			"",
+		)
 		SetReceivedKey(trnRequestUID, "")
 	}
 }
@@ -560,6 +635,20 @@ func CheckMustPassStatus50(trnRequestUID string) {
 			Update("ref_request_status_code", "50").Error; err != nil {
 			return
 		}
+		approvedEmpID := UpdateApproverRequest(trnRequestUID)
+		UpdateRecievedKeyUser(trnRequestUID)
+
+		var receivedKey models.VmsTrnRequestApprovedWithRecieiveKey
+		if err := config.DB.First(&receivedKey, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+			return
+		}
+		CreateTrnRequestActionLog(trnRequestUID,
+			"50",
+			GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+			approvedEmpID,
+			"approval-department",
+			"",
+		)
 	}
 }
 
@@ -642,8 +731,9 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	}
 	if requestDetail.ReserveStartDatetime.Hour() >= 12 {
 		date := requestDetail.ReserveStartDatetime.Truncate(24 * time.Hour)
-		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 8, 0, 0, 0, time.Local)
-		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 12, 0, 0, 0, time.Local)
+
+		date_8_00 := time.Date(date.Year(), date.Month(), date.Day(), 1, 0, 0, 0, time.UTC)
+		date_12_00 := time.Date(date.Year(), date.Month(), date.Day(), 5, 0, 0, 0, time.UTC)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: date_8_00}
 		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: date_12_00}
 	} else {
@@ -661,8 +751,9 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		}
 
 		//settime yesterday to 8:00:00
-		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 8, 0, 0, 0, time.Local)
-		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 12, 0, 0, 0, time.Local)
+
+		yesterday_8_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 1, 0, 0, 0, time.UTC)
+		yesterday_12_00 := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 5, 0, 0, 0, time.UTC)
 		request.ReceivedKeyStartDatetime = models.TimeWithZone{Time: yesterday_8_00}
 		request.ReceivedKeyEndDatetime = models.TimeWithZone{Time: yesterday_12_00}
 	}
@@ -678,4 +769,394 @@ func SetReceivedKey(trnRequestUID string, handoverUID string) {
 		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
 		return
 	}
+}
+
+func UpdateApproverRequest(trnRequestUID string) string {
+	empIDs, err := GetFinalApprovalEmpIDs(trnRequestUID)
+	if err != nil {
+		return ""
+	}
+	if len(empIDs) > 0 {
+		empUser := GetUserEmpInfo(empIDs[0])
+		var request models.VmsTrnRequestApproved
+		request.TrnRequestUID = trnRequestUID
+		request.ApprovedRequestEmpID = empUser.EmpID
+		request.ApprovedRequestEmpName = empUser.FullName
+		request.ApprovedRequestDeptSAP = empUser.DeptSAP
+		request.ApprovedRequestDeptNameShort = empUser.DeptSAPShort
+		request.ApprovedRequestDeptNameFull = empUser.DeptSAPFull
+		request.ApprovedRequestDeskPhone = empUser.TelInternal
+		request.ApprovedRequestMobilePhone = empUser.TelMobile
+		request.ApprovedRequestPosition = empUser.Position
+		request.ApprovedRequestDatetime = models.TimeWithZone{Time: time.Now()}
+		request.UpdatedAt = time.Now()
+		request.UpdatedBy = "system"
+		request.RefRequestStatusCode = "50"
+
+		if err := config.DB.Save(&request).Error; err != nil {
+			return ""
+		}
+		return empIDs[0]
+	}
+	return ""
+}
+
+func UpdateRecievedKeyUser(trnRequestUID string) {
+	var trnRequest models.VmsTrnRequestResponse
+	if err := config.DB.First(&trnRequest, "trn_request_uid = ?", trnRequestUID).Error; err != nil {
+		return
+	}
+	var request = models.VmsTrnReceivedKeyPEA{}
+	request.TrnRequestUID = trnRequestUID
+	if trnRequest.DriverEmpID[:1] == "D" {
+		request.ReceiverType = 1 // Driver
+		request.ReceiverPersonalId = trnRequest.DriverEmpID
+		request.ReceiverFullname = trnRequest.DriverEmpName
+		request.ReceiverDeptSAP = trnRequest.DriverEmpDeptSAP
+		request.ReceiverDeptNameShort = trnRequest.DriverEmpDeptNameShort
+		request.ReceiverDeptNameFull = trnRequest.DriverEmpDeptNameFull
+		request.ReceiverPosition = trnRequest.DriverEmpPosition
+		request.ReceiverMobilePhone = trnRequest.DriverMobileContact
+		request.ReceiverDeskPhone = trnRequest.DriverInternalContact
+	} else {
+		request.ReceiverType = 2 // PEA
+		empUser := GetUserEmpInfo(trnRequest.VehicleUserEmpID)
+		request.ReceiverPersonalId = empUser.EmpID
+		request.ReceiverFullname = empUser.FullName
+		request.ReceiverDeptSAP = empUser.DeptSAP
+		request.ReceiverDeptNameShort = empUser.DeptSAPShort
+		request.ReceiverDeptNameFull = empUser.DeptSAPFull
+		request.ReceiverPosition = empUser.Position
+		request.ReceiverMobilePhone = empUser.TelMobile
+		request.ReceiverDeskPhone = empUser.TelInternal
+	}
+	if err := config.DB.Save(&request).Error; err != nil {
+		return
+	}
+}
+func ExportRequests(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
+	if c.Query("format") == "csv" {
+		ExportRequestsCSV(c, user, query, statusNameMap)
+	} else {
+		ExportRequestsXLSX(c, user, query, statusNameMap)
+	}
+}
+
+func ExportRequestsXLSX(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
+	var requests []models.VmsTrnRequestList
+
+	// Use the keys from statusNameMap as the list of valid status codes
+	statusCodes := make([]string, 0, len(statusNameMap))
+	for code := range statusNameMap {
+		statusCodes = append(statusCodes, code)
+	}
+
+	query = query.Table("public.vms_trn_request").
+		Select(`vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,ref_trip_type_code,       
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=vms_trn_request.mas_carpool_uid) vehicle_carpool_name,
+			(select log.action_detail from vms_log_request_action log where log.trn_request_uid=vms_trn_request.trn_request_uid order by log.log_request_action_datetime desc limit 1) action_detail
+		`).
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+	query = query.Where("vms_trn_request.is_deleted = ?", "0")
+	// Apply additional filters (search, date range, etc.)
+	if search := c.Query("search"); search != "" {
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if startDate := c.Query("startdate"); startDate != "" {
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
+	}
+	if endDate := c.Query("enddate"); endDate != "" {
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
+	}
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		//fmt.Println("codes", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+	}
+
+	// Ordering
+	orderBy := c.Query("order_by")
+	orderDir := c.Query("order_dir")
+	if orderDir != "desc" {
+		orderDir = "asc"
+	}
+	switch orderBy {
+	case "request_no":
+		query = query.Order("vms_trn_request.request_no " + orderDir)
+	case "start_datetime":
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
+	case "ref_request_status_code":
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	}
+
+	// Execute the main query
+	if err := query.Scan(&requests).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range requests {
+		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		switch requests[i].TripType {
+		case 0:
+			requests[i].TripTypeName = "ไป-กลับ"
+		case 1:
+			requests[i].TripTypeName = "ค้างแรม"
+		}
+	}
+
+	// Set headers
+	headers := []string{
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"รหัสพนักงาน",
+		"หน่วยงานที่สังกัด",
+		"ยานพาหนะ",
+		"สังกัดยานพาหนะ",
+		"สถานที่ปฏิบัติงาน",
+		"วันที่เดินทางเริ่มต้น",
+		"วันที่เดินทางสิ้นสุด",
+		"ประเภทการเดินทาง",
+		"รายละเอียด",
+		"สถานะคำขอ",
+	}
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("Booking Requests")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Excel sheet", "message": err.Error()})
+		return
+	}
+	headerRow := sheet.AddRow()
+	for _, header := range headers {
+		cell := headerRow.AddCell()
+		cell.Value = header
+	}
+
+	for _, request := range requests {
+		row := sheet.AddRow()
+		row.AddCell().Value = request.RequestNo
+		row.AddCell().Value = request.VehicleUserEmpName
+		row.AddCell().Value = request.VehicleUserEmpID
+		row.AddCell().Value = request.VehicleUserDeptNameShort
+		row.AddCell().Value = request.VehicleLicensePlate + " " + request.VehicleLicensePlateProvinceFull
+		row.AddCell().Value = request.VehicleDepartmentDeptSapShort
+		row.AddCell().Value = request.WorkPlace
+
+		row.AddCell().Value = GetDateWithZone(request.ReserveStartDatetime.Time)
+		row.AddCell().Value = GetDateWithZone(request.ReserveEndDatetime.Time)
+		row.AddCell().Value = request.TripTypeName
+		row.AddCell().Value = request.ActionDetail
+		row.AddCell().Value = request.RefRequestStatusName
+	}
+	// Add style to the header row (bold, background color)
+	headerStyle := xlsx.NewStyle()
+	font := xlsx.DefaultFont()
+	font.Bold = true
+	headerStyle.Font = *font
+	headerStyle.ApplyFont = true
+	headerStyle.Font.Color = "FFFFFF"
+	headerStyle.Fill = *xlsx.NewFill("solid", "4F81BD", "4F81BD")
+	headerStyle.ApplyFill = true
+	headerStyle.Alignment.Horizontal = "center"
+	headerStyle.Alignment.Vertical = "center"
+	headerStyle.ApplyAlignment = true
+	headerStyle.Border = xlsx.Border{
+		Left:   "thin",
+		Top:    "thin",
+		Bottom: "thin",
+		Right:  "thin",
+	}
+	headerStyle.ApplyBorder = true
+
+	// Apply style and auto-size columns for header row
+	for i, cell := range headerRow.Cells {
+		cell.SetStyle(headerStyle)
+		// Auto-size columns (set a default width)
+		col := sheet.Col(i)
+		if col != nil {
+			col.Width = 20
+		}
+	}
+	c.Header("Content-Disposition", "attachment; filename=requests.xlsx")
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("File-Name", fmt.Sprintf("requests_%s.xlsx", time.Now().Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+	if err := file.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file", "message": err.Error()})
+		return
+	}
+}
+
+func ExportRequestsCSV(c *gin.Context, user *models.AuthenUserEmp, query *gorm.DB, statusNameMap map[string]string) {
+	var requests []models.VmsTrnRequestList
+
+	// Use the keys from statusNameMap as the list of valid status codes
+	statusCodes := make([]string, 0, len(statusNameMap))
+	for code := range statusNameMap {
+		statusCodes = append(statusCodes, code)
+	}
+
+	query = query.Table("public.vms_trn_request").
+		Select(`vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,ref_trip_type_code,       
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=vms_trn_request.mas_carpool_uid) vehicle_carpool_name,
+			(select log.action_detail from vms_log_request_action log where log.trn_request_uid=vms_trn_request.trn_request_uid order by log.log_request_action_datetime desc limit 1) action_detail
+		`).
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+	query = query.Where("vms_trn_request.is_deleted = ?", "0")
+	// Apply additional filters (search, date range, etc.)
+	if search := c.Query("search"); search != "" {
+		query = query.Where("vms_trn_request.request_no ILIKE ? OR v.vehicle_license_plate ILIKE ? OR vms_trn_request.vehicle_user_emp_name ILIKE ? OR vms_trn_request.work_place ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if startDate := c.Query("startdate"); startDate != "" {
+		query = query.Where("vms_trn_request.reserve_end_datetime >= ?", startDate)
+	}
+	if endDate := c.Query("enddate"); endDate != "" {
+		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
+	}
+	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
+		// Split the comma-separated codes into a slice
+		codes := strings.Split(refRequestStatusCodes, ",")
+		// Include additional keys with the same text in StatusNameMapUser
+		additionalCodes := make(map[string]bool)
+		for _, code := range codes {
+			if name, exists := statusNameMap[code]; exists {
+				for key, value := range statusNameMap {
+					if value == name {
+						additionalCodes[key] = true
+					}
+				}
+			}
+		}
+		// Merge the original codes with the additional codes
+		for key := range additionalCodes {
+			codes = append(codes, key)
+		}
+		//fmt.Println("codes", codes)
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+	}
+
+	// Ordering
+	orderBy := c.Query("order_by")
+	orderDir := c.Query("order_dir")
+	if orderDir != "desc" {
+		orderDir = "asc"
+	}
+	switch orderBy {
+	case "request_no":
+		query = query.Order("vms_trn_request.request_no " + orderDir)
+	case "start_datetime":
+		query = query.Order("vms_trn_request.start_datetime " + orderDir)
+	case "ref_request_status_code":
+		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	}
+
+	// Execute the main query
+	if err := query.Scan(&requests).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	for i := range requests {
+		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		switch requests[i].TripType {
+		case 0:
+			requests[i].TripTypeName = "ไป-กลับ"
+		case 1:
+			requests[i].TripTypeName = "ค้างแรม"
+		}
+	}
+
+	// Set headers
+	headers := []string{
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"รหัสพนักงาน",
+		"หน่วยงานที่สังกัด",
+		"ยานพาหนะ",
+		"สังกัดยานพาหนะ",
+		"สถานที่ปฏิบัติงาน",
+		"วันที่เดินทางเริ่มต้น",
+		"วันที่เดินทางสิ้นสุด",
+		"ประเภทการเดินทาง",
+		"รายละเอียด",
+		"สถานะคำขอ",
+	}
+
+	// Set CSV headers
+	c.Header("Content-Disposition", "attachment; filename=requests.csv")
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("File-Name", fmt.Sprintf("requests_%s.csv", time.Now().Format("2006-01-02")))
+	c.Header("Content-Transfer-Encoding", "binary")
+
+	writer := csv.NewWriter(c.Writer)
+	defer writer.Flush()
+
+	// Write header row
+	if err := writer.Write(headers); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV header", "message": err.Error()})
+		return
+	}
+
+	// Write data rows
+	for _, request := range requests {
+		row := []string{
+			request.RequestNo,
+			request.VehicleUserEmpName,
+			request.VehicleUserEmpID,
+			request.VehicleUserDeptNameShort,
+			request.VehicleLicensePlate + " " + request.VehicleLicensePlateProvinceFull,
+			request.VehicleDepartmentDeptSapShort,
+			request.WorkPlace,
+			request.ReserveStartDatetime.Format("2006-01-02 15:04:05"),
+			request.ReserveEndDatetime.Format("2006-01-02 15:04:05"),
+			request.TripTypeName,
+			request.ActionDetail,
+			request.RefRequestStatusName,
+		}
+		if err := writer.Write(row); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write CSV row", "message": err.Error()})
+			return
+		}
+	}
+}
+
+func UpdateDriverAvgScore(driverID string) {
+	//fn_driver_avg_score('DZ000229')
+	var driverScore struct {
+		AvgScore        float64 `json:"avg_score"`
+		TotalEvaluation int     `json:"total_evaluation"`
+	}
+	query := fmt.Sprintf("SELECT * FROM fn_driver_avg_score('%s')", driverID)
+	if err := config.DB.Raw(query).Scan(&driverScore).Error; err != nil {
+		fmt.Println("Error getting driver score:", err)
+		return
+	}
+	//update to vms_mas_driver
+	config.DB.Model(&models.VmsMasDriver{}).Where("driver_id = ?", driverID).
+		Updates(map[string]interface{}{
+			"driver_average_satisfaction_score": driverScore.AvgScore,
+			"driver_total_satisfaction_review":  driverScore.TotalEvaluation,
+		})
+
+	fmt.Println("Driver score:", driverScore)
 }

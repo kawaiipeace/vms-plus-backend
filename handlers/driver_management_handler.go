@@ -34,7 +34,7 @@ func (h *DriverManagementHandler) SetQueryRoleDept(user *models.AuthenUserEmp, q
 		return query
 	}
 	if slices.Contains(user.Roles, "admin-region") {
-		return query.Where("d.bureau_ba = ?", user.BusinessArea)
+		return query.Where("d.bureau_ba like ?", user.BusinessArea[:1]+"%")
 	}
 	if slices.Contains(user.Roles, "admin-department") {
 		return query.Where("d.bureau_dept_sap = ?", user.BureauDeptSap)
@@ -1310,22 +1310,27 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = h.SetQueryRoleDept(user, query)
 	query = query.Table("public.vms_mas_driver AS d").
-		Select(`d.mas_driver_uid, d.driver_name, d.driver_nickname, d.driver_id, 
+		Select(` d.driver_id,  d.driver_name, d.driver_nickname,
 				d.driver_dept_sap_short_work, d.driver_dept_sap_full_work, 
-				r.reserve_start_datetime, r.reserve_end_datetime,
+				cp.carpool_name,
+				td.trip_start_datetime, td.trip_end_datetime, td.trip_departure_place, 
+				r.request_no,r.vehicle_user_emp_name,r.vehicle_user_position,r.vehicle_user_dept_name_short,
+				r.work_place,r.ref_trip_type_code,rt.ref_trip_type_name,r.ref_request_status_code,
+				r.reserve_start_datetime, r.reserve_end_datetime,r.number_of_passengers,
 				v.vehicle_license_plate, v.vehicle_license_plate_province_short, 
 				v.vehicle_license_plate_province_full, v."CarTypeDetail" AS vehicle_car_type_detail,
-				td.trip_start_datetime, td.trip_end_datetime, td.trip_departure_place, td.trip_destination_place,
-				td.trip_start_miles, td.trip_end_miles, td.trip_detail`).
+				td.trip_start_miles, td.trip_end_miles, td.trip_end_miles - td.trip_start_miles AS trip_distance`).
 		Joins("INNER JOIN vms_trn_request r ON r.mas_carpool_driver_uid = d.mas_driver_uid").
 		Joins("INNER JOIN vms_mas_vehicle v ON v.mas_vehicle_uid = r.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_trn_trip_detail td ON td.trn_request_uid = r.trn_request_uid").
+		Joins("LEFT JOIN vms_mas_carpool cp ON cp.mas_carpool_uid = r.mas_carpool_uid").
+		Joins("LEFT JOIN vms_ref_trip_type rt ON rt.ref_trip_type_code = r.ref_trip_type_code").
 		Where("d.is_deleted = ? AND d.is_active = ?", "0", "1").
 		Where("r.reserve_start_datetime BETWEEN ? AND ? OR r.reserve_end_datetime BETWEEN ? AND ? OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime OR ? BETWEEN r.reserve_start_datetime AND r.reserve_end_datetime",
 			startDate, endDate, startDate, endDate, startDate, endDate)
 
 	query = query.Where("d.mas_driver_uid::Text IN (?)", masDriverUIDs)
-
+	query = query.Order("d.driver_id ASC, r.reserve_start_datetime ASC,td.trip_start_datetime ASC")
 	if err := query.Find(&driverWorkReports).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Internal server error"})
 		return
@@ -1341,11 +1346,31 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 	// Add header row
 	headerRow := sheet.AddRow()
 	headers := []string{
-		"รหัสพนักงานขับรถ", "ชื่อพนักงานขับรถ", "ชื่อเล่น",
-		"หน่วยงาน (ย่อ)", "หน่วยงาน (เต็ม)", "วันเวลาเริ่มงาน", "วันเวลาสิ้นสุดงาน",
-		"ทะเบียนรถ", "จังหวัด (ย่อ)", "จังหวัด (เต็ม)", "ประเภทรถ",
-		"วันเวลาเริ่มต้นการเดินทาง", "วันเวลาสิ้นสุดการเดินทาง", "สถานที่ออกเดินทาง", "สถานที่ถึง",
-		"ระยะทางเริ่มต้น", "ระยะทางสิ้นสุด", "รายละเอียดการเดินทาง",
+		"รหัสพนักงานขับรถ",
+		"ชื่อพนักงานขับรถ",
+		"ชื่อเล่น",
+		"หน่วยงาน (ย่อ)",
+		"หน่วยงาน (เต็ม)",
+		"ชื่อกลุ่มยานพาหนะ",
+		"วันเวลาเริ่มงาน",
+		"วันเวลาสิ้นสุดงาน",
+		"จำนวนวัน",
+		"เลขที่คำขอ",
+		"ผู้ใช้ยานพาหนะ",
+		"ตำแหน่ง/สังกัด",
+		"สถานที่ปฏิบัติงาน",
+		"ประเภทการเดินทาง",
+		"วันที่เริ่มต้นการจอง",
+		"วันที่สิ้นสุดการจอง",
+		"จำนวนผู้โดยสาร (รวมผู้ขับขี่)",
+		"สถานะ",
+		"เลขทะเบียน",
+		"จังหวัด (ย่อ)",
+		"จังหวัด (เต็ม)",
+		"ประเภทรถ",
+		"เลขไมล์ต้นทาง",
+		"เลขไมล์ปลายทาง",
+		"ระยะทางเดินทาง (กม.)",
 	}
 	for _, header := range headers {
 		cell := headerRow.AddCell()
@@ -1354,24 +1379,52 @@ func (h *DriverManagementHandler) GetDriverWorkReport(c *gin.Context) {
 
 	// Add data rows
 	for _, report := range driverWorkReports {
+		if report.RefRequestStatusCode == "80" {
+			report.RefRequestStatusName = "เสร็จสิ้น"
+		} else if report.RefRequestStatusCode < "50" {
+			report.RefRequestStatusName = "รออนุมัติ"
+		} else if report.RefTripTypeCode == 0 {
+			report.RefRequestStatusName = "ไป-กลับ"
+		} else if report.RefTripTypeCode == 1 {
+			report.RefRequestStatusName = "ค้างแรม"
+		}
+		report.TripDay = strconv.Itoa(int(report.TripEndDatetime.Time.Sub(report.TripStartDatetime.Time).Hours()/24)+1) + " วัน"
+		//if hours less than 5
+		if report.TripEndDatetime.Time.Sub(report.TripStartDatetime.Time).Hours() < 5 {
+			report.TripDay = "1 วัน(ไม่เต็มวัน)"
+		}
+
 		row := sheet.AddRow()
-		row.AddCell().Value = report.DriverID
+		if report.DriverID == driverWorkReports[len(driverWorkReports)-1].DriverID {
+			row.AddCell().Value = ""
+		} else {
+			row.AddCell().Value = report.DriverID
+		}
+		driverWorkReports = append(driverWorkReports, report)
 		row.AddCell().Value = report.DriverName
 		row.AddCell().Value = report.DriverNickname
 		row.AddCell().Value = report.DriverDeptSapShortWork
 		row.AddCell().Value = report.DriverDeptSapFullWork
-		row.AddCell().Value = report.ReserveStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.ReserveEndDatetime.Format("2006-01-02 15:04:05")
+		row.AddCell().Value = report.CarpoolName
+		row.AddCell().Value = funcs.GetDateWithZone(report.TripStartDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.TripEndDatetime.Time)
+		row.AddCell().Value = report.TripDay
+		row.AddCell().Value = report.RequestNo
+		row.AddCell().Value = report.VehicleUserEmpName
+		row.AddCell().Value = report.VehicleUserPosition + " " + report.VehicleUserDeptNameShort
+		row.AddCell().Value = report.WorkPlace
+		row.AddCell().Value = report.RefTripTypeName
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveStartDatetime.Time)
+		row.AddCell().Value = funcs.GetDateWithZone(report.ReserveEndDatetime.Time)
+		row.AddCell().Value = strconv.Itoa(report.NumberOfPassengers)
+		row.AddCell().Value = report.RefRequestStatusName
 		row.AddCell().Value = report.VehicleLicensePlate
 		row.AddCell().Value = report.VehicleLicensePlateProvinceShort
 		row.AddCell().Value = report.VehicleLicensePlateProvinceFull
 		row.AddCell().Value = report.VehicleCarTypeDetail
-		row.AddCell().Value = report.TripStartDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.TripEndDatetime.Format("2006-01-02 15:04:05")
-		row.AddCell().Value = report.TripDeparturePlace
-		row.AddCell().Value = report.TripDestinationPlace
-		row.AddCell().Value = fmt.Sprintf("%f", report.TripStartMiles)
-		row.AddCell().Value = fmt.Sprintf("%f", report.TripEndMiles)
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripStartMiles))
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripEndMiles))
+		row.AddCell().Value = funcs.GetReportNumber(float64(report.TripDistance))
 	}
 
 	// Add style to the header row (bold, background color)

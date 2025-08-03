@@ -201,9 +201,10 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		if requests[i].RefCarpoolChooseCarID == 2 && requests[i].MasVehicleUID == nil {
 			requests[i].CanChooseVehicle = true
 		}
-		if requests[i].TripType == 0 {
+		switch requests[i].TripType {
+		case 0:
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 1 {
+		case 1:
 			requests[i].TripTypeName = "ค้างแรม"
 		}
 		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
@@ -437,7 +438,7 @@ func (h *BookingAdminHandler) UpdateRejected(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		"ผู้ดูแลยานพาหนะตีกลับคำขอ",
+		"ถูกตึกลับ จากผู้ดูแลยานพาหนะ",
 		user.EmpID,
 		"admin-department",
 		request.RejectedRequestReason,
@@ -513,7 +514,7 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		requestStatus.RefRequestStatusCode,
-		"ผู้ดูแลยานพาหนะ ตรวจสอบผ่านแล้ว",
+		"รออนุมัติ จากเจ้าของยานพาหนะ",
 		user.EmpID,
 		"admin-department",
 		"",
@@ -938,4 +939,28 @@ func (h *BookingAdminHandler) UpdateVehicle(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updated successfully", "result": result})
+}
+
+// ExportRequests godoc
+// @Summary Export booking requests
+// @Description Export booking requests by criteria
+// @Tags Booking-admin
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security AuthorizationAuth
+// @Param search query string false "Search keyword (matches request_no, vehicle_license_plate, vehicle_user_emp_name, or work_place)"
+// @Param ref_request_status_code query string false "Filter by multiple request status codes (comma-separated, e.g., 'A,B,C')"
+// @Param startdate query string false "Filter by start datetime (YYYY-MM-DD format)"
+// @Param enddate query string false "Filter by end datetime (YYYY-MM-DD format)"
+// @Param order_by query string false "Order by request_no, start_datetime, ref_request_status_code"
+// @Param order_dir query string false "Order direction: asc or desc"
+// @Router /api/booking-admin/export-requests [get]
+func (h *BookingAdminHandler) ExportRequests(c *gin.Context) {
+	user := funcs.GetAuthenUser(c, h.Role)
+	if c.IsAborted() {
+		return
+	}
+	query := h.SetQueryRole(user, config.DB)
+	funcs.ExportRequests(c, user, query, StatusNameMapAdmin)
 }

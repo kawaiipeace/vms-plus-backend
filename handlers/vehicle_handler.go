@@ -80,8 +80,8 @@ func (h *VehicleHandler) SearchVehicles(c *gin.Context) {
 	query = query.Joins("LEFT JOIN vms_mas_vehicle_department vd ON v.mas_vehicle_uid = vd.mas_vehicle_uid")
 	query = query.Where("v.is_deleted = '0'")
 	query = query.Where("vd.ref_vehicle_status_code = '0' and vd.is_deleted = '0' and vd.is_active = '1'")
-	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba = ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))",
-		user.BureauDeptSap, user.BusinessArea, ref_trip_type_code)
+	query = query.Where("(vd.bureau_dept_sap = ?) OR (bureau_ba like ? AND (ref_other_use_code = 2 OR ref_other_use_code= 1 AND ? = 0))",
+		user.BureauDeptSap, user.BusinessArea[:1]+"%", ref_trip_type_code)
 	//ref_other_use_code = 2 -> ref_trip_type_code=1 ค้างแรม
 	//ref_other_use_code = 1 -> ref_trip_type_code=0 ไปกลับ
 
@@ -192,16 +192,22 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	masVehicleUIDs := make([]string, 0)
 	masCarpoolUIDs := make([]string, 0)
 	adminChooseDriverMasCarpoolUIDs := make([]string, 0)
+	systemChooseDriverMasCarpoolUIDs := make([]string, 0)
 	adminChooseDriverMasVehicleUIDs := make([]string, 0)
+	systemChooseDriverMasVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
 		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
 			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 		} else {
 			masVehicleUIDs = append(masVehicleUIDs, vehicleCanBooking.MasVehicleUID)
 		}
-		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 || vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
+		if vehicleCanBooking.RefCarpoolChooseDriverID == 2 {
 			adminChooseDriverMasCarpoolUIDs = append(adminChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 			adminChooseDriverMasVehicleUIDs = append(adminChooseDriverMasVehicleUIDs, vehicleCanBooking.MasVehicleUID)
+		}
+		if vehicleCanBooking.RefCarpoolChooseDriverID == 3 {
+			systemChooseDriverMasCarpoolUIDs = append(systemChooseDriverMasCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
+			systemChooseDriverMasVehicleUIDs = append(systemChooseDriverMasVehicleUIDs, vehicleCanBooking.MasVehicleUID)
 		}
 	}
 
@@ -218,6 +224,11 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			carpools[i].IsAdminChooseDriver = true
 		} else {
 			carpools[i].IsAdminChooseDriver = false
+		}
+		if funcs.Contains(systemChooseDriverMasCarpoolUIDs, carpools[i].MasCarpoolUID) {
+			carpools[i].IsSystemChooseDriver = true
+		} else {
+			carpools[i].IsSystemChooseDriver = false
 		}
 	}
 
@@ -260,7 +271,12 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 
 	// Apply filters if provided
 	if ownerDept != "" {
-		query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+		if len(ownerDept) > 10 {
+			//search by mas_carpool_uid
+			query = query.Where("cpv.mas_carpool_uid = ?", ownerDept)
+		} else {
+			query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+		}
 	}
 	if carType != "" {
 		query = query.Where("\"CarTypeDetail\" = ?", carType)
@@ -282,8 +298,14 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		} else {
 			vehicles[i].IsAdminChooseDriver = false
 		}
+		if funcs.Contains(systemChooseDriverMasVehicleUIDs, vehicles[i].MasVehicleUID) {
+			vehicles[i].IsSystemChooseDriver = true
+		} else {
+			vehicles[i].IsSystemChooseDriver = false
+		}
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptSAP = ""
 			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
@@ -406,6 +428,7 @@ func (h *VehicleHandler) SearchBookingVehiclesCarpool(c *gin.Context) {
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptSAP = ""
 			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
@@ -495,9 +518,16 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 			vehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
 			vehicle.VehicleDepartment.VehicleUser.IsEmployee = true
 		}
+		var carpool models.VmsMasCarpoolList
+		if err := config.DB.Table("vms_mas_carpool").Where("mas_carpool_uid = ? AND is_deleted = '0'", masCarpoolUID).First(&carpool).Error; err == nil {
+			vehicle.VehicleDepartment.VehicleOwnerDeptSap = ""
+			vehicle.VehicleDepartment.VehicleOwnerDeptShort = carpool.CarpoolName
+		}
+
 	}
 
 	funcs.TrimStringFields(&vehicle)
+
 	c.JSON(http.StatusOK, vehicle)
 }
 
@@ -629,10 +659,10 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 		return
 	}
 
-	query := config.DB.Raw(`SELECT vehicle_owner_dept_sap AS dept_sap,
-		fn_get_long_short_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_short,
-		fn_get_long_full_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_full
-	 FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by vehicle_owner_dept_sap`,
+	query := config.DB.Raw(`SELECT CASE WHEN carpool_name!='' THEN mas_carpool_uid::text ELSE vehicle_owner_dept_sap END AS dept_sap,
+		max(CASE WHEN carpool_name!='' THEN carpool_name ELSE fn_get_long_short_dept_name_by_dept_sap(vehicle_owner_dept_sap) END) AS dept_short,
+		max(CASE WHEN carpool_name!='' THEN carpool_name ELSE fn_get_long_full_dept_name_by_dept_sap(vehicle_owner_dept_sap) END) AS dept_full
+	 FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by (CASE WHEN carpool_name!='' THEN mas_carpool_uid::text ELSE vehicle_owner_dept_sap END)`,
 		startDate, endDate, bureauDeptSap, businessArea)
 
 	err := query.Scan(&departments).Error

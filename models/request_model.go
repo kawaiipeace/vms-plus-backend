@@ -35,32 +35,36 @@ func (VmsTrnRequestAdminList) TableName() string {
 
 // VmsTrnRequestList
 type VmsTrnRequestList struct {
-	TrnRequestUid                    string       `gorm:"column:trn_request_uid;type:uuid;" json:"trn_request_uid"`
-	RequestNo                        string       `gorm:"column:request_no" json:"request_no"`
-	VehicleUserEmpID                 string       `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
-	VehicleUserPosition              string       `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
-	VehicleUserEmpName               string       `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
-	VehicleUserDeptNameShort         string       `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short" example:"Finance"`
-	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
-	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
-	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
-	VehicleDepartmentDeptSapShort    string       `gorm:"column:vehicle_department_dept_sap_short" json:"vehicle_department_dept_sap_short"`
-	WorkPlace                        string       `gorm:"column:work_place" json:"work_place"`
-	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"start_datetime"`
-	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"end_datetime"`
-	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
-	RefRequestStatusName             string       `json:"ref_request_status_name"`
-	IsHaveSubRequest                 string       `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
-	ReceivedKeyPlace                 string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
-	ReceivedKeyStartDatetime         TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
-	ReceivedKeyEndDatetime           TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
-	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
-	IsPEAEmployeeDriver              string       `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
-	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
-	WorkDescription                  string       `gorm:"column:work_description" json:"work_description"`
-	ActionDetail                     string       `gorm:"column:action_detail" json:"action_detail"`
-	CanPickupButton                  bool         `gorm:"-" json:"can_pickup_button"`
-	CanScoreButton                   bool         `gorm:"-" json:"can_score_button"`
+	TrnRequestUid                    string                 `gorm:"column:trn_request_uid;primaryKey;" json:"trn_request_uid"`
+	RequestNo                        string                 `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpID                 string                 `gorm:"column:vehicle_user_emp_id" json:"vehicle_user_emp_id"`
+	VehicleUserPosition              string                 `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserEmpName               string                 `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserDeptNameShort         string                 `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short" example:"Finance"`
+	VehicleLicensePlate              string                 `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
+	VehicleLicensePlateProvinceShort string                 `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
+	VehicleLicensePlateProvinceFull  string                 `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
+	VehicleDepartmentDeptSapShort    string                 `gorm:"column:vehicle_department_dept_sap_short" json:"vehicle_department_dept_sap_short"`
+	WorkPlace                        string                 `gorm:"column:work_place" json:"work_place"`
+	ReserveStartDatetime             TimeWithZone           `gorm:"column:reserve_start_datetime" json:"start_datetime"`
+	ReserveEndDatetime               TimeWithZone           `gorm:"column:reserve_end_datetime" json:"end_datetime"`
+	RefRequestStatusCode             string                 `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName             string                 `json:"ref_request_status_name"`
+	IsHaveSubRequest                 string                 `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
+	ReceivedKeyPlace                 string                 `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
+	ReceivedKeyStartDatetime         TimeWithZone           `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
+	ReceivedKeyEndDatetime           TimeWithZone           `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
+	CanceledRequestDatetime          TimeWithZone           `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	IsPEAEmployeeDriver              string                 `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
+	CarpoolName                      string                 `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	WorkDescription                  string                 `gorm:"column:work_description" json:"work_description"`
+	ActionDetail                     string                 `gorm:"column:action_detail" json:"action_detail"`
+	CanPickupButton                  bool                   `gorm:"-" json:"can_pickup_button"`
+	CanScoreButton                   bool                   `gorm:"-" json:"can_score_button"`
+	CanTravelCardButton              bool                   `gorm:"-" json:"can_travel_card_button"`
+	TravelDetails                    []VmsTrnTripDetailList `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUid" json:"-"`
+	TripType                         int                    `gorm:"column:ref_trip_type_code" json:"trip_type" example:"1"`
+	TripTypeName                     string                 `gorm:"-" json:"trip_type_name" example:"1"`
 }
 
 func (VmsTrnRequestList) TableName() string {
@@ -190,7 +194,7 @@ type VmsTrnRequestResponse struct {
 
 	ReserveStartDatetime TimeWithZone   `gorm:"column:reserve_start_datetime" json:"start_datetime" swaggertype:"string" example:"2025-01-01T08:00:00Z"`
 	ReserveEndDatetime   TimeWithZone   `gorm:"column:reserve_end_datetime" json:"end_datetime" swaggertype:"string" example:"2025-01-01T10:00:00Z"`
-	RefTripTypeCode      int            `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
+	RefTripTypeCode      *int           `gorm:"ref_trip_type_code" json:"trip_type" example:"1"`
 	RefTripType          VmsRefTripType `gorm:"foreignKey:RefTripTypeCode;references:RefTripTypeCode" json:"trip_type_name"`
 
 	WorkPlace          string `gorm:"column:work_place" json:"work_place" example:"Head Office"`

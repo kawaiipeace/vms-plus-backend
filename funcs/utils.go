@@ -53,7 +53,6 @@ func DefaultUUID() string {
 }
 
 func CalculateAge(date time.Time) string {
-	fmt.Println("date", date)
 	today := time.Now()
 	years := today.Year() - date.Year()
 	months := today.Month() - date.Month()
@@ -145,4 +144,26 @@ func IsHoliday(date time.Time, holidays []models.VmsMasHolidays) bool {
 	}
 
 	return false
+}
+
+func GetDateBuddhistYear(date time.Time) string {
+	day := date.Day()
+	month := int(date.Month())
+	year := date.Year() + 543
+	return fmt.Sprintf("%02d/%02d/%04d", day, month, year)
+}
+
+func GetDateWithZone(date time.Time) string {
+	if date.IsZero() {
+		return ""
+	}
+	thaiYear := date.Year() + 543
+	return fmt.Sprintf("%02d-%02d-%04d %02d:%02d:%02d", date.Day(), date.Month(), thaiYear, date.Hour(), date.Minute(), date.Second())
+}
+
+func GetReportNumber(number float64) string {
+	if number == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%.0f", number)
 }

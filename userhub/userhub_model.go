@@ -44,6 +44,7 @@ type ServiceUserInfoResponse struct {
 type ServiceListUserRequest struct {
 	ServiceCode   string `json:"service_code" example:"vms"`
 	Search        string `json:"search" example:"700001"`
+	DeptSaps      string `json:"dept_saps" example:"4455,4456,4457"`
 	UpperDeptSap  string `json:"upper_dept_sap" example:"4455"`
 	BureauDeptSap string `json:"bureau_dept_sap" example:"4455"`
 	BusinessArea  string `json:"business_area" example:"Z00"`

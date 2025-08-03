@@ -98,44 +98,78 @@ func (VehicleTrnRequest) TableName() string {
 }
 
 type VehicleReportTripDetail struct {
-	MasVehicleUID                    string       `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	VehiclePEAID                     string       `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
-	VehicleDeptName                  string       `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
+	VehiclePEAID                     string       `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	VehicleDeptNameShort             string       `gorm:"column:vehicle_dept_name_short" json:"vehicle_dept_name_short"`
+	VehicleDeptNameFull              string       `gorm:"column:vehicle_dept_name_full" json:"vehicle_dept_name_full"`
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	VehicleCarTypeDetail             string       `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
-	VehicleMileage                   string       `gorm:"column:vehicle_mileage" json:"vehicle_mileage"`
-	TripStartDatetime                TimeWithZone `gorm:"column:trip_start_datetime;type:timestamp with time zone" json:"trip_start_datetime" example:"2025-03-26T08:00:00Z"`
-	TripEndDatetime                  TimeWithZone `gorm:"column:trip_end_datetime;type:timestamp" json:"trip_end_datetime" example:"2025-03-26T10:00:00Z"`
-	TripDeparturePlace               string       `gorm:"column:trip_departure_place" json:"trip_departure_place" example:"Changi Airport"`
-	TripDestinationPlace             string       `gorm:"column:trip_destination_place" json:"trip_destination_place" example:"Marina Bay Sands"`
-	TripStartMiles                   int          `gorm:"column:trip_start_miles" json:"trip_start_miles" example:"5000"`
-	TripEndMiles                     int          `gorm:"column:trip_end_miles" json:"trip_end_miles" example:"5050"`
-	TripDetail                       string       `gorm:"column:trip_detail" json:"trip_detail" example:"Routine transport between airport and hotel."`
+	RequestNo                        string       `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpName               string       `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserPosition              string       `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserDeptNameShort         string       `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
+	WorkPlace                        string       `gorm:"column:work_place" json:"work_place"`
+	RefTripTypeCode                  int          `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
+	RefTripTypeName                  string       `gorm:"column:ref_trip_type_name" json:"ref_trip_type_name"`
+	DriverEmpName                    string       `gorm:"column:driver_emp_name" json:"driver_emp_name"`
+	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"reserve_start_datetime"`
+	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"reserve_end_datetime"`
+	NumberOfPassengers               int          `gorm:"column:number_of_passengers" json:"number_of_passengers"`
+	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName             string       `gorm:"column:ref_request_status_name" json:"ref_request_status_name"`
+
+	TripStartDatetime    TimeWithZone `gorm:"column:trip_start_datetime;type:timestamp with time zone" json:"trip_start_datetime" example:"2025-03-26T08:00:00Z"`
+	TripEndDatetime      TimeWithZone `gorm:"column:trip_end_datetime;type:timestamp" json:"trip_end_datetime" example:"2025-03-26T10:00:00Z"`
+	TripDeparturePlace   string       `gorm:"column:trip_departure_place" json:"trip_departure_place" example:"Changi Airport"`
+	TripDestinationPlace string       `gorm:"column:trip_destination_place" json:"trip_destination_place" example:"Marina Bay Sands"`
+	TripStartMiles       int          `gorm:"column:trip_start_miles" json:"trip_start_miles" example:"5000"`
+	TripEndMiles         int          `gorm:"column:trip_end_miles" json:"trip_end_miles" example:"5050"`
+	TripDistance         int          `gorm:"column:trip_distance" json:"trip_distance" example:"1000"`
+	TripDetail           string       `gorm:"column:trip_detail" json:"trip_detail" example:"Routine transport between airport and hotel."`
+	RefFuelTypeID        int          `gorm:"column:ref_fuel_type_id" json:"ref_fuel_type_id"`
+	RefFuelType          string       `gorm:"column:ref_fuel_type_name_th" json:"ref_fuel_type_name_th" example:"Gasoline"`
 }
 
 type VehicleReportAddFuel struct {
-	MasVehicleUID                    string       `gorm:"column:mas_vehicle_uid" json:"mas_vehicle_uid"`
-	VehiclePEAID                     string       `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
 	VehicleLicensePlate              string       `gorm:"column:vehicle_license_plate" json:"vehicle_license_plate"`
 	VehicleLicensePlateProvinceShort string       `gorm:"column:vehicle_license_plate_province_short" json:"vehicle_license_plate_province_short"`
 	VehicleLicensePlateProvinceFull  string       `gorm:"column:vehicle_license_plate_province_full" json:"vehicle_license_plate_province_full"`
-	VehicleDeptName                  string       `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
+	VehiclePEAID                     string       `gorm:"column:vehicle_pea_id" json:"vehicle_pea_id"`
+	VehicleDeptNameShort             string       `gorm:"column:vehicle_dept_name_short" json:"vehicle_dept_name_short"`
+	VehicleDeptNameFull              string       `gorm:"column:vehicle_dept_name_full" json:"vehicle_dept_name_full"`
 	CarpoolName                      string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
 	VehicleCarTypeDetail             string       `gorm:"column:vehicle_car_type_detail" json:"vehicle_car_type_detail"`
+	RequestNo                        string       `gorm:"column:request_no" json:"request_no"`
+	VehicleUserEmpName               string       `gorm:"column:vehicle_user_emp_name" json:"vehicle_user_emp_name"`
+	VehicleUserPosition              string       `gorm:"column:vehicle_user_position" json:"vehicle_user_position"`
+	VehicleUserDeptNameShort         string       `gorm:"column:vehicle_user_dept_name_short" json:"vehicle_user_dept_name_short"`
+	WorkPlace                        string       `gorm:"column:work_place" json:"work_place"`
+	RefTripTypeCode                  int          `gorm:"column:ref_trip_type_code" json:"ref_trip_type_code"`
+	RefTripTypeName                  string       `gorm:"column:ref_trip_type_name" json:"ref_trip_type_name"`
+	DriverEmpName                    string       `gorm:"column:driver_emp_name" json:"driver_emp_name"`
+	ReserveStartDatetime             TimeWithZone `gorm:"column:reserve_start_datetime" json:"reserve_start_datetime"`
+	ReserveEndDatetime               TimeWithZone `gorm:"column:reserve_end_datetime" json:"reserve_end_datetime"`
+	NumberOfPassengers               int          `gorm:"column:number_of_passengers" json:"number_of_passengers"`
+	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
+	RefRequestStatusName             string       `gorm:"column:ref_request_status_name" json:"ref_request_status_name"`
+	AddFuelDateTime                  TimeWithZone `gorm:"column:add_fuel_date_time" json:"add_fuel_date_time" example:"2025-03-26T08:00:00Z"`
 	Mile                             int          `gorm:"column:mile" json:"mile" example:"12000"`
 	TaxInvoiceDate                   TimeWithZone `gorm:"column:tax_invoice_date;type:timestamp" json:"tax_invoice_date" example:"2025-03-26T08:00:00Z"`
 	TaxInvoiceNo                     string       `gorm:"column:tax_invoice_no;type:varchar(20)" json:"tax_invoice_no" example:"INV1234567890"`
 	PricePerLiter                    float64      `gorm:"column:price_per_liter;type:numeric(10,2)" json:"price_per_liter" example:"35.50"`
 	SumLiter                         float64      `gorm:"column:sum_liter;type:numeric(10,2)" json:"sum_liter" example:"50.00"`
+	IsTaxCredit                      bool         `gorm:"column:is_tax_credit" json:"is_tax_credit" example:"true"`
+	Vat                              float64      `gorm:"column:vat;type:numeric(10,2)" json:"vat" example:"7.00"`
 	SumPrice                         float64      `gorm:"column:sum_price;type:numeric(10,2)" json:"sum_price" example:"1872.50"`
-	ReceiptImg                       string       `gorm:"column:receipt_img;type:varchar(100)" json:"receipt_img" example:"http://vms.pea.co.th/receipt.jpg"`
-	AddFuelDateTime                  TimeWithZone `gorm:"column:add_fuel_date_time" json:"add_fuel_date_time" example:"2025-03-26T08:00:00Z"`
 	RefCostTypeCode                  int          `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
-	RefCostType                      string       `gorm:"column:ref_cost_type" json:"ref_cost_type" example:"Fuel"`
-	RefOilStationBrand               string       `gorm:"column:ref_oil_station_brand" json:"ref_oil_station_brand" example:"PTT"`
-	RefFuelType                      string       `gorm:"column:ref_fuel_type" json:"ref_fuel_type" example:"Gasoline"`
-	RefPaymentType                   string       `gorm:"column:ref_payment_type" json:"ref_payment_type" example:"Credit Card"`
+	RefOilStationBrand               string       `gorm:"column:ref_oil_station_brand_name_th" json:"ref_oil_station_brand_name_th" example:"PTT"`
+	RefFuelType                      string       `gorm:"column:ref_fuel_type_name_th" json:"ref_fuel_type_name_th" example:"Gasoline"`
+	RefPaymentType                   string       `gorm:"column:ref_payment_type_name" json:"ref_payment_type_name" example:"Credit Card"`
+	CostCenter                       string       `gorm:"column:cost_center" json:"cost_center" example:"Fuel"`
+	WbsNo                            string       `gorm:"column:wbs_no" json:"wbs_no" example:"1234567890"`
+	NetworkNo                        string       `gorm:"column:network_no" json:"network_no" example:"1234567890"`
+	ActivityNo                       string       `gorm:"column:activity_no" json:"activity_no" example:"1234567890"`
+	PmOrderNo                        string       `gorm:"column:pm_order_no" json:"pm_order_no" example:"1234567890"`
 }
