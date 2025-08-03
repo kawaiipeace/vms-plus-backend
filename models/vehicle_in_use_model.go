@@ -77,6 +77,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	CostCenter      string         `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
+	ActivityNo      string         `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
 	ProjectNo       string         `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
 	PmOrderNo       string         `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 

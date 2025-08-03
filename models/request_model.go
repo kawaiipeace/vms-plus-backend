@@ -115,7 +115,8 @@ type VmsTrnRequestRequest struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	RefCostTypeCode int    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
 	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
@@ -202,7 +203,8 @@ type VmsTrnRequestResponse struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -351,7 +353,8 @@ func (VmsTrnRequestPickup) TableName() string {
 type VmsTrnRequestDocument struct {
 	TrnRequestUID string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	DocNo         string    `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName   string    `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 	UpdatedAt     time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy     string    `gorm:"column:updated_by" json:"-"`
 }
