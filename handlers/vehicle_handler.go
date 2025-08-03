@@ -271,7 +271,12 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 
 	// Apply filters if provided
 	if ownerDept != "" {
-		query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+		if len(ownerDept) > 10 {
+			//search by mas_carpool_uid
+			query = query.Where("cpv.mas_carpool_uid = ?", ownerDept)
+		} else {
+			query = query.Where("vehicle_owner_dept_sap = ?", ownerDept)
+		}
 	}
 	if carType != "" {
 		query = query.Where("\"CarTypeDetail\" = ?", carType)
@@ -300,6 +305,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		}
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptSAP = ""
 			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
@@ -422,6 +428,7 @@ func (h *VehicleHandler) SearchBookingVehiclesCarpool(c *gin.Context) {
 	for i := range vehicles {
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
+			vehicles[i].VehicleOwnerDeptSAP = ""
 			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
@@ -511,9 +518,16 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 			vehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
 			vehicle.VehicleDepartment.VehicleUser.IsEmployee = true
 		}
+		var carpool models.VmsMasCarpoolList
+		if err := config.DB.Table("vms_mas_carpool").Where("mas_carpool_uid = ? AND is_deleted = '0'", masCarpoolUID).First(&carpool).Error; err == nil {
+			vehicle.VehicleDepartment.VehicleOwnerDeptSap = ""
+			vehicle.VehicleDepartment.VehicleOwnerDeptShort = carpool.CarpoolName
+		}
+
 	}
 
 	funcs.TrimStringFields(&vehicle)
+
 	c.JSON(http.StatusOK, vehicle)
 }
 
@@ -645,10 +659,10 @@ func (h *VehicleHandler) GetDepartments(c *gin.Context) {
 		return
 	}
 
-	query := config.DB.Raw(`SELECT vehicle_owner_dept_sap AS dept_sap,
-		fn_get_long_short_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_short,
-		fn_get_long_full_dept_name_by_dept_sap(vehicle_owner_dept_sap) AS dept_full
-	 FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by vehicle_owner_dept_sap`,
+	query := config.DB.Raw(`SELECT CASE WHEN carpool_name!='' THEN mas_carpool_uid::text ELSE vehicle_owner_dept_sap END AS dept_sap,
+		max(CASE WHEN carpool_name!='' THEN carpool_name ELSE fn_get_long_short_dept_name_by_dept_sap(vehicle_owner_dept_sap) END) AS dept_short,
+		max(CASE WHEN carpool_name!='' THEN carpool_name ELSE fn_get_long_full_dept_name_by_dept_sap(vehicle_owner_dept_sap) END) AS dept_full
+	 FROM fn_get_available_vehicles_view (?, ?, ?, ?) group by (CASE WHEN carpool_name!='' THEN mas_carpool_uid::text ELSE vehicle_owner_dept_sap END)`,
 		startDate, endDate, bureauDeptSap, businessArea)
 
 	err := query.Scan(&departments).Error

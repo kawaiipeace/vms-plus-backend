@@ -26,17 +26,18 @@ type MasHandler struct {
 // @Produce json
 // @Security ApiKeyAuth
 // @Security AuthorizationAuth
+
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Router /api/mas/user-vehicle-users [get]
 func (h *MasHandler) ListVehicleUser(c *gin.Context) {
-	funcs.GetAuthenUser(c, "*")
+	user := funcs.GetAuthenUser(c, "*")
 	search := c.Query("search")
 
 	request := userhub.ServiceListUserRequest{
-		ServiceCode: "vms",
-		Search:      search,
-		//BureauDeptSap: user.BureauDeptSap,
-		Limit: 100,
+		ServiceCode:   "vms",
+		Search:        search,
+		BureauDeptSap: user.BureauDeptSap,
+		Limit:         100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {

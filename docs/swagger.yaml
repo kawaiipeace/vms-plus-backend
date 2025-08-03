@@ -2566,6 +2566,14 @@ paths:
         name: mas_carpool_uid
         required: true
         type: string
+      - description: 'Carpool Type (carpool_type) example: 01'
+        in: query
+        name: carpool_type
+        type: string
+      - description: 'Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457'
+        in: query
+        name: dept_saps
+        type: string
       produces:
       - application/json
       responses: {}
@@ -2744,6 +2752,14 @@ paths:
         in: query
         name: mas_carpool_uid
         required: true
+        type: string
+      - description: 'Carpool Type (carpool_type) example: 01'
+        in: query
+        name: carpool_type
+        type: string
+      - description: 'Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457'
+        in: query
+        name: dept_saps
         type: string
       produces:
       - application/json
@@ -4940,23 +4956,12 @@ paths:
       - MAS
   /api/mas/user-vehicle-users:
     get:
-      consumes:
-      - application/json
-      description: This endpoint allows a user to retrieve Vehicle Users.
       parameters:
       - description: Search by Employee ID or Full Name
         in: query
         name: search
         type: string
-      produces:
-      - application/json
       responses: {}
-      security:
-      - ApiKeyAuth: []
-      - AuthorizationAuth: []
-      summary: Retrieve the Vehicle Users
-      tags:
-      - MAS
   /api/mas/user/{emp_id}:
     get:
       consumes:

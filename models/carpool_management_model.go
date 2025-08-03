@@ -400,7 +400,7 @@ type VmsMasCarpoolDriverDetail struct {
 	DriverDeptSapShortNameWork     string       `gorm:"column:driver_dept_sap_short_work" json:"driver_dept_sap_short_work"`
 	DriverContactNumber            string       `gorm:"column:driver_contact_number" json:"driver_contact_number"`
 	ApprovedJobDriverEndDate       TimeWithZone `gorm:"column:approved_job_driver_end_date" json:"approved_job_driver_end_date"`
-	DriverAverageSatisfactionScore float64      `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
+	DriverAverageSatisfactionScore Score        `gorm:"column:driver_average_satisfaction_score" json:"driver_average_satisfaction_score"`
 	DriverTotalSatisfactionReview  int          `gorm:"column:driver_total_satisfaction_review" json:"driver_total_satisfaction_review"`
 	RefDriverStatusName            string       `gorm:"column:driver_status_name" json:"driver_status_name"`
 	ContractNo                     string       `gorm:"column:contract_no" json:"contract_no"`

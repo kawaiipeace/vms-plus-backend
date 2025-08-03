@@ -1323,6 +1323,8 @@ func (h *CarpoolManagementHandler) DeleteCarpoolAdmin(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Param mas_carpool_uid query string true "MasCarpoolUID (mas_carpool_uid)"
+// @Param carpool_type query string false "Carpool Type (carpool_type) example: 01"
+// @Param dept_saps query string false "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457"
 // @Router /api/carpool-management/admin-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -1337,9 +1339,16 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 		adminUsers = []models.VmsMasCarpoolAdminList{}
 	}
 
+	carpoolType := c.Query("carpool_type")
+	deptSaps := c.Query("dept_saps")
+	if carpoolType == "01" {
+		deptSaps = ""
+	}
+
 	request := userhub.ServiceListUserRequest{
 		ServiceCode: "vms",
 		Search:      search,
+		DeptSaps:    deptSaps,
 		Limit:       100,
 	}
 	lists, err := userhub.GetUserList(request)
@@ -1372,6 +1381,8 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 // @Security AuthorizationAuth
 // @Param search query string false "Search by Employee ID or Full Name"
 // @Param mas_carpool_uid query string true "MasCarpoolUID (mas_carpool_uid)"
+// @Param carpool_type query string false "Carpool Type (carpool_type) example: 01"
+// @Param dept_saps query string false "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457"
 // @Router /api/carpool-management/approver-mas-search [get]
 func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	funcs.GetAuthenUser(c, h.Role)
@@ -1387,10 +1398,15 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	}
 
 	search := c.Query("search")
-
+	carpoolType := c.Query("carpool_type")
+	deptSaps := c.Query("dept_saps")
+	if carpoolType == "01" {
+		deptSaps = ""
+	}
 	request := userhub.ServiceListUserRequest{
 		ServiceCode: "vms",
 		Search:      search,
+		DeptSaps:    deptSaps,
 		Limit:       100 + len(approvers),
 	}
 	lists, err := userhub.GetUserList(request)

@@ -1863,6 +1863,18 @@ const docTemplate = `{
                         "name": "mas_carpool_uid",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Carpool Type (carpool_type) example: 01",
+                        "name": "carpool_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457",
+                        "name": "dept_saps",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -2150,6 +2162,18 @@ const docTemplate = `{
                         "name": "mas_carpool_uid",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Carpool Type (carpool_type) example: 01",
+                        "name": "carpool_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department SAP (dept_sap1,dept_sap2,dept_sap3) example: 4455,4456,4457",
+                        "name": "dept_saps",
+                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -5610,25 +5634,6 @@ const docTemplate = `{
         },
         "/api/mas/user-vehicle-users": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "AuthorizationAuth": []
-                    }
-                ],
-                "description": "This endpoint allows a user to retrieve Vehicle Users.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MAS"
-                ],
-                "summary": "Retrieve the Vehicle Users",
                 "parameters": [
                     {
                         "type": "string",
