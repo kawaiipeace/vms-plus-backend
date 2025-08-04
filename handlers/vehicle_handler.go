@@ -306,7 +306,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
 			vehicles[i].VehicleOwnerDeptSAP = ""
-			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
+			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName + "(carpool)"
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
 		}
