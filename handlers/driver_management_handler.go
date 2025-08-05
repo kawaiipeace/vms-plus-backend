@@ -103,7 +103,11 @@ func (h *DriverManagementHandler) SearchDrivers(c *gin.Context) {
 	}
 
 	if driverDeptSAP := c.Query("driver_dept_sap_work"); driverDeptSAP != "" {
-		query = query.Where("d.driver_dept_sap_work = ?", driverDeptSAP)
+		if len(driverDeptSAP) > 10 {
+			query = query.Where("d.mas_carpool_uid = ?", driverDeptSAP)
+		} else {
+			query = query.Where("d.driver_dept_sap_work = ?", driverDeptSAP)
+		}
 	}
 
 	if workType := c.Query("work_type"); workType != "" {

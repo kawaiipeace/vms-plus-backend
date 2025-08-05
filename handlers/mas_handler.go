@@ -658,8 +658,16 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve driver departments", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, driverDepts)
+	var carpools []models.VmsMasDepartment
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("CAST(mas_carpool_uid AS TEXT) AS dept_sap, carpool_name AS dept_short, carpool_name AS dept_full, 'Car pool' AS dept_type").
+		Where("is_deleted = ? AND is_active = ?", "0", "1").
+		Find(&carpools).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve carpools", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	results := append(driverDepts, carpools...)
+	c.JSON(http.StatusOK, results)
 }
 
 // ListConfirmerLicenseUser godoc
