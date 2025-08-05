@@ -60,7 +60,7 @@ type VmsMasVehicleDepartmentList struct {
 
 type VmsMasDepartment struct {
 	DeptSAP        string `gorm:"column:dept_sap;primaryKey" json:"dept_sap"`
-	DeptShort      string `gorm:"column:dept_short" json:"dept_short"`
+	DeptShort      string `gorm:"column:dept_long_short" json:"dept_short"`
 	DeptFull       string `gorm:"column:dept_full" json:"dept_full"`
 	CostCenterCode string `gorm:"column:cost_center_code" json:"cost_center_code"`
 	CostCenterName string `gorm:"column:cost_center_name" json:"cost_center_name"`
