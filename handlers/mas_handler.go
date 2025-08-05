@@ -579,6 +579,7 @@ func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
 		Select("vd.vehicle_owner_dept_sap, MAX(d.dept_long_short) AS dept_sap_short, MAX(d.dept_full) AS dept_sap_full, 'PEA' AS dept_type").
 		Joins("INNER JOIN vms_mas_department d ON d.dept_sap = vd.vehicle_owner_dept_sap").
 		Where("vd.is_deleted = ? AND vd.is_active = ? AND d.is_deleted = ?", "0", "1", "0").
+		Where("d.dept_long_short IS NOT NULL").
 		Group("vd.vehicle_owner_dept_sap").
 		Order("vd.vehicle_owner_dept_sap").
 		Find(&vehicleDepts).Error; err != nil {
@@ -648,6 +649,7 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 	search := c.Query("search")
 	query := config.DB
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
+	query = query.Where("dept_long_short IS NOT NULL")
 	if search != "" {
 		query = query.Where("dept_sap ILIKE ? OR dept_long_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
