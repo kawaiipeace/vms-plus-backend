@@ -12280,6 +12280,10 @@ const docTemplate = `{
         "models.VmsTrnRequestApprovedWithRecieiveKey": {
             "type": "object",
             "properties": {
+                "approved_request_emp_id": {
+                    "type": "string",
+                    "example": "700001"
+                },
                 "received_key_end_datetime": {
                     "type": "string",
                     "example": "2025-02-16T09:30:00Z"
@@ -12374,6 +12378,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "doc_file": {
+                    "type": "string",
+                    "example": "https://vms-plus.pea.co.th/files/document.pdf"
+                },
+                "doc_file_name": {
                     "type": "string",
                     "example": "document.pdf"
                 },
@@ -12475,6 +12483,10 @@ const docTemplate = `{
                     "example": "B0002211"
                 },
                 "doc_file": {
+                    "type": "string",
+                    "example": "https://vms-plus.pea.co.th/files/document.pdf"
+                },
+                "doc_file_name": {
                     "type": "string",
                     "example": "document.pdf"
                 },

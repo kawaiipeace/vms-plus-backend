@@ -963,6 +963,9 @@ definitions:
     type: object
   models.VmsTrnRequestApprovedWithRecieiveKey:
     properties:
+      approved_request_emp_id:
+        example: "700001"
+        type: string
       received_key_end_datetime:
         example: "2025-02-16T09:30:00Z"
         type: string
@@ -1030,6 +1033,9 @@ definitions:
   models.VmsTrnRequestDocument:
     properties:
       doc_file:
+        example: https://vms-plus.pea.co.th/files/document.pdf
+        type: string
+      doc_file_name:
         example: document.pdf
         type: string
       doc_no:
@@ -1103,6 +1109,9 @@ definitions:
         example: B0002211
         type: string
       doc_file:
+        example: https://vms-plus.pea.co.th/files/document.pdf
+        type: string
+      doc_file_name:
         example: document.pdf
         type: string
       doc_no:

@@ -90,7 +90,11 @@ func (h *VehicleManagementHandler) SearchVehicles(c *gin.Context) {
 	}
 
 	if vehicleOwnerDeptSAP := c.Query("vehicle_owner_dept_sap"); vehicleOwnerDeptSAP != "" {
-		query = query.Where("vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
+		if len(vehicleOwnerDeptSAP) > 10 {
+			query = query.Where("mc.mas_carpool_uid = ?", vehicleOwnerDeptSAP)
+		} else {
+			query = query.Where("vehicle_owner_dept_sap = ?", vehicleOwnerDeptSAP)
+		}
 	}
 
 	if categoryCode := c.Query("ref_vehicle_category_code"); categoryCode != "" {

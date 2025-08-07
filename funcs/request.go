@@ -178,6 +178,53 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 			request.MasDriver.VendorName = driverCarpoolName
 		}
 	}
+
+	if vehicleCarpoolName != "" {
+		var carpoolAdmin models.VmsMasCarpoolAdmin
+		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasCarpoolUID).
+			Select("admin_emp_no,admin_emp_name,admin_dept_sap,admin_position,mobile_contact_number,internal_contact_number").
+			Order("is_main_admin DESC").
+			First(&carpoolAdmin).Error; err == nil {
+			request.MasVehicle.VehicleDepartment.VehicleUser.EmpID = carpoolAdmin.AdminEmpNo
+			request.MasVehicle.VehicleDepartment.VehicleUser.FullName = carpoolAdmin.AdminEmpName
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAP = carpoolAdmin.AdminDeptSap
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPFull = GetDeptSAPFull(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPShort = GetDeptSAPShort(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.ImageUrl = GetEmpImage(carpoolAdmin.AdminEmpNo)
+			request.MasVehicle.VehicleDepartment.VehicleUser.Position = carpoolAdmin.AdminPosition
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelMobile = carpoolAdmin.MobileContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.IsEmployee = true
+		}
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return request, err
+		}
+		if len(userList) > 0 {
+			request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return request, err
+			}
+			if len(userList) > 0 {
+				request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
+		}
+	}
 	if request.RefRequestStatusCode == "90" {
 		// Check VmsLogRequest
 		var logRequest models.VmsLogRequest
@@ -274,6 +321,34 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			request.MasVehicle.VehicleDepartment.VehicleUser.TelMobile = carpoolAdmin.MobileContactNumber
 			request.MasVehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
 			request.MasVehicle.VehicleDepartment.VehicleUser.IsEmployee = true
+		}
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return request, err
+		}
+		if len(userList) > 0 {
+			request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return request, err
+			}
+			if len(userList) > 0 {
+				request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
 		}
 	}
 
@@ -377,10 +452,19 @@ func GetAdminApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		return empIDs, nil
 	} else {
 		var bureauDeptSap string
+
+		if result.MasVehicleUID != "" && result.MasVehicleUID != DefaultUUID() {
+			if err := config.DB.Table("vms_mas_vehicle_department").
+				Select("bureau_dept_sap").
+				Where("mas_vehicle_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasVehicleUID).
+				Scan(&bureauDeptSap).Error; err != nil {
+				return nil, err
+			}
+		}
 		request := userhub.ServiceListUserRequest{
 			ServiceCode:   "vms",
 			Search:        "",
-			Role:          "admin_approval",
+			Role:          "admin-department-main",
 			BureauDeptSap: bureauDeptSap,
 			Limit:         100,
 		}
@@ -418,21 +502,15 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		}
 		return empIDs, nil
 	} else {
-		var bureauDeptSap string
-		request := userhub.ServiceListUserRequest{
-			ServiceCode:   "vms",
-			Search:        "",
-			Role:          "final_approval",
-			BureauDeptSap: bureauDeptSap,
-			Limit:         100,
-		}
-		lists, err := userhub.GetUserList(request)
-		if err != nil {
+		var approvedRequestEmpID string
+		if err := config.DB.Table("vms_trn_request").
+			Select("approved_request_emp_id").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Scan(&approvedRequestEmpID).Error; err != nil {
 			return nil, err
 		}
-		for _, list := range lists {
-			empIDs = append(empIDs, list.EmpID)
-		}
+		fmt.Println("approvedRequestEmpID", approvedRequestEmpID)
+		empIDs = append(empIDs, approvedRequestEmpID)
 		return empIDs, nil
 	}
 }
@@ -510,6 +588,11 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 	if err != nil {
 		return
 	} else if exists {
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
 		var confirmedRequestEmpID string
 		if err := config.DB.Table("vms_trn_request").
 			Where("trn_request_uid = ?", trnRequestUID).

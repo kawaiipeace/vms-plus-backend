@@ -196,6 +196,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	adminChooseDriverMasVehicleUIDs := make([]string, 0)
 	systemChooseDriverMasVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
+
 		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
 			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 		} else {
@@ -231,7 +232,15 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			carpools[i].IsSystemChooseDriver = false
 		}
 	}
-
+	if len(ownerDept) > 10 {
+		filteredCarpools := make([]models.VmsMasCarpoolCarBooking, 0, len(carpools))
+		for _, carpool := range carpools {
+			if carpool.MasCarpoolUID == ownerDept {
+				filteredCarpools = append(filteredCarpools, carpool)
+			}
+		}
+		carpools = filteredCarpools
+	}
 	totalGroups := len(carpools)
 	// Pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))        // Default page = 1
@@ -306,7 +315,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
 			vehicles[i].VehicleOwnerDeptSAP = ""
-			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
+			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName + "(carpool)"
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
 		}

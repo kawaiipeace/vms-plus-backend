@@ -67,7 +67,7 @@ func CheckApproverRole(user *models.AuthenUserEmp) {
 	if count > 0 {
 		user.Roles = append(user.Roles, "license-approval")
 	}
-	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is not null", user.EmpID).Count(&count)
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is null", user.EmpID).Count(&count)
 	if count > 0 {
 		user.Roles = append(user.Roles, "approval-department")
 	}
@@ -210,7 +210,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("700001")
+		user, err := userhub.GetUserInfo("500029")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
@@ -280,11 +280,17 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		if role == "admin-department" {
 			CheckCarpoolAdminRole(&empUser)
 		}
+		if role == "admin-department-main" {
+			CheckCarpoolAdminRole(&empUser)
+		}
 		if role == "admin-carpool" {
 			CheckCarpoolAdminRole(&empUser)
 		}
 		if role == "approval-carpool" {
 			CheckCarpoolApprovalRole(&empUser)
+		}
+		if role == "approval-department" {
+			CheckApproverRole(&empUser)
 		}
 	}
 
@@ -338,7 +344,8 @@ func SetQueryAdminRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
 		) or exists (
 			select 1 from vms_mas_vehicle_department vd 
 			where vd.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid 
-			and vd.bureau_dept_sap in (?)	
+			and vd.bureau_dept_sap in (?) and vd.is_deleted = '0' and vd.is_active = '1'
+			and is_in_carpool = '0'
 		)`,
 		user.EmpID,
 		user.BureauDeptSap,
@@ -352,13 +359,10 @@ func SetQueryApproverRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
 			select 1 from vms_mas_carpool_approver ca 
 			where ca.mas_carpool_uid = vms_trn_request.mas_carpool_uid 
 			and ca.approver_emp_no = ? and ca.is_deleted = '0' and ca.is_active = '1' 
-		) or exists (
-			select 1 from vms_mas_vehicle_department vd 
-			where vd.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid 
-			and vd.bureau_dept_sap in (?)	
-		)`,
+			) or (vms_trn_request.mas_carpool_uid is null and approved_request_emp_id = ?)
+		`,
 		user.EmpID,
-		user.BureauDeptSap,
+		user.EmpID,
 	)
 	return query
 }

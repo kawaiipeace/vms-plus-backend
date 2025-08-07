@@ -27,6 +27,8 @@ type VmsTrnRequestAdminList struct {
 	RefCarpoolChooseCarID    int          `gorm:"column:ref_carpool_choose_car_id" json:"-"`
 	RefCarpoolChooseDriverID int          `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
+	KeyReceiverFullName      string       `gorm:"column:key_receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort string       `gorm:"column:key_receiver_dept_name_short" json:"key_receiver_dept_name_short"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -115,7 +117,8 @@ type VmsTrnRequestRequest struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	RefCostTypeCode int    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
 	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
@@ -202,7 +205,8 @@ type VmsTrnRequestResponse struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -351,7 +355,8 @@ func (VmsTrnRequestPickup) TableName() string {
 type VmsTrnRequestDocument struct {
 	TrnRequestUID string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	DocNo         string    `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName   string    `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 	UpdatedAt     time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy     string    `gorm:"column:updated_by" json:"-"`
 }
@@ -522,10 +527,12 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_start" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_end" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 	ReceiverType             int          `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
-	CreatedBy                string       `gorm:"column:created_by" json:"-"`
-	CreatedAt                time.Time    `gorm:"column:created_at" json:"-"`
-	UpdatedBy                string       `gorm:"column:updated_by" json:"-"`
-	UpdatedAt                time.Time    `gorm:"column:updated_at" json:"-"`
+	ApprovedRequestEmpID     string       `gorm:"-" json:"approved_request_emp_id" example:"700001"`
+
+	CreatedBy string    `gorm:"column:created_by" json:"-"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"-"`
+	UpdatedBy string    `gorm:"column:updated_by" json:"-"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"-"`
 }
 
 func (VmsTrnRequestApprovedWithRecieiveKey) TableName() string {
