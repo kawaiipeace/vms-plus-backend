@@ -322,6 +322,34 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 			request.MasVehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
 			request.MasVehicle.VehicleDepartment.VehicleUser.IsEmployee = true
 		}
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return request, err
+		}
+		if len(userList) > 0 {
+			request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return request, err
+			}
+			if len(userList) > 0 {
+				request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
+		}
 	}
 
 	request.MileUsed = request.MileEnd - request.MileStart
