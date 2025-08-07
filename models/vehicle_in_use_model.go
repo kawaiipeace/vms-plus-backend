@@ -113,6 +113,8 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
 
+	IsPeaEmployeeDriver string `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
+
 	ReceivedKeyEmpID         string `gorm:"column:receiver_personal_id" json:"received_key_emp_id" example:"990001"`
 	ReceivedKeyEmpName       string `gorm:"column:receiver_fullname" json:"received_key_emp_name"`
 	ReceivedKeyDeptSAP       string `gorm:"column:receiver_dept_sap" json:"received_key_dept_sap"`
