@@ -67,7 +67,7 @@ func CheckApproverRole(user *models.AuthenUserEmp) {
 	if count > 0 {
 		user.Roles = append(user.Roles, "license-approval")
 	}
-	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is not null", user.EmpID).Count(&count)
+	config.DB.Model(&models.VmsTrnRequestList{}).Where("approved_request_emp_id = ? and mas_carpool_uid is null", user.EmpID).Count(&count)
 	if count > 0 {
 		user.Roles = append(user.Roles, "approval-department")
 	}
@@ -288,6 +288,9 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		}
 		if role == "approval-carpool" {
 			CheckCarpoolApprovalRole(&empUser)
+		}
+		if role == "approval-department" {
+			CheckApproverRole(&empUser)
 		}
 	}
 

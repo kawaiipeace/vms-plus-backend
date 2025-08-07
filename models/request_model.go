@@ -527,7 +527,7 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_start" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_end" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 	ReceiverType             int          `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
-	ApprovedRequestEmpID     string       `gorm:"column:approved_request_emp_id" json:"approved_request_emp_id" example:"700001"`
+	ApprovedRequestEmpID     string       `gorm:"-" json:"approved_request_emp_id" example:"700001"`
 
 	CreatedBy string    `gorm:"column:created_by" json:"-"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"-"`
