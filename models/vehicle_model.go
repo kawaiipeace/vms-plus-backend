@@ -175,6 +175,7 @@ type VmsMasVehicleDepartment struct {
 	Remark               string     `gorm:"column:remark" json:"remark"`
 	RefVehicleStatusCode int        `gorm:"column:ref_vehicle_status_code" json:"ref_vehicle_status_code"`
 	RefOtherUseCode      *int       `gorm:"column:ref_other_use_code" json:"ref_other_use_code"`
+	BureauDeptSap        string     `gorm:"column:bureau_dept_sap" json:"bureau_dept_sap"`
 	VehicleUser          MasUserEmp `gorm:"-" json:"vehicle_user"`
 }
 

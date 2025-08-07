@@ -210,7 +210,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("460137")
+		user, err := userhub.GetUserInfo("492702")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
@@ -338,7 +338,8 @@ func SetQueryAdminRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
 		) or exists (
 			select 1 from vms_mas_vehicle_department vd 
 			where vd.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid 
-			and vd.bureau_dept_sap in (?)	
+			and vd.bureau_dept_sap in (?) and vd.is_deleted = '0' and vd.is_active = '1'
+			and is_in_carpool = '0'
 		)`,
 		user.EmpID,
 		user.BureauDeptSap,

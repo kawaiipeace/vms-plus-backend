@@ -178,6 +178,53 @@ func GetRequest(c *gin.Context, statusNameMap map[string]string) (models.VmsTrnR
 			request.MasDriver.VendorName = driverCarpoolName
 		}
 	}
+
+	if vehicleCarpoolName != "" {
+		var carpoolAdmin models.VmsMasCarpoolAdmin
+		if err := config.DB.Where("mas_carpool_uid = ? AND is_deleted = '0' AND is_active = '1'", request.MasCarpoolUID).
+			Select("admin_emp_no,admin_emp_name,admin_dept_sap,admin_position,mobile_contact_number,internal_contact_number").
+			Order("is_main_admin DESC").
+			First(&carpoolAdmin).Error; err == nil {
+			request.MasVehicle.VehicleDepartment.VehicleUser.EmpID = carpoolAdmin.AdminEmpNo
+			request.MasVehicle.VehicleDepartment.VehicleUser.FullName = carpoolAdmin.AdminEmpName
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAP = carpoolAdmin.AdminDeptSap
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPFull = GetDeptSAPFull(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.DeptSAPShort = GetDeptSAPShort(carpoolAdmin.AdminDeptSap)
+			request.MasVehicle.VehicleDepartment.VehicleUser.ImageUrl = GetEmpImage(carpoolAdmin.AdminEmpNo)
+			request.MasVehicle.VehicleDepartment.VehicleUser.Position = carpoolAdmin.AdminPosition
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelMobile = carpoolAdmin.MobileContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.TelInternal = carpoolAdmin.InternalContactNumber
+			request.MasVehicle.VehicleDepartment.VehicleUser.IsEmployee = true
+		}
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return request, err
+		}
+		if len(userList) > 0 {
+			request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    request.MasVehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return request, err
+			}
+			if len(userList) > 0 {
+				request.MasVehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
+		}
+	}
 	if request.RefRequestStatusCode == "90" {
 		// Check VmsLogRequest
 		var logRequest models.VmsLogRequest
@@ -510,6 +557,11 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 	if err != nil {
 		return
 	} else if exists {
+		if err := config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("ref_request_status_code", "30").Error; err != nil {
+			return
+		}
 		var confirmedRequestEmpID string
 		if err := config.DB.Table("vms_trn_request").
 			Where("trn_request_uid = ?", trnRequestUID).
