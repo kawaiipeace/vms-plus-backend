@@ -596,7 +596,7 @@ func (h *BookingUserHandler) GetRequest(c *gin.Context) {
 		}
 	}
 	if request.RefRequestStatusCode == "40" {
-		request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "40", "ผู้อนุมัติให้ใช้ยานพาหนะ")
+		//request.ProgressRequestStatusEmp = funcs.GetProgressRequestStatusEmp(request.TrnRequestUID, "40", "ผู้อนุมัติให้ใช้ยานพาหนะ")
 		request.ProgressRequestStatus = []models.ProgressRequestStatus{
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากต้นสังกัด"},
 			{ProgressIcon: "3", ProgressName: "อนุมัติจากผู้ดูแลยานพาหนะ"},

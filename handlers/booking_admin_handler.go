@@ -489,11 +489,20 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		return
 	}
 
+	empUser := funcs.GetUserEmpInfo(request.ApprovedRequestEmpID)
 	requestStatus := models.VmsTrnRequestUpdateRecieivedKeyStatus{
-		RefRequestStatusCode: "40", //
-		TrnRequestUID:        request.TrnRequestUID,
-		UpdatedAt:            time.Now(),
-		UpdatedBy:            user.EmpID,
+		RefRequestStatusCode:         "40", //
+		TrnRequestUID:                request.TrnRequestUID,
+		ApprovedRequestEmpID:         request.ApprovedRequestEmpID,
+		ApprovedRequestEmpName:       empUser.FullName,
+		ApprovedRequestDeptSAP:       empUser.DeptSAP,
+		ApprovedRequestDeptNameShort: empUser.DeptSAPShort,
+		ApprovedRequestDeptNameFull:  empUser.DeptSAPFull,
+		ApprovedRequestDeskPhone:     empUser.TelInternal,
+		ApprovedRequestMobilePhone:   empUser.TelMobile,
+		ApprovedRequestPosition:      empUser.Position,
+		UpdatedAt:                    time.Now(),
+		UpdatedBy:                    user.EmpID,
 	}
 	if err := config.DB.Save(&requestStatus).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})

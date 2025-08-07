@@ -474,14 +474,15 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		}
 		return empIDs, nil
 	} else {
-		var confirmedRequestEmpID string
+		var approvedRequestEmpID string
 		if err := config.DB.Table("vms_trn_request").
-			Select("confirmed_request_emp_id").
+			Select("approved_request_emp_id").
 			Where("trn_request_uid = ?", trnRequestUID).
-			Scan(&confirmedRequestEmpID).Error; err != nil {
+			Scan(&approvedRequestEmpID).Error; err != nil {
 			return nil, err
 		}
-		empIDs = append(empIDs, confirmedRequestEmpID)
+		fmt.Println("approvedRequestEmpID", approvedRequestEmpID)
+		empIDs = append(empIDs, approvedRequestEmpID)
 		return empIDs, nil
 	}
 }

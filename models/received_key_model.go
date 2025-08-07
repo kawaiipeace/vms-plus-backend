@@ -122,10 +122,18 @@ func (VmsTrnRequestUpdateRecieivedKeyConfirmed) TableName() string {
 
 // VmsTrnRequestUpdateRecieivedKeyConfirmed
 type VmsTrnRequestUpdateRecieivedKeyStatus struct {
-	TrnRequestUID        string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	RefRequestStatusCode string    `gorm:"column:ref_request_status_code" json:"-"`
-	UpdatedAt            time.Time `gorm:"column:updated_at" json:"-"`
-	UpdatedBy            string    `gorm:"column:updated_by" json:"-"`
+	TrnRequestUID                string    `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
+	RefRequestStatusCode         string    `gorm:"column:ref_request_status_code" json:"-"`
+	ApprovedRequestEmpID         string    `gorm:"column:approved_request_emp_id" json:"-"`
+	ApprovedRequestEmpName       string    `gorm:"column:approved_request_emp_name" json:"-"`
+	ApprovedRequestDeptSAP       string    `gorm:"column:approved_request_dept_sap" json:"-"`
+	ApprovedRequestDeptNameShort string    `gorm:"column:approved_request_dept_name_short" json:"-"`
+	ApprovedRequestDeptNameFull  string    `gorm:"column:approved_request_dept_name_full" json:"-"`
+	ApprovedRequestDeskPhone     string    `gorm:"column:approved_request_desk_phone" json:"-"`
+	ApprovedRequestMobilePhone   string    `gorm:"column:approved_request_mobile_phone" json:"-"`
+	ApprovedRequestPosition      string    `gorm:"column:approved_request_position" json:"-"`
+	UpdatedAt                    time.Time `gorm:"column:updated_at" json:"-"`
+	UpdatedBy                    string    `gorm:"column:updated_by" json:"-"`
 }
 
 func (VmsTrnRequestUpdateRecieivedKeyStatus) TableName() string {
