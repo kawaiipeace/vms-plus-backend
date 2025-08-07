@@ -474,21 +474,14 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		}
 		return empIDs, nil
 	} else {
-		var bureauDeptSap string
-		request := userhub.ServiceListUserRequest{
-			ServiceCode:   "vms",
-			Search:        "",
-			Role:          "approval-department",
-			BureauDeptSap: bureauDeptSap,
-			Limit:         100,
-		}
-		lists, err := userhub.GetUserList(request)
-		if err != nil {
+		var confirmedRequestEmpID string
+		if err := config.DB.Table("vms_trn_request").
+			Select("confirmed_request_emp_id").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Scan(&confirmedRequestEmpID).Error; err != nil {
 			return nil, err
 		}
-		for _, list := range lists {
-			empIDs = append(empIDs, list.EmpID)
-		}
+		empIDs = append(empIDs, confirmedRequestEmpID)
 		return empIDs, nil
 	}
 }
