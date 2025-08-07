@@ -424,6 +424,15 @@ func GetAdminApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		return empIDs, nil
 	} else {
 		var bureauDeptSap string
+
+		if result.MasVehicleUID != "" && result.MasVehicleUID != DefaultUUID() {
+			if err := config.DB.Table("vms_mas_vehicle_department").
+				Select("bureau_dept_sap").
+				Where("mas_vehicle_uid = ? AND is_deleted = '0' AND is_active = '1'", result.MasVehicleUID).
+				Scan(&bureauDeptSap).Error; err != nil {
+				return nil, err
+			}
+		}
 		request := userhub.ServiceListUserRequest{
 			ServiceCode:   "vms",
 			Search:        "",
