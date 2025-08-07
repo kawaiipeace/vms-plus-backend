@@ -427,7 +427,7 @@ func GetAdminApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		request := userhub.ServiceListUserRequest{
 			ServiceCode:   "vms",
 			Search:        "",
-			Role:          "admin_approval",
+			Role:          "admin-department-main",
 			BureauDeptSap: bureauDeptSap,
 			Limit:         100,
 		}
@@ -469,7 +469,7 @@ func GetFinalApprovalEmpIDs(trnRequestUID string) ([]string, error) {
 		request := userhub.ServiceListUserRequest{
 			ServiceCode:   "vms",
 			Search:        "",
-			Role:          "final_approval",
+			Role:          "approval-department",
 			BureauDeptSap: bureauDeptSap,
 			Limit:         100,
 		}

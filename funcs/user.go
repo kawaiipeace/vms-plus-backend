@@ -280,6 +280,9 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 		if role == "admin-department" {
 			CheckCarpoolAdminRole(&empUser)
 		}
+		if role == "admin-department-main" {
+			CheckCarpoolAdminRole(&empUser)
+		}
 		if role == "admin-carpool" {
 			CheckCarpoolAdminRole(&empUser)
 		}
