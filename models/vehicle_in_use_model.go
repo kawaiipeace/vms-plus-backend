@@ -90,6 +90,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
 	DriverEmpDeptSAP       string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap"`
+	DriverEmpPosition      string `gorm:"column:driver_emp_position" json:"driver_emp_position" example:""`
 	DriverEmpDeptNameShort string `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short"`
 	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full"`
 	DriverInternalContact  string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1234567890"`
