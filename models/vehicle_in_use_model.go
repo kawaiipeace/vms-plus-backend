@@ -87,12 +87,14 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RequestVehicleTypeID int               `gorm:"column:requested_vehicle_type_id" json:"requested_vehicle_type_id" example:"1"`
 	RequestVehicleType   VmsRefVehicleType `gorm:"foreignKey:RequestVehicleTypeID;references:RefVehicleTypeCode" json:"request_vehicle_type"`
 
-	DriverEmpID           string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
-	DriverEmpName         string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
-	DriverDeptSAP         string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"DPT001"`
-	DriverInternalContact string `gorm:"column:driver_internal_contact_number" json:"driver_internal_contact_number" example:"1234567890"`
-	DriverMobileContact   string `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
-	DriverImageURL        string `gorm:"-" json:"driver_image_url"`
+	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+	DriverEmpName          string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
+	DriverEmpDeptSAP       string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap"`
+	DriverEmpDeptNameShort string `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short"`
+	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full"`
+	DriverInternalContact  string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1234567890"`
+	DriverMobileContact    string `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
+	DriverImageURL         string `gorm:"-" json:"driver_image_url"`
 
 	PickupPlace    string       `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
 	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
