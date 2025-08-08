@@ -468,7 +468,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		}
 
 		for _, manager := range managers {
-			if manager.LevelCode == "M6" {
+			if manager.LevelCode == "M6" || manager.LevelCode == "M5" || manager.LevelCode == "M4" || manager.LevelCode == "M3" {
 				list = append(list, models.MasUserEmp{
 					EmpID:        strconv.Itoa(manager.EmpIDLeader),
 					FullName:     manager.EmpName,
@@ -485,7 +485,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		if len(list) == 0 && len(managers) > 0 {
 			upperManagers := funcs.GetUserManager(strconv.Itoa(managers[0].DeptUpper))
 			for _, manager := range upperManagers {
-				if manager.LevelCode == "S1" || manager.LevelCode == "M6" {
+				if manager.LevelCode == "S1" || manager.LevelCode == "M6" || manager.LevelCode == "M5" || manager.LevelCode == "M4" || manager.LevelCode == "M3" {
 					list = append(list, models.MasUserEmp{
 						EmpID:        strconv.Itoa(manager.EmpIDLeader),
 						FullName:     manager.EmpName,
