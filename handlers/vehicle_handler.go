@@ -8,6 +8,7 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -543,6 +544,34 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 			vehicle.VehicleDepartment.VehicleOwnerDeptShort = carpool.CarpoolName
 		}
 
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    vehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		if len(userList) > 0 {
+			vehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    vehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+			if len(userList) > 0 {
+				vehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
+		}
 	}
 
 	funcs.TrimStringFields(&vehicle)
