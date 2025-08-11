@@ -193,6 +193,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsPEAEmployeeDriver != 1 {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
 		}
+		requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
 		if requests[i].VehicleCarpoolName != "" {
 			requests[i].VehicleCarpoolText = "Carpool"
 		} else {
