@@ -15,6 +15,7 @@ type VmsTrnRequestAdminList struct {
 	DriverDeptName           string       `gorm:"column:driver_dept_name" json:"driver_dept_name"`
 	VehicleDeptName          string       `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 	VehicleCarpoolName       string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleCarpoolText       string       `gorm:"column:vehicle_carpool_text" json:"vehicle_carpool_text"`
 	IsAdminChooseDriver      int          `gorm:"column:is_admin_choose_driver" json:"-"`
 	IsAdminChooseVehicle     int          `gorm:"column:is_admin_choose_vehicle" json:"-"`
 	IsPEAEmployeeDriver      int          `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
