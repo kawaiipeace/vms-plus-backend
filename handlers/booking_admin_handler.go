@@ -165,6 +165,8 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
