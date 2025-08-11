@@ -366,7 +366,8 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.TripDetailsCount = 0
 	}
 	request.IsReturnOverDue = false
-	if time.Now().Truncate(24 * time.Hour).After(request.ReserveEndDatetime.Truncate(24 * time.Hour)) {
+
+	if time.Now().After(request.ReserveEndDatetime.Time) {
 		request.IsReturnOverDue = true
 	}
 
