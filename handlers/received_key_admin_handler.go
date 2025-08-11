@@ -74,13 +74,14 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
 			"fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,"+
 			"mc.carpool_name vehicle_carpool_name,"+
-			"k.receiver_fullname key_receiver_fullname,"+
-			"k.receiver_dept_name_short key_receiver_dept_name_short,"+
-			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place ").
+			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place, "+
+			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
 		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_trn_request.mas_carpool_uid").
-		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 	query = query.Where("vms_trn_request.is_deleted = ?", "0")
 

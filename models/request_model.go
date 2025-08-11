@@ -28,8 +28,8 @@ type VmsTrnRequestAdminList struct {
 	RefCarpoolChooseCarID    int          `gorm:"column:ref_carpool_choose_car_id" json:"-"`
 	RefCarpoolChooseDriverID int          `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
-	KeyReceiverFullName      string       `gorm:"column:key_receiver_fullname" json:"key_receiver_fullname"`
-	KeyReceiverDeptNameShort string       `gorm:"column:key_receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverFullName      string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
