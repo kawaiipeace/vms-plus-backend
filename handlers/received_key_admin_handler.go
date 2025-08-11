@@ -169,10 +169,25 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
 
-		if requests[i].TripType == 0 {
+		switch requests[i].TripType {
+		case 0:
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 1 {
+		case 1:
 			requests[i].TripTypeName = "ค้างแรม"
+		}
+		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
+			requests[i].DriverDeptName = requests[i].DriverCarpoolName
+		}
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
 		}
 	}
 	// Build the summary query
