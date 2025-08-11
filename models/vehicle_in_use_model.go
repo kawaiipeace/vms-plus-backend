@@ -37,6 +37,13 @@ type VmsTrnRequestVehicleInUseList struct {
 	CanPickupButton     bool   `gorm:"-" json:"can_pickup_button"`
 	CanScoreButton      bool   `gorm:"-" json:"can_score_button"`
 	CanTravelCardButton bool   `gorm:"-" json:"can_travel_card_button"`
+
+	IsPEAEmployeeDriver int    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
+	DriverCarpoolName   string `gorm:"column:driver_carpool_name" json:"driver_carpool_name"`
+	VehicleCarpoolName  string `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleCarpoolText  string `gorm:"column:vehicle_carpool_text" json:"vehicle_carpool_text"`
+	DriverDeptName      string `gorm:"column:driver_dept_name" json:"driver_dept_name"`
+	VehicleDeptName     string `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 }
 
 // VmsTrnRequestVehicleInUseResponse
