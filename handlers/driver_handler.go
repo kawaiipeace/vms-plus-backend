@@ -218,6 +218,8 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 	}
 	if masCarpoolUID != "" {
 		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
+	} else {
+		query = query.Where("vms_mas_driver.bureau_dept_sap = ?", bureauDeptSap)
 	}
 	if isDepartment {
 		query = query.Where("vms_mas_driver.bureau_dept_sap = ?", vehicleCarpoolOrDeptSap.BureauDeptSap)
