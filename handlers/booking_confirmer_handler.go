@@ -378,6 +378,9 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 			}
 		}
 	}
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.ProgressRequestStatus = append(request.ProgressRequestStatus[:0], request.ProgressRequestStatus[1:]...)
+	}
 	c.JSON(http.StatusOK, request)
 }
 
