@@ -210,11 +210,17 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
 		}
-		requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+
 		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
 			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
 		} else {
-			requests[i].VehicleCarpoolName = requests[i].VehicleDeptName
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
 		}
 	}
 
