@@ -601,13 +601,13 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 			Scan(&confirmedRequestEmpID).Error; err != nil {
 			return
 		}
-		CreateTrnRequestActionLog(trnRequestUID,
+		/*CreateTrnRequestActionLog(trnRequestUID,
 			"30",
 			"รอผู้ดูแลยานพาหนะตรวจสอบ",
 			confirmedRequestEmpID,
 			"level1-approval",
 			"",
-		)
+		)*/
 	}
 }
 

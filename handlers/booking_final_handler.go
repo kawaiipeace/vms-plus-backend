@@ -508,7 +508,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		funcs.GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+		funcs.GetDateTimeBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 		user.EmpID,
 		"approval-department",
 		"",

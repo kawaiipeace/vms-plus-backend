@@ -1052,6 +1052,7 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 	request.InspectVehicleDeptSAP = empUser.DeptSAP
 	request.InspectVehicleDeptSAPShort = funcs.GetDeptSAPShort(empUser.DeptSAP)
 	request.InspectVehicleDeptSAPFull = funcs.GetDeptSAPFull(empUser.DeptSAP)
+	request.InspectVehicleDatetime = models.TimeWithZone{Time: time.Now()}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 

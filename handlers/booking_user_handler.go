@@ -315,8 +315,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	query = query.Table("public.vms_trn_request AS req").
 		Select(`req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
 			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
-			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name,
-			(select log.action_detail from vms_log_request_action log where log.trn_request_uid=req.trn_request_uid order by log.log_request_action_datetime desc limit 1) action_detail
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name
 		`).
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=req.mas_vehicle_department_uid").
