@@ -165,6 +165,8 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -209,6 +211,18 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 		}
 		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
+		}
+
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
 		}
 	}
 
@@ -378,6 +392,9 @@ func (h *BookingAdminHandler) GetRequest(c *gin.Context) {
 			}
 		}
 
+	}
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.ProgressRequestStatus = append(request.ProgressRequestStatus[:0], request.ProgressRequestStatus[1:]...)
 	}
 	c.JSON(http.StatusOK, request)
 }

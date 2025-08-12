@@ -56,7 +56,7 @@ func (h *LogHandler) GetLogRequest(c *gin.Context) {
 
 	if err := config.DB.
 		Where("trn_request_uid = ? AND is_deleted = ?", trnRequestUID, "0").
-		Order("log_request_action_datetime").
+		Order("log_request_action_datetime desc").
 		Limit(limit).
 		Offset(offset).
 		Find(&logRequests).Error; err != nil {

@@ -121,6 +121,8 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -1050,6 +1052,7 @@ func (h *VehicleInspectionAdminHandler) UpdateAccepted(c *gin.Context) {
 	request.InspectVehicleDeptSAP = empUser.DeptSAP
 	request.InspectVehicleDeptSAPShort = funcs.GetDeptSAPShort(empUser.DeptSAP)
 	request.InspectVehicleDeptSAPFull = funcs.GetDeptSAPFull(empUser.DeptSAP)
+	request.InspectVehicleDatetime = models.TimeWithZone{Time: time.Now()}
 	request.UpdatedAt = time.Now()
 	request.UpdatedBy = user.EmpID
 

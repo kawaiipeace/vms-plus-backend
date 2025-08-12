@@ -366,7 +366,8 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.TripDetailsCount = 0
 	}
 	request.IsReturnOverDue = false
-	if time.Now().Truncate(24 * time.Hour).After(request.ReserveEndDatetime.Truncate(24 * time.Hour)) {
+
+	if time.Now().After(request.ReserveEndDatetime.Time) {
 		request.IsReturnOverDue = true
 	}
 
@@ -600,13 +601,13 @@ func CheckMustPassStatus30Department(trnRequestUID string) {
 			Scan(&confirmedRequestEmpID).Error; err != nil {
 			return
 		}
-		CreateTrnRequestActionLog(trnRequestUID,
+		/*CreateTrnRequestActionLog(trnRequestUID,
 			"30",
 			"รอผู้ดูแลยานพาหนะตรวจสอบ",
 			confirmedRequestEmpID,
 			"level1-approval",
 			"",
-		)
+		)*/
 	}
 }
 

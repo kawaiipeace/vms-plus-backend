@@ -146,6 +146,8 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -192,6 +194,17 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 
 		if requests[i].IsPEAEmployeeDriver != 1 {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
+		}
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
 		}
 	}
 
@@ -324,6 +337,9 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 			}
 		}
+	}
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.ProgressRequestStatus = append(request.ProgressRequestStatus[:0], request.ProgressRequestStatus[1:]...)
 	}
 	c.JSON(http.StatusOK, request)
 }
@@ -492,7 +508,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		funcs.GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+		funcs.GetDateTimeBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 		user.EmpID,
 		"approval-department",
 		"",

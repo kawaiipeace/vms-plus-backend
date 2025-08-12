@@ -437,8 +437,8 @@ func main() {
 
 	//funcs.UpdateDriverAvgScore("DZ000006")
 	//funcs.UpdateDriverAvgScore("DZ000159")
-
-	funcs.SendNotificationPEA("505291", "ทดสอบการส่งข้อความ")
+	//funcs.UpdateActionDetailToLogRequest()
+	//funcs.SendNotificationPEA("505291", "ทดสอบการส่งข้อความ")
 
 	router.Run(config.AppConfig.Host + ":" + port)
 }

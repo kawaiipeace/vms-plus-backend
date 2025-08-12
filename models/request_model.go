@@ -15,6 +15,7 @@ type VmsTrnRequestAdminList struct {
 	DriverDeptName           string       `gorm:"column:driver_dept_name" json:"driver_dept_name"`
 	VehicleDeptName          string       `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 	VehicleCarpoolName       string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleCarpoolText       string       `gorm:"column:vehicle_carpool_text" json:"vehicle_carpool_text"`
 	IsAdminChooseDriver      int          `gorm:"column:is_admin_choose_driver" json:"-"`
 	IsAdminChooseVehicle     int          `gorm:"column:is_admin_choose_vehicle" json:"-"`
 	IsPEAEmployeeDriver      int          `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
@@ -27,8 +28,8 @@ type VmsTrnRequestAdminList struct {
 	RefCarpoolChooseCarID    int          `gorm:"column:ref_carpool_choose_car_id" json:"-"`
 	RefCarpoolChooseDriverID int          `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
-	KeyReceiverFullName      string       `gorm:"column:key_receiver_fullname" json:"key_receiver_fullname"`
-	KeyReceiverDeptNameShort string       `gorm:"column:key_receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverFullName      string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {

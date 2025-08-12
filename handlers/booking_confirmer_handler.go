@@ -152,6 +152,8 @@ func (h *BookingConfirmerHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("req.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("req.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("req.request_no desc")
 	}
 
 	// Pagination
@@ -377,6 +379,9 @@ func (h *BookingConfirmerHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 			}
 		}
+	}
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.ProgressRequestStatus = append(request.ProgressRequestStatus[:0], request.ProgressRequestStatus[1:]...)
 	}
 	c.JSON(http.StatusOK, request)
 }
