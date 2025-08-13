@@ -387,7 +387,7 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	expiry := time.Minute * time.Duration(config.AppConfig.OtpExpired)
 	otpID, otpErr := SendOTP(req.Phone, refCode, expiry)
 	if otpErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed", "message": messages.ErrTryAgain.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed" + otpErr.Error(), "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
