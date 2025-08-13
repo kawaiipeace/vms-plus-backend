@@ -426,6 +426,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Order("req.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -443,7 +444,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		MinCode string
 	})
 
-	// Aggregate counts and find the minimum RefRequestStatusCode for each RefRequestStatusName
+	// Aggregate counts and find the grouped RefRequestStatusCode (sep by ,) for each RefRequestStatusName
 	for _, dbItem := range dbSummary {
 		name := statusNameMap[dbItem.RefRequestStatusCode]
 		if data, exists := groupedSummary[name]; exists {
@@ -452,7 +453,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 				MinCode string
 			}{
 				Count:   data.Count + dbItem.Count,
-				MinCode: min(data.MinCode, dbItem.RefRequestStatusCode),
+				MinCode: data.MinCode + "," + dbItem.RefRequestStatusCode,
 			}
 		} else {
 			groupedSummary[name] = struct {
