@@ -292,7 +292,7 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 		return
 	}
 
-	query := h.SetQueryRole(user, config.DB)
+	query := h.SetQueryRole(user, config.DB).Table("public.vms_trn_request")
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
@@ -316,7 +316,10 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	if err := config.DB.
+		Table("public.vms_trn_request").
+		Select("trn_request_uid,request_no,appointment_key_handover_place appointment_location,appointment_key_handover_start_datetime appointment_start,appointment_key_handover_end_datetime appointment_end").
+		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}
