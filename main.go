@@ -439,7 +439,7 @@ func main() {
 	//funcs.UpdateDriverAvgScore("DZ000159")
 	//funcs.UpdateActionDetailToLogRequest()
 	//funcs.SendNotificationPEA("505291", "ทดสอบการส่งข้อความ")
-	funcs.UpdateActionDetailWithKeyHandover("e402865f-a2ae-4d2e-af9d-e94020726c45")
+	//funcs.UpdateActionDetailWithKeyHandover("e402865f-a2ae-4d2e-af9d-e94020726c45")
 
 	router.Run(config.AppConfig.Host + ":" + port)
 }
