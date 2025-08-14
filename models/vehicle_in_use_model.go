@@ -21,10 +21,17 @@ type VmsTrnRequestVehicleInUseList struct {
 	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName             string       `json:"ref_request_status_name"`
 	IsHaveSubRequest                 string       `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
+	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	ReceivedKeyPlace                 string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime         TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime           TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
-	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	KeyReceiverPersonalID            string       `gorm:"column:receiver_personal_id" json:"key_receiver_personal_id"`
+	KeyReceiverFullName              string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort         string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverDeptNameFull          string       `gorm:"column:receiver_dept_name_full" json:"key_receiver_dept_name_full"`
+	KeyReceiverDeskPhone             string       `gorm:"column:receiver_desk_phone" json:"key_receiver_desk_phone"`
+	KeyReceiverMobilePhone           string       `gorm:"column:receiver_mobile_phone" json:"key_receiver_mobile_phone"`
+	KeyReceiverPosition              string       `gorm:"column:receiver_position" json:"key_receiver_position"`
 
 	RefVehicleKeyTypeCode   int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	RefVehicleKeyType       VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"ref_vehicle_key_type"`
