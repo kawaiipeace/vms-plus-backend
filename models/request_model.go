@@ -64,6 +64,7 @@ type VmsTrnRequestList struct {
 	KeyReceiverDeskPhone             string                 `gorm:"column:receiver_desk_phone" json:"key_receiver_desk_phone"`
 	KeyReceiverMobilePhone           string                 `gorm:"column:receiver_mobile_phone" json:"key_receiver_mobile_phone"`
 	KeyReceiverPosition              string                 `gorm:"column:receiver_position" json:"key_receiver_position"`
+	ParkingPlace                     string                 `gorm:"column:parking_place" json:"parking_place"`
 	CanceledRequestDatetime          TimeWithZone           `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string                 `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string                 `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
