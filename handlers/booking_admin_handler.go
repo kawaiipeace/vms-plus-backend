@@ -526,6 +526,16 @@ func (h *BookingAdminHandler) UpdateApproved(c *gin.Context) {
 		return
 	}
 
+	//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", request.TrnRequestUID).
+		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
+		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
+		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
+		return
+	}
+
 	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return

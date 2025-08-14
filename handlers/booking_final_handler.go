@@ -482,6 +482,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				TrnRequestUID:    request.TrnRequestUID,
 				AppointmentStart: approvedWithReceiveKey.ReceivedKeyStartDatetime,
 				AppointmentEnd:   approvedWithReceiveKey.ReceivedKeyEndDatetime,
+				AppointmentPlace: approvedWithReceiveKey.ReceivedKeyPlace,
 				ReceiverType:     0,
 				CreatedAt:        time.Now(),
 				CreatedBy:        user.EmpID,
@@ -493,6 +494,15 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
+			//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+			if err := config.DB.Table("vms_trn_request").
+				Where("trn_request_uid = ?", request.TrnRequestUID).
+				Update("appointment_key_handover_place", approvedWithReceiveKey.ReceivedKeyPlace).
+				Update("appointment_key_handover_start_datetime", approvedWithReceiveKey.ReceivedKeyStartDatetime).
+				Update("appointment_key_handover_end_datetime", approvedWithReceiveKey.ReceivedKeyEndDatetime).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
+				return
+			}
 
 		} else {
 			// Handle other errors
@@ -500,6 +510,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 			return
 		}
 	}
+
 	funcs.UpdateRecievedKeyUser(request.TrnRequestUID)
 
 	var receivedKey models.VmsTrnRequestApprovedWithRecieiveKey

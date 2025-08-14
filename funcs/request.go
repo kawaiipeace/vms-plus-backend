@@ -778,7 +778,6 @@ func IsAllowScoreButton(trnRequestUID string) bool {
 	return false
 }
 
-// Test
 func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	if handoverUID == "" {
 		handoverUID = uuid.New().String()
