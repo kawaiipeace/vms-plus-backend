@@ -22,8 +22,8 @@ type ReceivedVehicleUserHandler struct {
 
 var StatusNameMapReceivedVehicleUser = map[string]string{
 	"51":  "รับยานพาหนะ",
+	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "เดินทาง",
-	"60e": "เกินวันเดินทาง",
 }
 
 func (h *ReceivedVehicleUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {

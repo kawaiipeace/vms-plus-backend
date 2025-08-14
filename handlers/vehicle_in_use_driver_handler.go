@@ -22,10 +22,9 @@ type VehicleInUseDriverHandler struct {
 
 var StatusNameMapVehicelInUseDriver = map[string]string{
 	"50":  "รอรับยานพาหนะ",
-	"50e": "รับยานพาหนะล่าช้า",
 	"51":  "รับยานพาหนะ",
+	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "อยู่ระหว่างเดินทาง",
-	"60e": "คืนยานพาหนะล่าช้า",
 }
 
 func (h *VehicleInUseDriverHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -91,25 +90,18 @@ func (h *VehicleInUseDriverHandler) SearchRequests(c *gin.Context) {
 		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
-		// Split the comma-separated codes into a slice
+		has51e := false
 		codes := strings.Split(refRequestStatusCodes, ",")
-		// Include additional keys with the same text in StatusNameMapUser
-		additionalCodes := make(map[string]bool)
-		for _, code := range codes {
-			if name, exists := statusNameMap[code]; exists {
-				for key, value := range statusNameMap {
-					if value == name {
-						additionalCodes[key] = true
-					}
-				}
+		for i := range codes {
+			if codes[i] == "51e" {
+				has51e = true
+				codes[i] = "51"
 			}
 		}
-		// Merge the original codes with the additional codes
-		for key := range additionalCodes {
-			codes = append(codes, key)
-		}
-		fmt.Println("codes", codes)
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
+		if has51e {
+			query = query.Where("req.ref_request_status_code = '51' AND reserve_start_datetime < NOW()")
+		}
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -161,9 +153,14 @@ func (h *VehicleInUseDriverHandler) SearchRequests(c *gin.Context) {
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+		Select(`CASE 
+			WHEN req.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			ELSE req.ref_request_status_code
+		END as ref_request_status_code, COUNT(*) as count`).
+		Group(`CASE 
+			WHEN req.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			ELSE req.ref_request_status_code
+		END`)
 
 	// Execute the summary query
 	dbSummary := []struct {

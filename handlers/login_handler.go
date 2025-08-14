@@ -742,7 +742,7 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 				Order("ref_request_annual_driver_status_code").
 				Find(&licenses).Error
 			if err == nil && len(licenses) > 0 {
-				fmt.Println("license", licenses)
+				//fmt.Println("license", licenses)
 				user.TrnRequestAnnualDriverUID = licenses[0].TrnRequestAnnualDriverUID
 				user.AnnualYYYY = licenses[0].AnnualYYYY
 				user.LicenseStatusCode = licenses[0].RefRequestAnnualDriverStatusCode
