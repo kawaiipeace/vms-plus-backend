@@ -154,3 +154,33 @@ func UpdateActionDetailToLogRequest() error {
 
 	return nil
 }
+
+func UpdateActionDetailWithKeyHandover(trnRequestUID string) error {
+	var trn_request_uids []string
+	if err := config.DB.Table("vms_trn_request").
+		Where("ref_request_status_code = '50'").
+		Pluck("trn_request_uid", &trn_request_uids).Error; err != nil {
+		return err
+	}
+
+	for _, trnRequestUID := range trn_request_uids {
+		var receivedKey struct {
+			ReceivedKeyStartDatetime models.TimeWithZone `gorm:"column:appointment_start"`
+			ReceivedKeyEndDatetime   models.TimeWithZone `gorm:"column:appointment_end"`
+			ReceivedKeyPlace         string              `gorm:"column:appointment_location"`
+		}
+
+		if err := config.DB.Table("vms_trn_vehicle_key_handover").
+			Where("trn_request_uid = ?", trnRequestUID).
+			First(&receivedKey).Error; err != nil {
+			return err
+		}
+		actionDetail := GetDateTime2BuddhistYear(receivedKey.ReceivedKeyStartDatetime.TimeWithZoneToTime(), receivedKey.ReceivedKeyEndDatetime.TimeWithZoneToTime()) + " สถานที่ " + receivedKey.ReceivedKeyPlace + " นัดหมายรับกุญแจ"
+		config.DB.Table("vms_trn_request").
+			Where("trn_request_uid = ?", trnRequestUID).
+			Update("action_detail", actionDetail)
+		fmt.Println(actionDetail)
+
+	}
+	return nil
+}

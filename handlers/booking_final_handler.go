@@ -214,6 +214,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
 		Group("vms_trn_request.ref_request_status_code")
+	summaryQuery = summaryQuery.Order("vms_trn_request.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -508,7 +509,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		funcs.GetDateTimeBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+		funcs.GetDateTime2BuddhistYear(receivedKey.ReceivedKeyStartDatetime.TimeWithZoneToTime(), receivedKey.ReceivedKeyEndDatetime.TimeWithZoneToTime())+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 		user.EmpID,
 		"approval-department",
 		"",
