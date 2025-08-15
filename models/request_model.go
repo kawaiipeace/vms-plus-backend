@@ -155,7 +155,6 @@ type VmsTrnRequestRequest struct {
 
 	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string `gorm:"column:driver_emp_name" json:"-"`
-	DriverDeptSAP          string `gorm:"column:driver_emp_dept_sap" json:"-"`
 	DriverEmpDeskPhone     string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1221"`
 	DriverEmpMobilePhone   string `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverEmpPosition      string `gorm:"column:driver_emp_position" json:"-"`

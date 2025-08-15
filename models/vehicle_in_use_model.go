@@ -315,14 +315,14 @@ func (VmsTrnSatisfactionSurveyAnswers) TableName() string {
 // VmsTrnReturnedVehicle
 type VmsTrnReturnedVehicle struct {
 	TrnRequestUID                string                 `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	ReturnedVehicleDatetime      TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" swaggertype:"string" example:"2025-04-16T14:30:00"`
+	ReturnedVehicleDatetime      TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" swaggertype:"string" example:"2025-04-16T14:30:00Z"`
 	MileEnd                      int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                      int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	ReturnedCleanlinessLevel     int                    `gorm:"column:ref_cleanliness_code" json:"returned_cleanliness_level" example:"1"`
-	ReturnedParkingPlace         string                 `gorm:"column:returned_parking_place" json:"returned_parking_place" example:"Parking Lot 1"`
+	ReturnedParkingPlace         string                 `gorm:"column:returned_parking_place" json:"returned_vehicle_parking" example:"Parking Lot 1"`
 	ReturnedVehicleRemark        string                 `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 	VehicleImages                []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
-	ReturnedVehicleEmpID         string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
+	ReturnedVehicleEmpID         string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id" example:"700001"`
 	ReturnedVehicleEmpName       string                 `gorm:"column:returned_vehicle_emp_name" json:"-"`
 	ReturnedVehicleDeptSAP       string                 `gorm:"column:returned_vehicle_dept_sap" json:"-"`
 	ReturnedVehicleDeptNameShort string                 `gorm:"column:returned_vehicle_dept_name_short" json:"-"`
