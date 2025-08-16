@@ -121,7 +121,7 @@ func (h *BookingAdminHandler) SearchRequests(c *gin.Context) {
 	query = query.Table("public.vms_trn_request").
 		Select(
 			`vms_trn_request.*,
-			v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+			v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,v."CarTypeDetail" car_type,
 			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name,
 			case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_short_work from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,
 			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       

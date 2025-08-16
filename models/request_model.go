@@ -30,6 +30,7 @@ type VmsTrnRequestAdminList struct {
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
 	KeyReceiverFullName      string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
 	KeyReceiverDeptNameShort string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	CarType                  string       `gorm:"column:car_type" json:"car_type"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
