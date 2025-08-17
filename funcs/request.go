@@ -274,6 +274,9 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
 	}
 	request.ParkingPlace = request.MasVehicle.VehicleDepartment.ParkingPlace
+
+	request.VehicleUserImageUrl = GetEmpImage(request.VehicleUserEmpID)
+
 	if request.MasDriver.DriverImage != "" {
 		request.DriverImageURL = request.MasDriver.DriverImage
 	} else {
