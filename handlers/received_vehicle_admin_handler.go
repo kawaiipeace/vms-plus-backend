@@ -195,7 +195,7 @@ func (h *ReceivedVehicleAdminHandler) SearchRequests(c *gin.Context) {
 		}
 		switch requests[i].KeyReceiverType {
 		case 1:
-			requests[i].KeyReceiverTypeName = "คนขับรถ"
+			requests[i].KeyReceiverTypeName = "คนพนักงานขับรถ"
 		case 2:
 			requests[i].KeyReceiverTypeName = requests[i].KeyReceiverDeptNameShort
 		case 3:
