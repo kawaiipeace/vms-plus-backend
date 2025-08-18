@@ -210,7 +210,7 @@ func GetAuthenUser(c *gin.Context, roles string) *models.AuthenUserEmp {
 	var empUser models.AuthenUserEmp
 	//501621 //510683
 	if config.AppConfig.IsDev && c.Request.Header.Get("Authorization") == "" {
-		user, err := userhub.GetUserInfo("700001")
+		user, err := userhub.GetUserInfo("460137")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()

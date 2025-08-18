@@ -21,13 +21,10 @@ type VehicleInUseAdminHandler struct {
 }
 
 var StatusNameMapVehicelInUseAdmin = map[string]string{
-	"50":  "รอรับยานพาหนะ",
-	"50e": "รับยานพาหนะล่าช้า",
-	"51":  "รับยานพาหนะ",
+	"51":  "รอรับยานพาหนะ",
+	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "อยู่ระหว่างเดินทาง",
 	"60e": "คืนยานพาหนะล่าช้า",
-	"70":  "ส่งคืนยานพาหนะ",
-	"80":  "เสร็จสิ้น",
 }
 
 func (h *VehicleInUseAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -101,25 +98,26 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
-		// Split the comma-separated codes into a slice
+		has51e := false
+		has60e := false
 		codes := strings.Split(refRequestStatusCodes, ",")
-		// Include additional keys with the same text in StatusNameMapUser
-		additionalCodes := make(map[string]bool)
-		for _, code := range codes {
-			if name, exists := statusNameMap[code]; exists {
-				for key, value := range statusNameMap {
-					if value == name {
-						additionalCodes[key] = true
-					}
-				}
+		for i := range codes {
+			if codes[i] == "51e" {
+				has51e = true
+				codes[i] = "51"
+			}
+			if codes[i] == "60e" {
+				has60e = true
+				codes[i] = "60"
 			}
 		}
-		// Merge the original codes with the additional codes
-		for key := range additionalCodes {
-			codes = append(codes, key)
-		}
-		fmt.Println("codes", codes)
 		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+		if has51e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW())")
+		}
+		if has60e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW())")
+		}
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -184,9 +182,18 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request").
-		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
-		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
-		Group("vms_trn_request.ref_request_status_code")
+		Select(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
+			ELSE vms_trn_request.ref_request_status_code
+		END as ref_request_status_code, COUNT(*) as count`).
+		Group(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
+			ELSE vms_trn_request.ref_request_status_code
+		END`).
+		Where("vms_trn_request.is_deleted = ?", "0").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -197,7 +204,7 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	fmt.Println(dbSummary)
 	// Create a complete summary with all statuses from statusNameMap
 	for code, name := range statusNameMap {
 		count := 0

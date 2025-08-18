@@ -264,7 +264,7 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		Preload("SatisfactionSurveyAnswers.SatisfactionSurveyQuestions").
 		Select("vms_trn_request.*,k.receiver_type,k.ref_vehicle_key_type_code ref_vehicle_key_type_code,k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
 			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
-			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark,k.actual_receive_time received_key_datetime").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		First(&request, "vms_trn_request.trn_request_uid = ?", trnRequestUID).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{})
@@ -274,6 +274,9 @@ func GetRequestVehicelInUse(c *gin.Context, statusNameMap map[string]string) (mo
 		request.MasDriver.Age = request.MasDriver.CalculateAgeInYearsMonths()
 	}
 	request.ParkingPlace = request.MasVehicle.VehicleDepartment.ParkingPlace
+
+	request.VehicleUserImageUrl = GetEmpImage(request.VehicleUserEmpID)
+
 	if request.MasDriver.DriverImage != "" {
 		request.DriverImageURL = request.MasDriver.DriverImage
 	} else {
@@ -778,7 +781,6 @@ func IsAllowScoreButton(trnRequestUID string) bool {
 	return false
 }
 
-// Test
 func SetReceivedKey(trnRequestUID string, handoverUID string) {
 	if handoverUID == "" {
 		handoverUID = uuid.New().String()

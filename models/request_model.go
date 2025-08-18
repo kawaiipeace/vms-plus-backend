@@ -29,7 +29,11 @@ type VmsTrnRequestAdminList struct {
 	RefCarpoolChooseDriverID int          `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
 	KeyReceiverFullName      string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverNickname      string       `gorm:"column:receiver_nickname" json:"key_receiver_nickname"`
 	KeyReceiverDeptNameShort string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	CarType                  string       `gorm:"column:car_type" json:"car_type"`
+	KeyReceiverType          int          `gorm:"column:receiver_type" json:"key_receiver_type"`
+	KeyReceiverTypeName      string       `gorm:"-" json:"key_receiver_type_name"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -57,6 +61,14 @@ type VmsTrnRequestList struct {
 	ReceivedKeyPlace                 string                 `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime         TimeWithZone           `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime           TimeWithZone           `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
+	KeyReceiverPersonalID            string                 `gorm:"column:receiver_personal_id" json:"key_receiver_personal_id"`
+	KeyReceiverFullName              string                 `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort         string                 `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverDeptNameFull          string                 `gorm:"column:receiver_dept_name_full" json:"key_receiver_dept_name_full"`
+	KeyReceiverDeskPhone             string                 `gorm:"column:receiver_desk_phone" json:"key_receiver_desk_phone"`
+	KeyReceiverMobilePhone           string                 `gorm:"column:receiver_mobile_phone" json:"key_receiver_mobile_phone"`
+	KeyReceiverPosition              string                 `gorm:"column:receiver_position" json:"key_receiver_position"`
+	ParkingPlace                     string                 `gorm:"column:parking_place" json:"parking_place"`
 	CanceledRequestDatetime          TimeWithZone           `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string                 `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string                 `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
@@ -147,7 +159,6 @@ type VmsTrnRequestRequest struct {
 
 	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string `gorm:"column:driver_emp_name" json:"-"`
-	DriverDeptSAP          string `gorm:"column:driver_emp_dept_sap" json:"-"`
 	DriverEmpDeskPhone     string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1221"`
 	DriverEmpMobilePhone   string `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverEmpPosition      string `gorm:"column:driver_emp_position" json:"-"`

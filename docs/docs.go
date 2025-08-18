@@ -12765,16 +12765,17 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "returned_parking_place": {
-                    "type": "string",
-                    "example": "Parking Lot 1"
-                },
                 "returned_vehicle_datetime": {
                     "type": "string",
-                    "example": "2025-04-16T14:30:00"
+                    "example": "2025-04-16T14:30:00Z"
                 },
                 "returned_vehicle_emp_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "700001"
+                },
+                "returned_vehicle_parking": {
+                    "type": "string",
+                    "example": "Parking Lot 1"
                 },
                 "returned_vehicle_remark": {
                     "type": "string",

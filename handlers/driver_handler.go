@@ -212,10 +212,10 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 			isDepartment = true
 		}
 		if vehicleCarpoolOrDeptSap.MasCarpoolUID != "" {
-			query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')",
-				vehicleCarpoolOrDeptSap.MasCarpoolUID)
+			masCarpoolUID = vehicleCarpoolOrDeptSap.MasCarpoolUID
 		}
 	}
+
 	if masCarpoolUID != "" {
 		query = query.Where("exists (select 1 from vms_mas_carpool_driver where mas_carpool_uid = ? AND mas_driver_uid = vms_mas_driver.mas_driver_uid AND is_deleted = '0')", masCarpoolUID)
 	} else {
@@ -246,9 +246,16 @@ func (h *DriverHandler) GetBookingDrivers(c *gin.Context) {
 		Preload("DriverStatus").
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			// Use COALESCE to treat NULL driver_license_end_date as the earliest possible date for ordering
-			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC")
+			// Limit to 1 record
+			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC").Limit(1)
 		}).
 		Preload("DriverLicense.DriverLicenseType").
+		Preload("DriverCertificate", func(db *gorm.DB) *gorm.DB {
+			// Use COALESCE to treat NULL driver_certificate_expire_date as the earliest possible date for ordering
+			// Limit to 1 record
+			return db.Order("COALESCE(driver_certificate_expire_date, '1900-01-01') DESC").Limit(1)
+		}).
+		Preload("DriverCertificate.RefDriverCertificateType").
 		Find(&drivers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
 		return
@@ -404,9 +411,16 @@ func (h *DriverHandler) GetDriver(c *gin.Context) {
 	if err := query.
 		Preload("DriverLicense", func(db *gorm.DB) *gorm.DB {
 			// Use COALESCE to treat NULL driver_license_end_date as the earliest possible date for ordering
-			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC")
+			// Limit to 1 record
+			return db.Order("COALESCE(driver_license_end_date, '1900-01-01') DESC").Limit(1)
 		}).
 		Preload("DriverLicense.DriverLicenseType").
+		Preload("DriverCertificate", func(db *gorm.DB) *gorm.DB {
+			// Use COALESCE to treat NULL driver_certificate_expire_date as the earliest possible date for ordering
+			// Limit to 1 record
+			return db.Order("COALESCE(driver_certificate_expire_date, '1900-01-01') DESC").Limit(1)
+		}).
+		Preload("DriverCertificate.RefDriverCertificateType").
 		Preload("DriverStatus").
 		First(&driver, "mas_driver_uid = ?", parsedID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found", "message": messages.ErrNotfound.Error()})

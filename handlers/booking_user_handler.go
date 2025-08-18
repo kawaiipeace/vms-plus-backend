@@ -37,7 +37,7 @@ var StatusNameMapUser = map[string]string{
 	"41": "ถูกตีกลับ",
 	"50": "รอรับกุญแจ",
 	"51": "รอรับยานพาหนะ",
-	"60": "เดินทาง",
+	"60": "บันทึกการเดินทาง",
 	"70": "รอตรวจสอบ",
 	"71": "คืนยานพาหนะไม่สำเร็จ",
 	"80": "เสร็จสิ้น",
@@ -315,8 +315,13 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 	query = query.Table("public.vms_trn_request AS req").
 		Select(`req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
 			fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
-			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name
+			(select max(mc.carpool_name) from vms_mas_carpool mc where mc.mas_carpool_uid=req.mas_carpool_uid) vehicle_carpool_name,
+			(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place,
+			k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,
+			k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,
+			k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark
 		`).
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = req.trn_request_uid").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
 		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=req.mas_vehicle_department_uid").
 		Where("req.ref_request_status_code IN (?)", statusCodes)
@@ -426,6 +431,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
 		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Order("req.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -443,7 +449,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 		MinCode string
 	})
 
-	// Aggregate counts and find the minimum RefRequestStatusCode for each RefRequestStatusName
+	// Aggregate counts and find the grouped RefRequestStatusCode (sep by ,) for each RefRequestStatusName
 	for _, dbItem := range dbSummary {
 		name := statusNameMap[dbItem.RefRequestStatusCode]
 		if data, exists := groupedSummary[name]; exists {
@@ -452,7 +458,7 @@ func (h *BookingUserHandler) SearchRequests(c *gin.Context) {
 				MinCode string
 			}{
 				Count:   data.Count + dbItem.Count,
-				MinCode: min(data.MinCode, dbItem.RefRequestStatusCode),
+				MinCode: data.MinCode + "," + dbItem.RefRequestStatusCode,
 			}
 		} else {
 			groupedSummary[name] = struct {

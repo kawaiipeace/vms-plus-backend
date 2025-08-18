@@ -1314,13 +1314,14 @@ definitions:
       returned_cleanliness_level:
         example: 1
         type: integer
-      returned_parking_place:
-        example: Parking Lot 1
-        type: string
       returned_vehicle_datetime:
-        example: 2025-04-16T14:30:00
+        example: "2025-04-16T14:30:00Z"
         type: string
       returned_vehicle_emp_id:
+        example: "700001"
+        type: string
+      returned_vehicle_parking:
+        example: Parking Lot 1
         type: string
       returned_vehicle_remark:
         example: OK
