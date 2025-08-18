@@ -21,10 +21,17 @@ type VmsTrnRequestVehicleInUseList struct {
 	RefRequestStatusCode             string       `gorm:"column:ref_request_status_code" json:"ref_request_status_code"`
 	RefRequestStatusName             string       `json:"ref_request_status_name"`
 	IsHaveSubRequest                 string       `gorm:"column:is_have_sub_request" json:"is_have_sub_request" example:"0"`
+	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	ReceivedKeyPlace                 string       `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime         TimeWithZone `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime           TimeWithZone `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" example:"2025-02-16T09:30:00Z"`
-	CanceledRequestDatetime          TimeWithZone `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
+	KeyReceiverPersonalID            string       `gorm:"column:receiver_personal_id" json:"key_receiver_personal_id"`
+	KeyReceiverFullName              string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort         string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverDeptNameFull          string       `gorm:"column:receiver_dept_name_full" json:"key_receiver_dept_name_full"`
+	KeyReceiverDeskPhone             string       `gorm:"column:receiver_desk_phone" json:"key_receiver_desk_phone"`
+	KeyReceiverMobilePhone           string       `gorm:"column:receiver_mobile_phone" json:"key_receiver_mobile_phone"`
+	KeyReceiverPosition              string       `gorm:"column:receiver_position" json:"key_receiver_position"`
 
 	RefVehicleKeyTypeCode   int                  `gorm:"column:ref_vehicle_key_type_code" json:"ref_vehicle_key_type_code" example:"1"`
 	RefVehicleKeyType       VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"ref_vehicle_key_type"`
@@ -37,6 +44,13 @@ type VmsTrnRequestVehicleInUseList struct {
 	CanPickupButton     bool   `gorm:"-" json:"can_pickup_button"`
 	CanScoreButton      bool   `gorm:"-" json:"can_score_button"`
 	CanTravelCardButton bool   `gorm:"-" json:"can_travel_card_button"`
+
+	IsPEAEmployeeDriver int    `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
+	DriverCarpoolName   string `gorm:"column:driver_carpool_name" json:"driver_carpool_name"`
+	VehicleCarpoolName  string `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleCarpoolText  string `gorm:"column:vehicle_carpool_text" json:"vehicle_carpool_text"`
+	DriverDeptName      string `gorm:"column:driver_dept_name" json:"driver_dept_name"`
+	VehicleDeptName     string `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 }
 
 // VmsTrnRequestVehicleInUseResponse
@@ -77,6 +91,7 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	CostCenter      string         `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
 	WbsNo           string         `gorm:"column:wbs_no" json:"wbs_no" example:"WBS12345"`
 	NetworkNo       string         `gorm:"column:network_no" json:"network_no" example:"NET12345"`
+	ActivityNo      string         `gorm:"column:activity_no" json:"activity_no" example:"A12345"`
 	ProjectNo       string         `gorm:"column:project_no" json:"project_no" example:"PROJ12345"`
 	PmOrderNo       string         `gorm:"column:pm_order_no" json:"pm_order_no" example:"PM123456"`
 
@@ -86,12 +101,15 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	RequestVehicleTypeID int               `gorm:"column:requested_vehicle_type_id" json:"requested_vehicle_type_id" example:"1"`
 	RequestVehicleType   VmsRefVehicleType `gorm:"foreignKey:RequestVehicleTypeID;references:RefVehicleTypeCode" json:"request_vehicle_type"`
 
-	DriverEmpID           string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
-	DriverEmpName         string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
-	DriverDeptSAP         string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap" example:"DPT001"`
-	DriverInternalContact string `gorm:"column:driver_internal_contact_number" json:"driver_internal_contact_number" example:"1234567890"`
-	DriverMobileContact   string `gorm:"column:driver_mobile_contact_number" json:"driver_mobile_contact_number" example:"0987654321"`
-	DriverImageURL        string `gorm:"-" json:"driver_image_url"`
+	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
+	DriverEmpName          string `gorm:"column:driver_emp_name" json:"driver_emp_name" example:"John Doe"`
+	DriverEmpDeptSAP       string `gorm:"column:driver_emp_dept_sap" json:"driver_emp_dept_sap"`
+	DriverEmpPosition      string `gorm:"column:driver_emp_position" json:"driver_emp_position" example:""`
+	DriverEmpDeptNameShort string `gorm:"column:driver_emp_dept_name_short" json:"driver_emp_dept_name_short"`
+	DriverEmpDeptNameFull  string `gorm:"column:driver_emp_dept_name_full" json:"driver_emp_dept_name_full"`
+	DriverInternalContact  string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1234567890"`
+	DriverMobileContact    string `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
+	DriverImageURL         string `gorm:"-" json:"driver_image_url"`
 
 	PickupPlace    string       `gorm:"column:pickup_place" json:"pickup_place" example:"Main Office"`
 	PickupDateTime TimeWithZone `gorm:"column:pickup_datetime" json:"pickup_datetime" example:"2025-02-16T08:30:00Z"`
@@ -111,6 +129,8 @@ type VmsTrnRequestVehicleInUseResponse struct {
 	ReceiverKeyType       int                  `gorm:"column:receiver_type" json:"receiver_key_type" example:"3"`
 	ReceiverKeyTypeDetail VmsRefVehicleKeyType `gorm:"foreignKey:RefVehicleKeyTypeCode;references:RefVehicleKeyTypeCode" json:"receiver_key_type_detail"`
 	FleetCardNo           string               `gorm:"column:fleet_card_no" json:"fleet_card_no"`
+
+	IsPeaEmployeeDriver string `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver" example:"1"`
 
 	ReceivedKeyEmpID         string `gorm:"column:receiver_personal_id" json:"received_key_emp_id" example:"990001"`
 	ReceivedKeyEmpName       string `gorm:"column:receiver_fullname" json:"received_key_emp_name"`
@@ -295,14 +315,14 @@ func (VmsTrnSatisfactionSurveyAnswers) TableName() string {
 // VmsTrnReturnedVehicle
 type VmsTrnReturnedVehicle struct {
 	TrnRequestUID                string                 `gorm:"column:trn_request_uid;primaryKey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
-	ReturnedVehicleDatetime      TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" swaggertype:"string" example:"2025-04-16T14:30:00"`
+	ReturnedVehicleDatetime      TimeWithZone           `gorm:"column:returned_vehicle_datetime" json:"returned_vehicle_datetime" swaggertype:"string" example:"2025-04-16T14:30:00Z"`
 	MileEnd                      int                    `gorm:"column:mile_end" json:"mile_end" example:"12000"`
 	FuelEnd                      int                    `gorm:"column:fuel_end" json:"fuel_end" example:"70"`
 	ReturnedCleanlinessLevel     int                    `gorm:"column:ref_cleanliness_code" json:"returned_cleanliness_level" example:"1"`
-	ReturnedParkingPlace         string                 `gorm:"column:returned_parking_place" json:"returned_parking_place" example:"Parking Lot 1"`
+	ReturnedParkingPlace         string                 `gorm:"column:returned_parking_place" json:"returned_vehicle_parking" example:"Parking Lot 1"`
 	ReturnedVehicleRemark        string                 `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 	VehicleImages                []VehicleImageReturned `gorm:"foreignKey:TrnRequestUID;references:TrnRequestUID" json:"vehicle_images"`
-	ReturnedVehicleEmpID         string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id"`
+	ReturnedVehicleEmpID         string                 `gorm:"column:returned_vehicle_emp_id" json:"returned_vehicle_emp_id" example:"700001"`
 	ReturnedVehicleEmpName       string                 `gorm:"column:returned_vehicle_emp_name" json:"-"`
 	ReturnedVehicleDeptSAP       string                 `gorm:"column:returned_vehicle_dept_sap" json:"-"`
 	ReturnedVehicleDeptNameShort string                 `gorm:"column:returned_vehicle_dept_name_short" json:"-"`

@@ -103,7 +103,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 	query = query.Table("public.vms_trn_request").
 		Select(
 			`vms_trn_request.*,
-		v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,
+		v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,v."CarTypeDetail" car_type,
 		case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name,
 		case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_short_work from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,
 		fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,       
@@ -146,6 +146,8 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -193,6 +195,17 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		if requests[i].IsPEAEmployeeDriver != 1 {
 			requests[i].DriverDeptName = requests[i].DriverCarpoolName
 		}
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
+		}
 	}
 
 	// Build the summary query
@@ -201,6 +214,7 @@ func (h *BookingFinalHandler) SearchRequests(c *gin.Context) {
 		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
 		Group("vms_trn_request.ref_request_status_code")
+	summaryQuery = summaryQuery.Order("vms_trn_request.ref_request_status_code")
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -324,6 +338,9 @@ func (h *BookingFinalHandler) GetRequest(c *gin.Context) {
 				{ProgressIcon: "2", ProgressName: "ยกเลิกจากผู้ให้ใช้ยานพาหนะ"},
 			}
 		}
+	}
+	if request.MasCarpoolUID == nil || *request.MasCarpoolUID == "" {
+		request.ProgressRequestStatus = append(request.ProgressRequestStatus[:0], request.ProgressRequestStatus[1:]...)
 	}
 	c.JSON(http.StatusOK, request)
 }
@@ -465,6 +482,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				TrnRequestUID:    request.TrnRequestUID,
 				AppointmentStart: approvedWithReceiveKey.ReceivedKeyStartDatetime,
 				AppointmentEnd:   approvedWithReceiveKey.ReceivedKeyEndDatetime,
+				AppointmentPlace: approvedWithReceiveKey.ReceivedKeyPlace,
 				ReceiverType:     0,
 				CreatedAt:        time.Now(),
 				CreatedBy:        user.EmpID,
@@ -476,6 +494,15 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create key handover record: %v", err), "message": messages.ErrInternalServer.Error()})
 				return
 			}
+			//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+			if err := config.DB.Table("vms_trn_request").
+				Where("trn_request_uid = ?", request.TrnRequestUID).
+				Update("appointment_key_handover_place", approvedWithReceiveKey.ReceivedKeyPlace).
+				Update("appointment_key_handover_start_datetime", approvedWithReceiveKey.ReceivedKeyStartDatetime).
+				Update("appointment_key_handover_end_datetime", approvedWithReceiveKey.ReceivedKeyEndDatetime).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update : %v", err), "message": messages.ErrInternalServer.Error()})
+				return
+			}
 
 		} else {
 			// Handle other errors
@@ -483,6 +510,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 			return
 		}
 	}
+
 	funcs.UpdateRecievedKeyUser(request.TrnRequestUID)
 
 	var receivedKey models.VmsTrnRequestApprovedWithRecieiveKey
@@ -492,7 +520,7 @@ func (h *BookingFinalHandler) UpdateApproved(c *gin.Context) {
 	}
 	funcs.CreateTrnRequestActionLog(request.TrnRequestUID,
 		request.RefRequestStatusCode,
-		funcs.GetDateBuddhistYear(receivedKey.ReceivedKeyStartDatetime.Time)+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
+		funcs.GetDateTime2BuddhistYear(receivedKey.ReceivedKeyStartDatetime.TimeWithZoneToTime(), receivedKey.ReceivedKeyEndDatetime.TimeWithZoneToTime())+" สถานที่ "+receivedKey.ReceivedKeyPlace+" นัดหมายรับกุญแจ",
 		user.EmpID,
 		"approval-department",
 		"",

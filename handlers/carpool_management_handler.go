@@ -1341,15 +1341,29 @@ func (h *CarpoolManagementHandler) SearchMasAdminUser(c *gin.Context) {
 
 	carpoolType := c.Query("carpool_type")
 	deptSaps := c.Query("dept_saps")
+	businessArea := ""
 	if carpoolType == "01" {
 		deptSaps = ""
 	}
+	if carpoolType == "02" {
+		deptSapsList := strings.Split(deptSaps, ",")
+		var department models.VmsMasDepartment
+		if err := config.DB.Where("dept_sap = ?", deptSapsList[0]).First(&department).Error; err != nil {
+			businessArea = ""
+			deptSaps = ""
+		} else {
+
+			businessArea = department.BusinessArea
+			deptSaps = ""
+		}
+	}
 
 	request := userhub.ServiceListUserRequest{
-		ServiceCode: "vms",
-		Search:      search,
-		DeptSaps:    deptSaps,
-		Limit:       100,
+		ServiceCode:  "vms",
+		Search:       search,
+		DeptSaps:     deptSaps,
+		BusinessArea: businessArea,
+		Limit:        100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {
@@ -1400,14 +1414,30 @@ func (h *CarpoolManagementHandler) SearchMasApprovalUser(c *gin.Context) {
 	search := c.Query("search")
 	carpoolType := c.Query("carpool_type")
 	deptSaps := c.Query("dept_saps")
+	businessArea := ""
+
 	if carpoolType == "01" {
 		deptSaps = ""
 	}
+	if carpoolType == "02" {
+		deptSapsList := strings.Split(deptSaps, ",")
+		var department models.VmsMasDepartment
+		if err := config.DB.Where("dept_sap = ?", deptSapsList[0]).First(&department).Error; err != nil {
+			businessArea = ""
+			deptSaps = ""
+		} else {
+
+			businessArea = department.BusinessArea
+			deptSaps = ""
+		}
+	}
+
 	request := userhub.ServiceListUserRequest{
-		ServiceCode: "vms",
-		Search:      search,
-		DeptSaps:    deptSaps,
-		Limit:       100 + len(approvers),
+		ServiceCode:  "vms",
+		Search:       search,
+		DeptSaps:     deptSaps,
+		BusinessArea: businessArea,
+		Limit:        100,
 	}
 	lists, err := userhub.GetUserList(request)
 	if err != nil {

@@ -468,7 +468,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		}
 
 		for _, manager := range managers {
-			if manager.LevelCode == "M6" {
+			if manager.LevelCode == "M6" || manager.LevelCode == "M5" || manager.LevelCode == "M4" || manager.LevelCode == "M3" {
 				list = append(list, models.MasUserEmp{
 					EmpID:        strconv.Itoa(manager.EmpIDLeader),
 					FullName:     manager.EmpName,
@@ -485,7 +485,7 @@ func (h *MasHandler) ListFinalApprovalUser(c *gin.Context) {
 		if len(list) == 0 && len(managers) > 0 {
 			upperManagers := funcs.GetUserManager(strconv.Itoa(managers[0].DeptUpper))
 			for _, manager := range upperManagers {
-				if manager.LevelCode == "S1" || manager.LevelCode == "M6" {
+				if manager.LevelCode == "S1" || manager.LevelCode == "M6" || manager.LevelCode == "M5" || manager.LevelCode == "M4" || manager.LevelCode == "M3" {
 					list = append(list, models.MasUserEmp{
 						EmpID:        strconv.Itoa(manager.EmpIDLeader),
 						FullName:     manager.EmpName,
@@ -579,6 +579,7 @@ func (h *MasHandler) ListVehicleDepartment(c *gin.Context) {
 		Select("vd.vehicle_owner_dept_sap, MAX(d.dept_long_short) AS dept_sap_short, MAX(d.dept_full) AS dept_sap_full, 'PEA' AS dept_type").
 		Joins("INNER JOIN vms_mas_department d ON d.dept_sap = vd.vehicle_owner_dept_sap").
 		Where("vd.is_deleted = ? AND vd.is_active = ? AND d.is_deleted = ?", "0", "1", "0").
+		Where("d.dept_long_short IS NOT NULL").
 		Group("vd.vehicle_owner_dept_sap").
 		Order("vd.vehicle_owner_dept_sap").
 		Find(&vehicleDepts).Error; err != nil {
@@ -648,6 +649,7 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 	search := c.Query("search")
 	query := config.DB
 	query = query.Where("is_deleted = ? AND is_active = ?", "0", "1")
+	query = query.Where("dept_long_short IS NOT NULL")
 	if search != "" {
 		query = query.Where("dept_sap ILIKE ? OR dept_long_short ILIKE ? OR dept_full ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
@@ -658,8 +660,16 @@ func (h *MasHandler) ListDriverDepartment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve driver departments", "message": messages.ErrInternalServer.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, driverDepts)
+	var carpools []models.VmsMasDepartment
+	if err := config.DB.Table("vms_mas_carpool").
+		Select("CAST(mas_carpool_uid AS TEXT) AS dept_sap, carpool_name AS dept_long_short, carpool_name AS dept_full, 'Car pool' AS dept_type").
+		Where("is_deleted = ? AND is_active = ?", "0", "1").
+		Find(&carpools).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve carpools", "message": messages.ErrInternalServer.Error()})
+		return
+	}
+	results := append(driverDepts, carpools...)
+	c.JSON(http.StatusOK, results)
 }
 
 // ListConfirmerLicenseUser godoc

@@ -66,7 +66,7 @@ type VmsTrnTravelCard struct {
 	ApprovedRequestPosition     string `gorm:"column:approved_request_position" json:"approved_request_position" example:"Manager"`
 	ApprovedRequestDeptSAP      string `gorm:"column:approved_request_dept_sap" json:"approved_request_dept_sap" example:"Finance"`
 	ApprovedRequestDeptSAPShort string `gorm:"column:approved_request_dept_name_short" json:"approved_request_dept_sap_short" example:"Finance"`
-	ApprovedRequestDeptSAPFull  string `gorm:"column:approved_request_dept_na_full" json:"approved_request_dept_sap_full" example:"Finance"`
+	ApprovedRequestDeptSAPFull  string `gorm:"column:approved_request_dept_name_full" json:"approved_request_dept_sap_full" example:"Finance"`
 }
 
 func (VmsTrnTravelCard) TableName() string {

@@ -38,9 +38,13 @@ type Config struct {
 	KeyCloakClientID    string
 	KeyCloakSecret      string
 	KeyCloakEndPoint    string
-	ThaiIDClientID      string
-	ThaiIDSecret        string
-	ThaiIDEndPoint      string
+
+	SmsAuthenKey string
+	SmsServiceID string
+
+	ThaiIDClientID string
+	ThaiIDSecret   string
+	ThaiIDEndPoint string
 
 	MinIoEndPoint  string
 	MinIoAccessKey string
@@ -88,6 +92,9 @@ func InitConfig() {
 		KeyCloakClientID:    os.Getenv("KEYCLOAK_CLIENT_ID"),
 		KeyCloakSecret:      os.Getenv("KEYCLOAK_CLIENT_SECRET"),
 		KeyCloakEndPoint:    os.Getenv("KEYCLOAK_END_POINT"),
+
+		SmsAuthenKey: os.Getenv("SMS_AUTHEN_KEY"),
+		SmsServiceID: os.Getenv("SMS_SERVICE_ID"),
 
 		ThaiIDClientID: os.Getenv("THAIID_CLIENT_ID"),
 		ThaiIDSecret:   os.Getenv("THAIID_CLIENT_SECRET"),

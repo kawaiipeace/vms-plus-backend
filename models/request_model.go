@@ -15,6 +15,7 @@ type VmsTrnRequestAdminList struct {
 	DriverDeptName           string       `gorm:"column:driver_dept_name" json:"driver_dept_name"`
 	VehicleDeptName          string       `gorm:"column:vehicle_dept_name" json:"vehicle_dept_name"`
 	VehicleCarpoolName       string       `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
+	VehicleCarpoolText       string       `gorm:"column:vehicle_carpool_text" json:"vehicle_carpool_text"`
 	IsAdminChooseDriver      int          `gorm:"column:is_admin_choose_driver" json:"-"`
 	IsAdminChooseVehicle     int          `gorm:"column:is_admin_choose_vehicle" json:"-"`
 	IsPEAEmployeeDriver      int          `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
@@ -27,6 +28,12 @@ type VmsTrnRequestAdminList struct {
 	RefCarpoolChooseCarID    int          `gorm:"column:ref_carpool_choose_car_id" json:"-"`
 	RefCarpoolChooseDriverID int          `gorm:"column:ref_carpool_choose_driver_id" json:"-"`
 	WorkDescription          string       `gorm:"column:work_description" json:"work_description"`
+	KeyReceiverFullName      string       `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverNickname      string       `gorm:"column:receiver_nickname" json:"key_receiver_nickname"`
+	KeyReceiverDeptNameShort string       `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	CarType                  string       `gorm:"column:car_type" json:"car_type"`
+	KeyReceiverType          int          `gorm:"column:receiver_type" json:"key_receiver_type"`
+	KeyReceiverTypeName      string       `gorm:"-" json:"key_receiver_type_name"`
 }
 
 func (VmsTrnRequestAdminList) TableName() string {
@@ -54,6 +61,14 @@ type VmsTrnRequestList struct {
 	ReceivedKeyPlace                 string                 `gorm:"column:appointment_key_handover_place" json:"received_key_place" example:"Main Office"`
 	ReceivedKeyStartDatetime         TimeWithZone           `gorm:"column:appointment_key_handover_start_datetime" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime           TimeWithZone           `gorm:"column:appointment_key_handover_end_datetime" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
+	KeyReceiverPersonalID            string                 `gorm:"column:receiver_personal_id" json:"key_receiver_personal_id"`
+	KeyReceiverFullName              string                 `gorm:"column:receiver_fullname" json:"key_receiver_fullname"`
+	KeyReceiverDeptNameShort         string                 `gorm:"column:receiver_dept_name_short" json:"key_receiver_dept_name_short"`
+	KeyReceiverDeptNameFull          string                 `gorm:"column:receiver_dept_name_full" json:"key_receiver_dept_name_full"`
+	KeyReceiverDeskPhone             string                 `gorm:"column:receiver_desk_phone" json:"key_receiver_desk_phone"`
+	KeyReceiverMobilePhone           string                 `gorm:"column:receiver_mobile_phone" json:"key_receiver_mobile_phone"`
+	KeyReceiverPosition              string                 `gorm:"column:receiver_position" json:"key_receiver_position"`
+	ParkingPlace                     string                 `gorm:"column:parking_place" json:"parking_place"`
 	CanceledRequestDatetime          TimeWithZone           `gorm:"column:canceled_request_datetime" json:"canceled_request_datetime"`
 	IsPEAEmployeeDriver              string                 `gorm:"column:is_pea_employee_driver" json:"is_pea_employee_driver"`
 	CarpoolName                      string                 `gorm:"column:vehicle_carpool_name" json:"vehicle_carpool_name"`
@@ -115,7 +130,8 @@ type VmsTrnRequestRequest struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	RefCostTypeCode int    `gorm:"column:ref_cost_type_code" json:"ref_cost_type_code" example:"1"`
 	CostCenter      string `gorm:"column:cost_center" json:"cost_center" example:"B0002211"`
@@ -143,7 +159,6 @@ type VmsTrnRequestRequest struct {
 
 	DriverEmpID            string `gorm:"column:driver_emp_id" json:"driver_emp_id" example:"700001"`
 	DriverEmpName          string `gorm:"column:driver_emp_name" json:"-"`
-	DriverDeptSAP          string `gorm:"column:driver_emp_dept_sap" json:"-"`
 	DriverEmpDeskPhone     string `gorm:"column:driver_emp_desk_phone" json:"driver_internal_contact_number" example:"1221"`
 	DriverEmpMobilePhone   string `gorm:"column:driver_emp_mobile_phone" json:"driver_mobile_contact_number" example:"0987654321"`
 	DriverEmpPosition      string `gorm:"column:driver_emp_position" json:"-"`
@@ -202,7 +217,8 @@ type VmsTrnRequestResponse struct {
 	NumberOfPassengers int    `gorm:"column:number_of_passengers" json:"number_of_passengers" example:"3"`
 	Remark             string `gorm:"column:remark" json:"remark" example:"Urgent request"`
 	DocNo              string `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile            string `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName        string `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 
 	NumberOfAvailableDrivers int `gorm:"-" json:"number_of_available_drivers" example:"2"`
 
@@ -351,7 +367,8 @@ func (VmsTrnRequestPickup) TableName() string {
 type VmsTrnRequestDocument struct {
 	TrnRequestUID string    `gorm:"column:trn_request_uid;primarykey" json:"trn_request_uid" example:"0b07440c-ab04-49d0-8730-d62ce0a9bab9"`
 	DocNo         string    `gorm:"column:doc_no" json:"doc_no" example:"REF123456"`
-	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"document.pdf"`
+	DocFile       string    `gorm:"column:doc_file" json:"doc_file" example:"https://vms-plus.pea.co.th/files/document.pdf"`
+	DocFileName   string    `gorm:"column:doc_file_name" json:"doc_file_name" example:"document.pdf"`
 	UpdatedAt     time.Time `gorm:"column:updated_at" json:"-"`
 	UpdatedBy     string    `gorm:"column:updated_by" json:"-"`
 }
@@ -522,10 +539,12 @@ type VmsTrnRequestApprovedWithRecieiveKey struct {
 	ReceivedKeyStartDatetime TimeWithZone `gorm:"column:appointment_start" json:"received_key_start_datetime" swaggertype:"string" example:"2025-02-16T08:00:00Z"`
 	ReceivedKeyEndDatetime   TimeWithZone `gorm:"column:appointment_end" json:"received_key_end_datetime" swaggertype:"string" example:"2025-02-16T09:30:00Z"`
 	ReceiverType             int          `gorm:"column:receiver_type" json:"receiver_type" example:"0"`
-	CreatedBy                string       `gorm:"column:created_by" json:"-"`
-	CreatedAt                time.Time    `gorm:"column:created_at" json:"-"`
-	UpdatedBy                string       `gorm:"column:updated_by" json:"-"`
-	UpdatedAt                time.Time    `gorm:"column:updated_at" json:"-"`
+	ApprovedRequestEmpID     string       `gorm:"-" json:"approved_request_emp_id" example:"700001"`
+
+	CreatedBy string    `gorm:"column:created_by" json:"-"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"-"`
+	UpdatedBy string    `gorm:"column:updated_by" json:"-"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"-"`
 }
 
 func (VmsTrnRequestApprovedWithRecieiveKey) TableName() string {

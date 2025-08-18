@@ -22,8 +22,8 @@ type ReceivedVehicleUserHandler struct {
 
 var StatusNameMapReceivedVehicleUser = map[string]string{
 	"51":  "รับยานพาหนะ",
+	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "เดินทาง",
-	"60e": "เกินวันเดินทาง",
 }
 
 func (h *ReceivedVehicleUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -122,6 +122,8 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("req.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("req.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("req.request_no desc")
 	}
 
 	// Pagination
@@ -165,7 +167,9 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+		Group("req.ref_request_status_code").
+		Where("req.is_deleted = ?", "0")
+	summaryQuery = summaryQuery.Where("req.ref_request_status_code IN (?)", statusCodes)
 
 	// Execute the summary query
 	dbSummary := []struct {
