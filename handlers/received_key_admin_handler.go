@@ -190,6 +190,14 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 			requests[i].VehicleCarpoolText = ""
 
 		}
+		switch requests[i].KeyReceiverType {
+		case 1:
+			requests[i].KeyReceiverTypeName = "คนขับรถ"
+		case 2:
+			requests[i].KeyReceiverTypeName = "พนักงาน"
+		case 3:
+			requests[i].KeyReceiverTypeName = "บุคคลภายนอก"
+		}
 	}
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
