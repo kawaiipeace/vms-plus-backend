@@ -153,6 +153,21 @@ func GetDateBuddhistYear(date time.Time) string {
 	return fmt.Sprintf("%02d/%02d/%04d", day, month, year)
 }
 
+func GetDateTimeBuddhistYear(date time.Time) string {
+	day := date.Day()
+	month := int(date.Month())
+	year := date.Year() + 543
+	return fmt.Sprintf("%02d/%02d/%04d %02d:%02d", day, month, year, date.Hour(), date.Minute())
+}
+
+func GetDateTime2BuddhistYear(date1, date2 time.Time) string {
+	day := date1.Day()
+	month := int(date1.Month())
+	year := date1.Year() + 543
+
+	return fmt.Sprintf("%02d/%02d/%04d %02d:%02d - %02d:%02d", day, month, year, date1.Hour(), date1.Minute(), date2.Hour(), date2.Minute())
+}
+
 func GetDateWithZone(date time.Time) string {
 	if date.IsZero() {
 		return ""

@@ -224,3 +224,8 @@ func GetTimeWithZone(dateString string) (TimeWithZone, error) {
 	}
 	return TimeWithZone{}, err
 }
+
+func (t *TimeWithZone) TimeWithZoneToTime() time.Time {
+	loc := time.FixedZone("Asia/Bangkok", 7*60*60)
+	return t.Time.In(loc)
+}

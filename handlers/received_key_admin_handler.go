@@ -21,8 +21,7 @@ type ReceivedKeyAdminHandler struct {
 
 var StatusNameMapReceivedKeyAdmin = map[string]string{
 	"50":  "รอรับกุญแจ",
-	"50e": "เกินวันนัดหมาย",
-	"51":  "รับยานพาหนะ",
+	"50e": "เกินวันที่นัดหมาย",
 }
 
 func (h *ReceivedKeyAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -58,7 +57,7 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	var statusNameMap = StatusNameMapReceivedKeyUser
+	var statusNameMap = StatusNameMapReceivedKeyAdmin
 	var requests []models.VmsTrnRequestAdminList
 	var summary []models.VmsTrnRequestSummary
 
@@ -71,10 +70,23 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	// Build the main query
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request").
-		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place ").
+		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,v.\"CarTypeDetail\" car_type," +
+			"case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name," +
+			"case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_short_work from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name," +
+			"fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short," +
+			"mc.carpool_name vehicle_carpool_name," +
+			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place, " +
+			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,k.receiver_type," +
+			"case when k.receiver_type = 1 then (select driver_nickname from vms_mas_driver d where d.driver_id=k.receiver_personal_id) else '' end receiver_nickname," +
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place," +
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
-		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_trn_request.mas_carpool_uid")
+
+	query = query.Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
+
 	query = query.Where("vms_trn_request.is_deleted = ?", "0")
 
 	// Apply additional filters (search, date range, etc.)
@@ -94,26 +106,23 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	if receivedKeyEndDatetime := c.Query("received_key_end_datetime"); receivedKeyEndDatetime != "" {
 		query = query.Where("vms_trn_request.received_key_end_datetime <= ?", receivedKeyEndDatetime)
 	}
+	has50e := false
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
 		// Include additional keys with the same text in StatusNameMapUser
-		additionalCodes := make(map[string]bool)
-		for _, code := range codes {
-			if name, exists := statusNameMap[code]; exists {
-				for key, value := range statusNameMap {
-					if value == name {
-						additionalCodes[key] = true
-					}
-				}
+
+		for i := range codes {
+			if codes[i] == "50e" {
+				has50e = true
+				codes[i] = "50"
 			}
 		}
-		// Merge the original codes with the additional codes
-		for key := range additionalCodes {
-			codes = append(codes, key)
-		}
-		fmt.Println("codes", codes)
+
 		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+		if has50e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '50' AND appointment_key_handover_end_datetime < NOW()")
+		}
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -128,6 +137,8 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -159,18 +170,48 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
 
-		if requests[i].TripType == 0 {
+		switch requests[i].TripType {
+		case 0:
 			requests[i].TripTypeName = "ไป-กลับ"
-		} else if requests[i].TripType == 1 {
+		case 1:
 			requests[i].TripTypeName = "ค้างแรม"
+		}
+		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
+			requests[i].DriverDeptName = requests[i].DriverCarpoolName
+		}
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+
+		}
+		switch requests[i].KeyReceiverType {
+		case 1:
+			requests[i].KeyReceiverTypeName = "พนักงานขับรถ"
+		case 2:
+			requests[i].KeyReceiverTypeName = requests[i].KeyReceiverDeptNameShort
+		case 3:
+			requests[i].KeyReceiverTypeName = "บุคคลภายนอก"
 		}
 	}
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request").
-		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
-		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
-		Group("vms_trn_request.ref_request_status_code")
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
+		Select(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '50' AND k.appointment_end < NOW() THEN '50e'
+			ELSE vms_trn_request.ref_request_status_code
+		END as ref_request_status_code, COUNT(*) as count`)
+
+	summaryQuery = summaryQuery.Group(`CASE 
+		WHEN vms_trn_request.ref_request_status_code = '50' AND k.appointment_end < NOW() THEN '50e'
+		ELSE vms_trn_request.ref_request_status_code
+	END`)
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -265,7 +306,7 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 		return
 	}
 
-	query := h.SetQueryRole(user, config.DB)
+	query := h.SetQueryRole(user, config.DB).Table("public.vms_trn_request")
 	query = h.SetQueryStatusCanUpdate(query)
 	if err := query.First(&trnRequest, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Booking can not update", "message": messages.ErrBookingCannotUpdate.Error()})
@@ -280,7 +321,19 @@ func (h *ReceivedKeyAdminHandler) UpdateRecieivedKey(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
+	//update vms_trn_request set appointment_key_handover_place,appointment_key_handover_start_datetime,appointment_key_handover_end_datetime
+	if err := config.DB.Table("vms_trn_request").
+		Where("trn_request_uid = ?", request.TrnRequestUID).
+		Update("appointment_key_handover_place", request.ReceivedKeyPlace).
+		Update("appointment_key_handover_start_datetime", request.ReceivedKeyStartDatetime).
+		Update("appointment_key_handover_end_datetime", request.ReceivedKeyEndDatetime).Error; err != nil {
+		return
+	}
+
+	if err := config.DB.
+		Table("public.vms_trn_request").
+		Select("trn_request_uid,request_no,appointment_key_handover_place appointment_location,appointment_key_handover_start_datetime appointment_start,appointment_key_handover_end_datetime appointment_end").
+		First(&result, "trn_request_uid = ?", request.TrnRequestUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found", "message": messages.ErrBookingNotFound.Error()})
 		return
 	}

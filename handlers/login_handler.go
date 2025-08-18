@@ -387,7 +387,7 @@ func (h *LoginHandler) RequestOTP(c *gin.Context) {
 	expiry := time.Minute * time.Duration(config.AppConfig.OtpExpired)
 	otpID, otpErr := SendOTP(req.Phone, refCode, expiry)
 	if otpErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed", "message": messages.ErrTryAgain.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP sending failed" + otpErr.Error(), "message": messages.ErrTryAgain.Error()})
 		return
 	}
 
@@ -742,7 +742,7 @@ func (h *LoginHandler) Profile(c *gin.Context) {
 				Order("ref_request_annual_driver_status_code").
 				Find(&licenses).Error
 			if err == nil && len(licenses) > 0 {
-				fmt.Println("license", licenses)
+				//fmt.Println("license", licenses)
 				user.TrnRequestAnnualDriverUID = licenses[0].TrnRequestAnnualDriverUID
 				user.AnnualYYYY = licenses[0].AnnualYYYY
 				user.LicenseStatusCode = licenses[0].RefRequestAnnualDriverStatusCode

@@ -8,6 +8,7 @@ import (
 	"vms_plus_be/funcs"
 	"vms_plus_be/messages"
 	"vms_plus_be/models"
+	"vms_plus_be/userhub"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -196,6 +197,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 	adminChooseDriverMasVehicleUIDs := make([]string, 0)
 	systemChooseDriverMasVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
+
 		if vehicleCanBooking.RefCarpoolChooseCarID == 2 || vehicleCanBooking.RefCarpoolChooseCarID == 3 {
 			masCarpoolUIDs = append(masCarpoolUIDs, vehicleCanBooking.MasCarpoolUID)
 		} else {
@@ -231,7 +233,15 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 			carpools[i].IsSystemChooseDriver = false
 		}
 	}
-
+	if len(ownerDept) > 10 {
+		filteredCarpools := make([]models.VmsMasCarpoolCarBooking, 0, len(carpools))
+		for _, carpool := range carpools {
+			if carpool.MasCarpoolUID == ownerDept {
+				filteredCarpools = append(filteredCarpools, carpool)
+			}
+		}
+		carpools = filteredCarpools
+	}
 	totalGroups := len(carpools)
 	// Pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))        // Default page = 1
@@ -306,7 +316,7 @@ func (h *VehicleHandler) SearchBookingVehicles(c *gin.Context) {
 		funcs.TrimStringFields(&vehicles[i])
 		if vehicles[i].CarpoolName != "" {
 			vehicles[i].VehicleOwnerDeptSAP = ""
-			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName
+			vehicles[i].VehicleOwnerDeptShort = vehicles[i].CarpoolName + "(carpool)"
 		} else {
 			vehicles[i].VehicleOwnerDeptShort = funcs.GetDeptSAPShort(vehicles[i].VehicleOwnerDeptSAP)
 		}
@@ -377,14 +387,24 @@ func (h *VehicleHandler) SearchBookingVehiclesCarpool(c *gin.Context) {
 
 	var vehicleCanBookings []models.VmsMasVehicleCanBooking
 	masCarpoolUID := c.Query("mas_carpool_uid")
-	queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?) where mas_carpool_uid = ?`,
-		StartTimeWithZone, EndTimeWithZone, bureauDeptSap, businessArea, masCarpoolUID)
-	err := queryCanBooking.Scan(&vehicleCanBookings).Error
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
-		return
+	if masCarpoolUID != "" {
+		queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?) where mas_carpool_uid = ?`,
+			StartTimeWithZone, EndTimeWithZone, bureauDeptSap, businessArea, masCarpoolUID)
+		err := queryCanBooking.Scan(&vehicleCanBookings).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
+			return
+		}
+	} else {
+		queryCanBooking := config.DB.Raw(`SELECT * FROM fn_get_available_vehicles_view (?, ?, ?, ?) where mas_carpool_uid is null`,
+			StartTimeWithZone, EndTimeWithZone, bureauDeptSap, businessArea)
+		err := queryCanBooking.Scan(&vehicleCanBookings).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch available vehicles", "message": messages.ErrInternalServer.Error()})
+			return
+		}
 	}
+
 	masVehicleUIDs := make([]string, 0)
 	for _, vehicleCanBooking := range vehicleCanBookings {
 		masVehicleUIDs = append(masVehicleUIDs, vehicleCanBooking.MasVehicleUID)
@@ -524,6 +544,34 @@ func (h *VehicleHandler) GetVehicle(c *gin.Context) {
 			vehicle.VehicleDepartment.VehicleOwnerDeptShort = carpool.CarpoolName
 		}
 
+	} else {
+		userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+			ServiceCode: "vms",
+			Role:        "admin-department-main",
+			DeptSaps:    vehicle.VehicleDepartment.BureauDeptSap,
+			Limit:       100,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+			return
+		}
+		if len(userList) > 0 {
+			vehicle.VehicleDepartment.VehicleUser = userList[0]
+		} else {
+			userList, err := userhub.GetUserList(userhub.ServiceListUserRequest{
+				ServiceCode: "vms",
+				Role:        "admin-department",
+				DeptSaps:    vehicle.VehicleDepartment.BureauDeptSap,
+				Limit:       100,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": messages.ErrInternalServer.Error()})
+				return
+			}
+			if len(userList) > 0 {
+				vehicle.VehicleDepartment.VehicleUser = userList[0]
+			}
+		}
 	}
 
 	funcs.TrimStringFields(&vehicle)

@@ -21,7 +21,7 @@ type ReceivedKeyUserHandler struct {
 
 var StatusNameMapReceivedKeyUser = map[string]string{
 	"50":  "รอรับกุญแจ",
-	"50e": "เกินวันนัดหมาย",
+	"50e": "เกินวันที่นัดหมาย",
 }
 
 func (h *ReceivedKeyUserHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -64,17 +64,17 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	}
 
 	// Build the main query
-
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request AS req").
-		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place,"+
-			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
-			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+		Select("req.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full," +
+			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = req.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place," +
+			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap," +
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place," +
 			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
 		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = req.trn_request_uid").
-		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid").
-		Where("req.ref_request_status_code IN (?)", statusCodes)
+		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = req.mas_vehicle_uid")
+
+	query = query.Where("req.ref_request_status_code IN (?)", statusCodes)
 
 	query = query.Where("req.is_deleted = ?", "0")
 
@@ -88,26 +88,23 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 	if endDate := c.Query("enddate"); endDate != "" {
 		query = query.Where("req.reserve_start_datetime <= ?", endDate)
 	}
+	has50e := false
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		codes := strings.Split(refRequestStatusCodes, ",")
 		// Include additional keys with the same text in StatusNameMapUser
-		additionalCodes := make(map[string]bool)
-		for _, code := range codes {
-			if name, exists := statusNameMap[code]; exists {
-				for key, value := range statusNameMap {
-					if value == name {
-						additionalCodes[key] = true
-					}
-				}
+
+		for i := range codes {
+			if codes[i] == "50e" {
+				has50e = true
+				codes[i] = "50"
 			}
 		}
-		// Merge the original codes with the additional codes
-		for key := range additionalCodes {
-			codes = append(codes, key)
+
+		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+		if has50e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '50' AND appointment_key_handover_end_datetime < NOW()")
 		}
-		fmt.Println("codes", codes)
-		query = query.Where("req.ref_request_status_code IN (?)", codes)
 	}
 
 	// Ordering
@@ -123,6 +120,8 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("req.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("req.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("req.request_no desc")
 	}
 
 	// Pagination
@@ -157,10 +156,17 @@ func (h *ReceivedKeyUserHandler) SearchRequests(c *gin.Context) {
 
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
-	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
-		Select("req.ref_request_status_code, COUNT(*) as count").
-		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+	summaryQuery = summaryQuery.Table("public.vms_trn_request").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
+		Select(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '50' AND k.appointment_end < NOW() THEN '50e'
+			ELSE vms_trn_request.ref_request_status_code
+		END as ref_request_status_code, COUNT(*) as count`)
+
+	summaryQuery = summaryQuery.Group(`CASE 
+		WHEN vms_trn_request.ref_request_status_code = '50' AND k.appointment_end < NOW() THEN '50e'
+		ELSE vms_trn_request.ref_request_status_code
+	END`)
 
 	// Execute the summary query
 	dbSummary := []struct {

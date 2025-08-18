@@ -21,13 +21,10 @@ type VehicleInUseAdminHandler struct {
 }
 
 var StatusNameMapVehicelInUseAdmin = map[string]string{
-	"50":  "รอรับยานพาหนะ",
-	"50e": "รับยานพาหนะล่าช้า",
-	"51":  "รับยานพาหนะ",
+	"51":  "รอรับยานพาหนะ",
+	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "อยู่ระหว่างเดินทาง",
 	"60e": "คืนยานพาหนะล่าช้า",
-	"70":  "ส่งคืนยานพาหนะ",
-	"80":  "เสร็จสิ้น",
 }
 
 func (h *VehicleInUseAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -75,10 +72,19 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	query := h.SetQueryRole(user, config.DB)
 	query = query.Table("public.vms_trn_request").
 		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
-			"(select max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid AND d.is_deleted = '0' AND d.is_active = '1') parking_place ").
+			"case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_name else (select driver_name from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_name,"+
+			"case vms_trn_request.is_pea_employee_driver when '1' then vms_trn_request.driver_emp_dept_name_short else (select driver_dept_sap_short_work from vms_mas_driver d where d.mas_driver_uid=vms_trn_request.mas_carpool_driver_uid) end driver_dept_name,"+
+			"fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,"+
+			"mc.carpool_name vehicle_carpool_name,"+
+			"(select Max(parking_place) from vms_mas_vehicle_department d where d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and d.is_deleted = '0' and d.is_active = '1') parking_place, "+
+			"k.receiver_personal_id,k.receiver_fullname,k.receiver_dept_sap,"+
+			"k.appointment_start appointment_key_handover_start_datetime,k.appointment_end appointment_key_handover_end_datetime,k.appointment_location appointment_key_handover_place,"+
+			"k.receiver_dept_name_short,k.receiver_dept_name_full,k.receiver_desk_phone,k.receiver_mobile_phone,k.receiver_position,k.remark receiver_remark").
+		Joins("LEFT JOIN vms_trn_vehicle_key_handover k ON k.trn_request_uid = vms_trn_request.trn_request_uid").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
+		Joins("LEFT JOIN vms_mas_vehicle_department d on d.mas_vehicle_department_uid=vms_trn_request.mas_vehicle_department_uid").
+		Joins("LEFT JOIN vms_mas_carpool mc ON mc.mas_carpool_uid = vms_trn_request.mas_carpool_uid").
 		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
-
 	query = query.Where("vms_trn_request.is_deleted = ?", "0")
 
 	// Apply additional filters (search, date range, etc.)
@@ -92,25 +98,26 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Where("vms_trn_request.reserve_start_datetime <= ?", endDate)
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
-		// Split the comma-separated codes into a slice
+		has51e := false
+		has60e := false
 		codes := strings.Split(refRequestStatusCodes, ",")
-		// Include additional keys with the same text in StatusNameMapUser
-		additionalCodes := make(map[string]bool)
-		for _, code := range codes {
-			if name, exists := statusNameMap[code]; exists {
-				for key, value := range statusNameMap {
-					if value == name {
-						additionalCodes[key] = true
-					}
-				}
+		for i := range codes {
+			if codes[i] == "51e" {
+				has51e = true
+				codes[i] = "51"
+			}
+			if codes[i] == "60e" {
+				has60e = true
+				codes[i] = "60"
 			}
 		}
-		// Merge the original codes with the additional codes
-		for key := range additionalCodes {
-			codes = append(codes, key)
-		}
-		fmt.Println("codes", codes)
 		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
+		if has51e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW())")
+		}
+		if has60e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW())")
+		}
 	}
 	// Ordering
 	orderBy := c.Query("order_by")
@@ -125,6 +132,8 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		query = query.Order("vms_trn_request.start_datetime " + orderDir)
 	case "ref_request_status_code":
 		query = query.Order("vms_trn_request.ref_request_status_code " + orderDir)
+	default:
+		query = query.Order("vms_trn_request.request_no desc")
 	}
 
 	// Pagination
@@ -155,14 +164,36 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	for i := range requests {
 		requests[i].RefRequestStatusName = statusNameMap[requests[i].RefRequestStatusCode]
+		if requests[i].IsPEAEmployeeDriver != 1 && requests[i].DriverCarpoolName != "" {
+			requests[i].DriverDeptName = requests[i].DriverCarpoolName
+		}
+		if requests[i].VehicleCarpoolName != "" {
+			requests[i].VehicleDepartmentDeptSapShort = requests[i].VehicleCarpoolName
+			requests[i].VehicleDeptName = requests[i].VehicleCarpoolName
+			requests[i].VehicleCarpoolText = "Carpool"
+			requests[i].VehicleCarpoolName = "Carpool"
+		} else {
+			requests[i].VehicleDeptName = requests[i].VehicleDepartmentDeptSapShort
+			requests[i].VehicleCarpoolName = ""
+			requests[i].VehicleCarpoolText = ""
+		}
 	}
 
 	// Build the summary query
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request").
-		Select("vms_trn_request.ref_request_status_code, COUNT(*) as count").
-		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes).
-		Group("vms_trn_request.ref_request_status_code")
+		Select(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
+			ELSE vms_trn_request.ref_request_status_code
+		END as ref_request_status_code, COUNT(*) as count`).
+		Group(`CASE 
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
+			ELSE vms_trn_request.ref_request_status_code
+		END`).
+		Where("vms_trn_request.is_deleted = ?", "0").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -173,7 +204,7 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	fmt.Println(dbSummary)
 	// Create a complete summary with all statuses from statusNameMap
 	for code, name := range statusNameMap {
 		count := 0
