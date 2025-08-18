@@ -90,16 +90,24 @@ func (h *ReceivedVehicleDriverHandler) SearchRequests(c *gin.Context) {
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		// Split the comma-separated codes into a slice
 		has51e := false
+		has60e := false
 		codes := strings.Split(refRequestStatusCodes, ",")
 		for i := range codes {
 			if codes[i] == "51e" {
 				has51e = true
 				codes[i] = "51"
 			}
+			if codes[i] == "60e" {
+				has60e = true
+				codes[i] = "60"
+			}
 		}
 		query = query.Where("req.ref_request_status_code IN (?)", codes)
 		if has51e {
-			query = query.Where("req.ref_request_status_code = '51' AND reserve_start_datetime < NOW()")
+			query = query.Where("req.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW())")
+		}
+		if has60e {
+			query = query.Where("req.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW())")
 		}
 	}
 	// Ordering
@@ -153,11 +161,13 @@ func (h *ReceivedVehicleDriverHandler) SearchRequests(c *gin.Context) {
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select(`CASE 
-			WHEN req.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			WHEN req.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN req.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
 			ELSE req.ref_request_status_code
 		END as ref_request_status_code, COUNT(*) as count`).
 		Group(`CASE 
-			WHEN req.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			WHEN req.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN req.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
 			ELSE req.ref_request_status_code
 		END`)
 

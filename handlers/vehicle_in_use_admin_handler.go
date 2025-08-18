@@ -21,12 +21,10 @@ type VehicleInUseAdminHandler struct {
 }
 
 var StatusNameMapVehicelInUseAdmin = map[string]string{
-	"50":  "รอรับยานพาหนะ",
-	"51":  "รับยานพาหนะ",
+	"51":  "รอรับยานพาหนะ",
 	"51e": "รับยานพาหนะล่าช้า",
 	"60":  "อยู่ระหว่างเดินทาง",
-	"70":  "ส่งคืนยานพาหนะ",
-	"80":  "เสร็จสิ้น",
+	"60e": "คืนยานพาหนะล่าช้า",
 }
 
 func (h *VehicleInUseAdminHandler) SetQueryRole(user *models.AuthenUserEmp, query *gorm.DB) *gorm.DB {
@@ -101,16 +99,24 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	}
 	if refRequestStatusCodes := c.Query("ref_request_status_code"); refRequestStatusCodes != "" {
 		has51e := false
+		has60e := false
 		codes := strings.Split(refRequestStatusCodes, ",")
 		for i := range codes {
 			if codes[i] == "51e" {
 				has51e = true
 				codes[i] = "51"
 			}
+			if codes[i] == "60e" {
+				has60e = true
+				codes[i] = "60"
+			}
 		}
 		query = query.Where("vms_trn_request.ref_request_status_code IN (?)", codes)
 		if has51e {
-			query = query.Where("vms_trn_request.ref_request_status_code = '51' AND reserve_start_datetime < NOW()")
+			query = query.Where("vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW())")
+		}
+		if has60e {
+			query = query.Where("vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW())")
 		}
 	}
 	// Ordering
@@ -177,13 +183,17 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 	summaryQuery := h.SetQueryRole(user, config.DB)
 	summaryQuery = summaryQuery.Table("public.vms_trn_request").
 		Select(`CASE 
-			WHEN vms_trn_request.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
 			ELSE vms_trn_request.ref_request_status_code
 		END as ref_request_status_code, COUNT(*) as count`).
 		Group(`CASE 
-			WHEN vms_trn_request.ref_request_status_code = '51' AND reserve_start_datetime < NOW() THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '51' AND DATE(reserve_start_datetime) < DATE(NOW()) THEN '51e'
+			WHEN vms_trn_request.ref_request_status_code = '60' AND DATE(reserve_end_datetime) < DATE(NOW()) THEN '60e'
 			ELSE vms_trn_request.ref_request_status_code
-		END`)
+		END`).
+		Where("vms_trn_request.is_deleted = ?", "0").
+		Where("vms_trn_request.ref_request_status_code IN (?)", statusCodes)
 
 	// Execute the summary query
 	dbSummary := []struct {
@@ -194,7 +204,7 @@ func (h *VehicleInUseAdminHandler) SearchRequests(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	fmt.Println(dbSummary)
 	// Create a complete summary with all statuses from statusNameMap
 	for code, name := range statusNameMap {
 		count := 0

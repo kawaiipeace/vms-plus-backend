@@ -167,7 +167,9 @@ func (h *ReceivedVehicleUserHandler) SearchRequests(c *gin.Context) {
 	summaryQuery = summaryQuery.Table("public.vms_trn_request AS req").
 		Select("req.ref_request_status_code, COUNT(*) as count").
 		Where("req.ref_request_status_code IN (?)", statusCodes).
-		Group("req.ref_request_status_code")
+		Group("req.ref_request_status_code").
+		Where("req.is_deleted = ?", "0")
+	summaryQuery = summaryQuery.Where("req.ref_request_status_code IN (?)", statusCodes)
 
 	// Execute the summary query
 	dbSummary := []struct {
