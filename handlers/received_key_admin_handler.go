@@ -194,7 +194,7 @@ func (h *ReceivedKeyAdminHandler) SearchRequests(c *gin.Context) {
 		case 1:
 			requests[i].KeyReceiverTypeName = "คนขับรถ"
 		case 2:
-			requests[i].KeyReceiverTypeName = "พนักงาน"
+			requests[i].KeyReceiverTypeName = requests[i].KeyReceiverDeptNameShort
 		case 3:
 			requests[i].KeyReceiverTypeName = "บุคคลภายนอก"
 		}
