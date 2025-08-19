@@ -72,6 +72,7 @@ func (h *VehicleInspectionAdminHandler) SearchRequests(c *gin.Context) {
 	query = query.Table("public.vms_trn_request").
 		Select("vms_trn_request.*, v.vehicle_license_plate,v.vehicle_license_plate_province_short,v.vehicle_license_plate_province_full,"+
 			"fn_get_long_short_dept_name_by_dept_sap(d.vehicle_owner_dept_sap) vehicle_department_dept_sap_short,"+
+			"(select min(req_next.reserve_start_datetime) from vms_trn_request req_next where req_next.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid and req_next.reserve_start_datetime > vms_trn_request.reserve_start_datetime) next_start_datetime,"+
 			"d.parking_place").
 		Joins("LEFT JOIN vms_mas_vehicle v on v.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").
 		Joins("LEFT JOIN (select mas_vehicle_uid,max(vehicle_owner_dept_sap) vehicle_owner_dept_sap,max(parking_place) parking_place from vms_mas_vehicle_department group by mas_vehicle_uid) d on d.mas_vehicle_uid = vms_trn_request.mas_vehicle_uid").

@@ -39,7 +39,7 @@ type VmsTrnRequestVehicleInUseList struct {
 	ReturnedVehicleRemark   string               `gorm:"column:returned_vehicle_remark" json:"returned_vehicle_remark" example:"OK"`
 
 	ParkingPlace        string `gorm:"column:parking_place" json:"parking_place"`
-	NextStartDatetime   string `gorm:"-" json:"next_start_datetime"`
+	NextStartDatetime   string `gorm:"next_start_datetime" json:"next_start_datetime"`
 	WorkDescription     string `gorm:"column:work_description" json:"work_description"`
 	CanPickupButton     bool   `gorm:"-" json:"can_pickup_button"`
 	CanScoreButton      bool   `gorm:"-" json:"can_score_button"`
